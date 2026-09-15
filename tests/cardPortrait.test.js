@@ -185,9 +185,9 @@ test('pause cancels and reduced motion restores the original without staged node
   assert.equal(h.shell.dataset.state, 'idle');
 });
 
-test('failed photos are skipped and the curated cycle wraps to the original', async () => {
+test('failed photos are skipped and the curated cycle includes the business portrait before wrapping', async () => {
   const h = await setup({ failed: ['/nick-waterfall-summer.jpg'] });
-  for (const expected of ['/nick-mirror.jpg', '/nick-snow.jpg', '/nick-waterfall-autumn.jpg', '/nick-pixel-source.jpg']) {
+  for (const expected of ['/nick-mirror.jpg', '/nick-snow.jpg', '/nick-waterfall-autumn.jpg', '/nick-business-portrait.jpg', '/nick-pixel-source.jpg']) {
     await h.finish();
     assert.equal(h.frame.children[0].src, expected);
     h.api.scatterFrom();
@@ -196,7 +196,7 @@ test('failed photos are skipped and the curated cycle wraps to the original', as
 
 test('cancelling a wraparound reveal cannot leave the reduced-motion original transparent', async () => {
   const h = await setup();
-  for (let index = 0; index < 4; index++) {
+  for (let index = 0; index < 5; index++) {
     await h.finish();
     h.api.scatterFrom();
   }

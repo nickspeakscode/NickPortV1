@@ -13,6 +13,7 @@ const PORTRAIT_PHOTOS = [
   '/nick-mirror.jpg',
   '/nick-snow.jpg',
   '/nick-waterfall-autumn.jpg',
+  '/nick-business-portrait.jpg',
 ];
 
 // Keep the portrait's existing integration point; the old free-body puzzle
