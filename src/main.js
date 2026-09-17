@@ -159,7 +159,37 @@ app.innerHTML = `
           </p>
           <p>
             Working on a tool for accountants and CPAs called
-            <span class="redacted-mark">redacted</span>
+            <span class="redacted-wrap">
+              <button
+                type="button"
+                class="redacted-mark"
+                aria-expanded="false"
+                aria-controls="sumlino-teaser"
+                aria-haspopup="true"
+                aria-label="redacted, Sumlino preview"
+              >
+                redacted
+              </button>
+              <a
+                class="redacted-popover"
+                id="sumlino-teaser"
+                href="https://x.com/sumlinoapp"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Sumlino on X"
+                tabindex="-1"
+              >
+                <img
+                  class="redacted-popover-logo"
+                  src="/sumlino-mark.svg"
+                  alt=""
+                  width="64"
+                  height="64"
+                  decoding="async"
+                />
+                <span class="redacted-popover-label" aria-hidden="true">Sumlino</span>
+              </a>
+            </span>
             that takes the month-end recon grind off their plate so they can
             keep the judgment calls.
           </p>
@@ -228,6 +258,7 @@ const cardPortrait = createCardPortrait({
 
 initializeMobileNav();
 syncHeaderOffset();
+initializeRedactedTeaser();
 
 const revealItems = document.querySelectorAll(".reveal-on-scroll");
 const revealObserver = new IntersectionObserver(
@@ -297,6 +328,60 @@ loadLearningNotes()
   .catch(() => {
     if (!cachedNotes?.length) fillHomeList("latestLearningNote", renderHomeRows([], () => "/notes/"));
   });
+
+function initializeRedactedTeaser() {
+  const wrap = document.querySelector(".redacted-wrap");
+  const trigger = wrap?.querySelector(".redacted-mark");
+  const popover = wrap?.querySelector(".redacted-popover");
+  if (!wrap || !trigger || !popover) return;
+
+  const fineHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+  let lastPointerType = "mouse";
+
+  const setOpen = (open) => {
+    wrap.classList.toggle("is-open", open);
+    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    popover.tabIndex = open ? 0 : -1;
+  };
+
+  wrap.addEventListener("pointerdown", (event) => {
+    lastPointerType = event.pointerType || lastPointerType;
+  });
+
+  wrap.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "touch") return;
+    if (event.pointerType === "mouse" || fineHover.matches) setOpen(true);
+  });
+
+  wrap.addEventListener("pointerleave", (event) => {
+    if (event.pointerType === "touch") return;
+    if (wrap.contains(document.activeElement)) return;
+    setOpen(false);
+  });
+
+  wrap.addEventListener("focusout", (event) => {
+    if (!wrap.contains(event.relatedTarget)) setOpen(false);
+  });
+
+  trigger.addEventListener("click", (event) => {
+    const keyboard = event.detail === 0;
+    const touchLike =
+      lastPointerType === "touch" ||
+      lastPointerType === "pen" ||
+      !fineHover.matches;
+    if (!keyboard && !touchLike) return;
+    setOpen(!wrap.classList.contains("is-open"));
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!wrap.contains(event.target)) setOpen(false);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !wrap.classList.contains("is-open")) return;
+    setOpen(false);
+  });
+}
 
 function getOverlap(a, b) {
   const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
