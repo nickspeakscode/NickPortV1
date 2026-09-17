@@ -157,6 +157,10 @@ app.innerHTML = `
             Accountant, license to keep sharpening how I think about finance,
             strategy, and business performance.
           </p>
+          <p>
+            I’m quietly building a tool for accountants and CPAs called
+            <span class="redacted-mark">redacted</span>.
+          </p>
           <div class="about-focus-list" aria-label="Current focus areas">
             <span style="--focus-delay: 120ms">Financial modeling</span>
             <span style="--focus-delay: 240ms">CMA prep</span>
