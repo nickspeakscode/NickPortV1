@@ -819,14 +819,13 @@ p {
 
 .redacted-popover {
   position: absolute;
-  left: 50%;
-  bottom: calc(100% + 18px);
+  left: calc(100% + 10px);
+  top: 0;
   z-index: 6;
   display: block;
   width: max-content;
   color: inherit;
   text-decoration: none;
-  transform: translateX(-50%);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -861,21 +860,30 @@ p {
     0 14px 32px rgba(2, 9, 20, 0.5),
     0 0 22px rgba(126, 200, 255, 0.12),
     0 0 0 1px rgba(89, 241, 215, 0.06);
-  transform-origin: 50% 100%;
+  transform-origin: 0% 50%;
+}
+
+.redacted-popover-card::before {
+  content: "";
+  position: absolute;
+  right: 100%;
+  top: 0;
+  bottom: 0;
+  width: 18px;
 }
 
 .redacted-popover-card::after {
   content: "";
   position: absolute;
-  left: 50%;
-  bottom: -6px;
+  left: -6px;
+  top: 14px;
   width: 12px;
   height: 12px;
-  border-right: 1px solid rgba(126, 200, 255, 0.22);
-  border-bottom: 1px solid rgba(126, 200, 255, 0.22);
+  border-top: 1px solid rgba(126, 200, 255, 0.22);
+  border-left: 1px solid rgba(126, 200, 255, 0.22);
   background: var(--panel-strong);
-  transform: translateX(-50%) rotate(45deg);
-  box-shadow: 3px 3px 10px rgba(2, 9, 20, 0.18);
+  transform: translateY(-50%) rotate(45deg);
+  box-shadow: -2px 2px 8px rgba(2, 9, 20, 0.12);
 }
 
 .redacted-popover:hover .redacted-popover-card,
@@ -902,7 +910,7 @@ p {
   width: 40px;
   height: 32px;
   filter: drop-shadow(0 0 8px rgba(13, 93, 245, 0.38));
-  transform-origin: 50% 100%;
+  transform-origin: 0% 80%;
 }
 
 .redacted-popover-label {
@@ -992,15 +1000,29 @@ p {
 @media (max-width: 560px) {
   .redacted-popover {
     left: 0;
+    top: calc(100% + 14px);
     transform: none;
   }
 
   .redacted-popover-card {
-    transform-origin: 28px 100%;
+    transform-origin: 28px 0%;
+  }
+
+  .redacted-popover-card::before {
+    right: auto;
+    left: 0;
+    top: auto;
+    bottom: 100%;
+    width: 48px;
+    height: 16px;
   }
 
   .redacted-popover-card::after {
     left: 28px;
+    top: -6px;
+    border-right: none;
+    border-bottom: none;
+    transform: translateX(-50%) rotate(45deg);
   }
 }
 
