@@ -779,11 +779,10 @@ p {
   margin-bottom: 24px;
 }
 
-/* Soft blue glow on the product teaser — keep the halo inside the line box
-   so mobile grid clipping does not eat it. */
+/* Soft blue glow on the product teaser. Padding is skipped so the
+   following period stays tight; overflow:visible on the about layout
+   keeps the halo from clipping on mobile. */
 .redacted-mark {
-  display: inline-block;
-  padding: 0 0.18em;
   color: #7ec8ff;
   font-weight: 600;
   letter-spacing: 0.02em;
