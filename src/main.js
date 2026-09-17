@@ -158,8 +158,10 @@ app.innerHTML = `
             strategy, and business performance.
           </p>
           <p>
-            I’m quietly building a tool for accountants and CPAs called
-            <span class="redacted-mark">redacted</span>.
+            Working on a tool for accountants and CPAs called
+            <span class="redacted-mark">redacted</span>
+            that takes the month-end recon grind off their plate so they can
+            keep the judgment calls.
           </p>
           <div class="about-focus-list" aria-label="Current focus areas">
             <span style="--focus-delay: 120ms">Financial modeling</span>
