@@ -158,7 +158,8 @@ app.innerHTML = `
             strategy, and business performance.
           </p>
           <p>
-            Working on a tool for accountants and CPAs called
+            Some of that same tinkering has turned into a project for accountants
+            and CPAs called
             <span class="redacted-wrap">
               <button
                 type="button"
@@ -179,15 +180,17 @@ app.innerHTML = `
                 aria-label="Sumlino on X"
                 tabindex="-1"
               >
-                <img
-                  class="redacted-popover-logo"
-                  src="/sumlino-mark.svg"
-                  alt=""
-                  width="64"
-                  height="64"
-                  decoding="async"
-                />
-                <span class="redacted-popover-label" aria-hidden="true">Sumlino</span>
+                <span class="redacted-popover-card">
+                  <img
+                    class="redacted-popover-logo"
+                    src="/sumlino-mark.svg"
+                    alt=""
+                    width="40"
+                    height="32"
+                    decoding="async"
+                  />
+                  <span class="redacted-popover-label" aria-hidden="true">Sumlino</span>
+                </span>
               </a>
             </span>
             that takes the month-end recon grind off their plate so they can
@@ -342,6 +345,11 @@ function initializeRedactedTeaser() {
     wrap.classList.toggle("is-open", open);
     trigger.setAttribute("aria-expanded", open ? "true" : "false");
     popover.tabIndex = open ? 0 : -1;
+    wrap.classList.remove("is-swinging");
+    if (open) {
+      void wrap.offsetWidth;
+      wrap.classList.add("is-swinging");
+    }
   };
 
   wrap.addEventListener("pointerdown", (event) => {
