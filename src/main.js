@@ -359,21 +359,17 @@ function initializeRedactedTeaser() {
     setOpen(false);
   });
 
-  wrap.addEventListener("focusin", () => {
-    if (lastPointerType === "touch") return;
-    if (wrap.querySelector(":focus-visible")) setOpen(true);
-  });
-
   wrap.addEventListener("focusout", (event) => {
     if (!wrap.contains(event.relatedTarget)) setOpen(false);
   });
 
-  trigger.addEventListener("click", () => {
+  trigger.addEventListener("click", (event) => {
+    const keyboard = event.detail === 0;
     const touchLike =
       lastPointerType === "touch" ||
       lastPointerType === "pen" ||
       !fineHover.matches;
-    if (!touchLike) return;
+    if (!keyboard && !touchLike) return;
     setOpen(!wrap.classList.contains("is-open"));
   });
 
