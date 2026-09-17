@@ -44,8 +44,8 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Features
 
-- [Homepage](./homepage.md) covers the landing hero, About, musings and TIL highlights, and header navigation.
-- [Site chrome](./chrome.md) covers the `Open menu` drawer (`≤900px`) and desktop `.is-compact` header.
+- [Homepage](./homepage.md) covers the landing hero, About (including the Sumlino redacted teaser), musings and TIL highlights, GitHub, and header navigation.
+- [Site chrome](./chrome.md) covers the `Open menu` drawer (`≤900px`), GitHub among the drawer socials, and desktop `.is-compact` header.
 - [Nick's Musings](./writing.md) covers the writing index, article detail, and missing-slug copy.
 - [Learning Library](./library.md) covers the shelf, currently-learning CMA callout, detail pages, and missing-slug copy.
 - [Today I Learned](./notes.md) covers the notes index, note detail, Learning From links, and missing-slug copy.

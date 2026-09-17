@@ -11,6 +11,11 @@ navigation: Main navigation
 link: LinkedIn
 link: YouTube
 link: X
+link: GitHub
 link: Email Nicholas Thomas
 button: Release a random Pokemon
+button: Open menu
+button: Close menu
 heading h1: musings
+link: The Art of Becoming Uncomfortable Sep 8, 2026
+link: Right About the Technology, Wrong About the Trade Sep 5, 2026

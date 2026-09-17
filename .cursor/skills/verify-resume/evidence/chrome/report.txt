@@ -1,0 +1,8 @@
+feature: chrome
+entry: / at 390x844 then 1280x800
+driven: 2026-09-17
+action: viewport 390, Open menu, GitHub in #mobileMenu, Close menu, viewport 1280, scroll compact
+drawer: dialog open, heading Navigation, Home/About/Musings/Library/TIL
+github: https://github.com/nickspeakscode inside #mobileMenu
+pokeball: remains in header, not copied into drawer
+compact: .site-header.desktop-scroll-header.is-compact after scrollY 240

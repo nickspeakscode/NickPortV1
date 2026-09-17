@@ -2,6 +2,9 @@ title: Nicholas Thomas
 url: http://127.0.0.1:5173/
 
 button: Nicholas Thomas
+button: Release a random Pokemon
+button: Open menu
+button: Close menu
 navigation: Main navigation
   link: Home
   link: About
@@ -13,9 +16,6 @@ link: YouTube
 link: X
 link: GitHub
 link: Email Nicholas Thomas
-button: Release a random Pokemon
-button: Open menu
-button: Close menu
 button: Shuffle Nicholas Thomas’s portrait cards
 heading h1: Hello, Nick Here.
 link: Contact me

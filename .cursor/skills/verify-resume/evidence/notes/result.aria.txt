@@ -1,5 +1,5 @@
-title: The Outcome Was Already in the Actions — Today I Learned | Nicholas Thomas
-url: http://127.0.0.1:5173/notes/the-outcome-was-already-in-the-actions
+title: In a World That Never Stops — Today I Learned | Nicholas Thomas
+url: http://127.0.0.1:5173/notes/in-a-world-that-never-stops
 
 link: Nicholas Thomas
 navigation: Main navigation
@@ -11,7 +11,10 @@ navigation: Main navigation
 link: LinkedIn
 link: YouTube
 link: X
+link: GitHub
 link: Email Nicholas Thomas
 button: Release a random Pokemon
+button: Open menu
+button: Close menu
 link: ← Today I Learned
-heading h1: The Outcome Was Already in the Actions
+heading h1: In a World That Never Stops

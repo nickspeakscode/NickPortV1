@@ -1,18 +1,7 @@
 feature: library
-entry: header link Library
-driven: 2026-09-04T13:06:00Z
-action: clicked Main navigation link named Library, waited for .index-row, clicked first row
-action-url: http://127.0.0.1:5173/library/
-action-h1: library
-index-rows: The Machine Stops, Thinking, Fast and Slow
-cma-callout: absent
-filters: none
-result-url: http://127.0.0.1:5173/library/the-machine-stops
-result-h1: The Machine Stops
-result-back: ← Learning Library
-result-progress: 100
-related-notes: No notes yet.
-unknown-slug-h1: nothing on this shelf
-unknown-slug-copy: That resource is not on this shelf.
-unknown-slug-back: Back to the Library
-note: CMA currently-learning callout absent is a published-data miss. Old .resource-card filters are gone.
+entry: / then Library; /library/<slug>; unknown slug
+driven: 2026-09-17
+index: h1 library, 2 .index-row (The Machine Stops, Thinking Fast and Slow)
+cma: .index-featured absent (no published Currently Learning CMA/Gleim resource)
+detail: The Machine Stops, Learning progress present, ← Learning Library, Notes From This Resource = No notes yet.
+404: /library/this-slug-does-not-exist-verify h1 nothing on this shelf, That resource is not on this shelf., Back to the Library

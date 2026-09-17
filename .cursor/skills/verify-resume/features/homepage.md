@@ -1,11 +1,13 @@
 # Homepage
 
-The homepage is the public landing page. A visitor sees a `Hello, Nick Here.` headline that types in with a caret, the HVAC hero sentence, an interactive card portrait, About, Today I Learned highlights, musings highlights, an eight-symbol market ticker, and header links to the rest of the site.
+The homepage is the public landing page. A visitor sees a `Hello, Nick Here.` headline that types in with a caret, the HVAC hero sentence, an interactive card portrait, About (including a `redacted` Sumlino teaser), Today I Learned highlights, musings highlights, an eight-symbol market ticker, GitHub among the header socials, and header links to the rest of the site.
 
 ## Sub-features
 
 - `home-hero` shows the headline, the HVAC one-liner, and Contact me mailto action.
 - `home-about` lands on the About section from the header About link.
+- `home-sumlino` opens the About `redacted` teaser. The popup shows the Sumlino logo and a `Sumlino on X` link to `https://x.com/sumlinoapp`.
+- `home-github` exposes a header social named `GitHub` to `https://github.com/nickspeakscode`.
 - `home-nav` reaches Musings, Library, and TIL from the main navigation.
 - `home-featured-writing` lists up to three musing highlight rows that open `/writing/?article=<slug>`, or empty copy when none are published.
 - `home-til-teaser` lists up to three note highlight rows that open `/notes/<slug>`, or empty copy, plus `all notes`.
@@ -31,7 +33,9 @@ Preconditions:
 - **Open landing.** Go to `/`. Run `control-resume browser goto --path /`. Title is `Nicholas Thomas`. An `h1` named `Hello, Nick Here.` exists. A button named `Shuffle Nicholas Thomas’s portrait cards` is present.
 - **Read the hero sentence.** The first hero paragraph is `I do financial planning and analysis for HVAC businesses, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.`
 - **Watch the type-in.** Visual text in `.intro-before`, `.intro-name`, and `.intro-after` types in once. `.intro-cursor` is visible and blinks. The accessible name stays `Hello, Nick Here.` while characters appear. With `prefers-reduced-motion: reduce`, the full sentence is painted immediately and `.intro-cursor` is hidden.
-- **Read About.** Choose `About`. Run `control-resume browser click --role link --name "About"`. URL contains `#about`. Heading `about me` is visible. The About photo alt is `Nick and his girlfriend taking a mirror selfie`.
+- **Read About.** Choose `About`. Run `control-resume browser click --role link --name "About"`. URL contains `#about`. Heading `about me` is visible. The About photo alt is `Nick and his girlfriend taking a mirror selfie`. A button named `redacted, Sumlino preview` sits in the copy.
+- **Open Sumlino teaser.** Choose `redacted, Sumlino preview`. Run `control-resume browser click --role button --name "redacted, Sumlino preview"`. `.redacted-wrap` has `is-open`. A link named `Sumlino on X` (`#sumlino-teaser`) points to `https://x.com/sumlinoapp`. Its logo `src` is `/sumlino-mark.svg`. Record `href` and a screenshot of the open popup. Do not follow the X URL off-site as proof. Hover on a fine pointer also opens it; Escape and an outside click close it. A mouse click on a fine-pointer desktop does not toggle (hover already opened it).
+- **Confirm GitHub.** Run `control-resume browser eval --js "document.querySelector('.social-icons a[aria-label=GitHub]')?.href"`. Result is `https://github.com/nickspeakscode`. Do not click it off-site as proof.
 - **Open Musings from header.** Choose `Musings`. Run `control-resume browser click --role link --name "Musings"`. URL is `/writing/`. Heading is `musings`.
 - **Return home.** Choose `Home`. Run `control-resume browser click --role link --name "Home"`. URL is `/` and the headline is back.
 - **Open Library.** Choose `Library`. Run `control-resume browser click --role link --name "Library"`. URL is `/library/`. Heading is `library` or the missing-resource heading.
@@ -51,6 +55,8 @@ Preconditions:
 ## Gotchas
 
 - Header labels render in CSS uppercase. Drive them as `Home`, `About`, `Musings`, `Library`, and `TIL` as in the markup. `control-resume` matches those names case-insensitively.
+- The About teaser visible text is `redacted`. Drive the button by accessible name `redacted, Sumlino preview`. The popup link name is `Sumlino on X`, not `Sumlino`.
+- Header socials include LinkedIn, YouTube, X, GitHub, and email. GitHub is `https://github.com/nickspeakscode`. The pokeball is a button in the same strip, not a social link.
 - The homepage wordmark is a reload button, not a link. Interior wordmarks are links to `/`.
 - The accessible headline is complete immediately (`aria-label="Hello, Nick Here."`). The visible letters type in once; reduced motion skips the type-in and hides `.intro-cursor`. Do not treat a mid-type screenshot as a missing heading.
 - Hover and Pokemon-overlap shuffles are gated on `audio.canPlay()`. A first hover before any click/key will not move the cards when Web Audio is present. The load intro uses `shuffle({ silent: true })` and is not gated.

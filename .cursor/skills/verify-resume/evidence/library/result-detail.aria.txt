@@ -11,11 +11,14 @@ navigation: Main navigation
 link: LinkedIn
 link: YouTube
 link: X
+link: GitHub
 link: Email Nicholas Thomas
 button: Release a random Pokemon
+button: Open menu
+button: Close menu
 link: ← Learning Library
 heading h1: The Machine Stops
 progressbar: Learning progress
-link: Open resource ↗
+link: Open resource
 heading h2: My thoughts
 heading h2: Notes From This Resource
