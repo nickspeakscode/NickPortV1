@@ -700,11 +700,15 @@ p {
 }
 
 .hero-copy .hero-bio {
+  max-width: 470px;
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: clamp(14px, 1.12vw, 16px);
+  font-size: clamp(14.5px, 1.18vw, 16px);
   font-weight: 400;
-  line-height: 1.85;
-  letter-spacing: 0;
+  line-height: 1.9;
+  letter-spacing: 0.015em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .contact-action {
@@ -1636,8 +1640,9 @@ p {
   }
 
   .hero-copy .hero-bio {
-    font-size: clamp(13.5px, 1.02vw, 15px);
-    line-height: 1.85;
+    font-size: 15px;
+    line-height: 1.9;
+    max-width: 470px;
   }
 
   .contact-action {
