@@ -84,10 +84,13 @@ Stable handles from this codebase (use these, not coordinates):
 | --- | --- |
 | `nav[aria-label="Main navigation"]` | Header nav on every page |
 | link name `Home` | Homepage: `#home`. Interior: `/` |
-| link name `About` | `/#about` |
+| link name `About` | Homepage: `#about`. Interior: `/#about` |
 | link name `Musings` | `/writing/` |
 | link name `Library` | `/library/` |
 | link name `TIL` | `/notes/` |
+| link name `GitHub` | `https://github.com/nickspeakscode` (header and mobile drawer) |
+| button name `redacted, Sumlino preview` | About teaser; click opens `.redacted-wrap.is-open` |
+| link name `Sumlino on X` | `https://x.com/sumlinoapp` inside the open teaser |
 | link name `all musings` | Homepage CTA to `/writing/` |
 | link name `all notes` | Homepage CTA to `/notes/` |
 | homepage wordmark `#reloadSite` | Button that reloads `/` |
@@ -130,7 +133,7 @@ Proof standards:
 - `#app` HTML from `curl` is the empty shell. It is not UI proof.
 - Writing, Library, and TIL may be empty. Empty copy is a valid result. Do not invent documents. There are no local sample musings.
 - Market ticker: payload `status: "delayed"` means the proxy answered. Each `.ticker-item` carries its own status (`delayed`, `live`, `stale`, `offline`, or `loading`). There is no `.ticker-status` and no demo book. A `502` is a valid proxy miss; the UI shows `offline` / `—` or a `stale` cached price, not `feed offline` plus NQ `23785.25`. Confirm with the `/api/market-data` body. Do not mock Yahoo inside the page.
-- Production `/about` and `/about/` redirect to `/#about`. Local Vite does not. Mobile chrome is `Open menu` / `#mobileMenu` at `≤900px`; set `control-resume browser viewport --width 390 --height 844` before driving it.
+- Production `/about` and `/about/` redirect to `/#about`. Local Vite does not: `GET /about` may 200 the homepage shell without changing the hash. Drive About from the header link. Mobile chrome is `Open menu` / `#mobileMenu` at `≤900px`; set `control-resume browser viewport --width 390 --height 844` before driving it.
 - Pokemon name is random. Proof is `#pokemonWalker` gaining `is-released` and `#pokemonSprite` getting a non-empty `alt`.
 - Card portrait proof is the click on the named portrait button plus a screenshot of the hero. Do not call `cardPortrait.disturb()` from eval.
 

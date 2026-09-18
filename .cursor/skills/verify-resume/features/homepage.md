@@ -1,15 +1,16 @@
 # Homepage
 
-The homepage is the public landing page. A visitor sees a `Hello, Nick Here.` headline that types in with a caret, the HVAC hero sentence, an interactive card portrait, About, Today I Learned highlights, musings highlights, an eight-symbol market ticker, and header links to the rest of the site.
+The homepage is the public landing page. A visitor sees a `Hello, Nick Here.` headline that types in with a caret, the HVAC hero sentence, an interactive card portrait, About (including the Sumlino redacted teaser), Today I Learned highlights, musings highlights, an eight-symbol market ticker, and header links to the rest of the site.
 
 ## Sub-features
 
-- `home-hero` shows the headline, the HVAC one-liner, and Contact me mailto action.
+- `home-hero` shows the headline, the HVAC one-liner in JetBrains Mono, and Contact me mailto action.
 - `home-about` lands on the About section from the header About link.
+- `home-sumlino` reveals a Sumlino preview from the About `redacted` control, then a `Sumlino on X` link.
 - `home-nav` reaches Musings, Library, and TIL from the main navigation.
 - `home-featured-writing` lists up to three musing highlight rows that open `/writing/?article=<slug>`, or empty copy when none are published.
 - `home-til-teaser` lists up to three note highlight rows that open `/notes/<slug>`, or empty copy, plus `all notes`.
-- `home-pokemon` releases a named Pokemon from the pokeball button.
+- `home-pokemon` releases a random Pokemon from the pokeball button.
 - `home-cards` shuffles the portrait from its named button.
 - `home-chrome` uses the shared mobile drawer and desktop compact header. See [Site chrome](./chrome.md).
 
@@ -19,7 +20,7 @@ The homepage is the public landing page. A visitor sees a `Hello, Nick Here.` he
 - Choose `Home` in the header on the homepage (jumps to `#home`).
 - Choose `Home` or the `Nicholas Thomas` wordmark on an interior page.
 - Choose the homepage wordmark button `Nicholas Thomas` to reload `/`.
-- On production only, open `/about` or `/about/`. Vercel redirects that path to `/#about`. Local Vite has no `/about` page.
+- On production only, open `/about` or `/about/`. Vercel redirects that path to `/#about`. Local Vite has no About rewrite.
 
 ## Driving it with control-resume
 
@@ -28,10 +29,11 @@ Preconditions:
 - Resume is healthy at `http://127.0.0.1:5173`.
 - `control-resume doctor` reports `ok`.
 
-- **Open landing.** Go to `/`. Run `control-resume browser goto --path /`. Title is `Nicholas Thomas`. An `h1` named `Hello, Nick Here.` exists. A button named `Shuffle Nicholas Thomas’s portrait cards` is present.
-- **Read the hero sentence.** The first hero paragraph is `I do financial planning and analysis for HVAC businesses, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.`
+- **Open landing.** Go to `/`. Run `control-resume browser goto --path /`. Title is `Nicholas Thomas`. An `h1` named `Hello, Nick Here.` exists. A button named `Shuffle Nicholas Thomas’s portrait cards` is present. Header socials include a link named `GitHub` to `https://github.com/nickspeakscode`.
+- **Read the hero sentence.** The first hero paragraph (`.hero-bio`) is `I do financial planning and analysis for HVAC businesses, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.` Computed `font-family` includes `JetBrains Mono`.
 - **Watch the type-in.** Visual text in `.intro-before`, `.intro-name`, and `.intro-after` types in once. `.intro-cursor` is visible and blinks. The accessible name stays `Hello, Nick Here.` while characters appear. With `prefers-reduced-motion: reduce`, the full sentence is painted immediately and `.intro-cursor` is hidden.
-- **Read About.** Choose `About`. Run `control-resume browser click --role link --name "About"`. URL contains `#about`. Heading `about me` is visible. The About photo alt is `Nick and his girlfriend taking a mirror selfie`.
+- **Read About.** Choose `About`. Run `control-resume browser click --role link --name "About"`. URL contains `#about`. Heading `about me` is visible. The About photo (`.about-portrait img`) alt is `Nick and his girlfriend taking a mirror selfie`.
+- **Open the Sumlino teaser.** In About, a button named `redacted, Sumlino preview` sits in the accountants/CPAs sentence. Run `control-resume browser click --role button --name "redacted, Sumlino preview"`. `.redacted-wrap` has `is-open`, the trigger `aria-expanded` is `true`, and a link named `Sumlino on X` points at `https://x.com/sumlinoapp`. Hover on a fine pointer also opens it; `control-resume` has no hover action, so prove the open state with this click (a keyboard-equivalent `.click()`). Escape or a click outside closes it.
 - **Open Musings from header.** Choose `Musings`. Run `control-resume browser click --role link --name "Musings"`. URL is `/writing/`. Heading is `musings`.
 - **Return home.** Choose `Home`. Run `control-resume browser click --role link --name "Home"`. URL is `/` and the headline is back.
 - **Open Library.** Choose `Library`. Run `control-resume browser click --role link --name "Library"`. URL is `/library/`. Heading is `library` or the missing-resource heading.
@@ -54,7 +56,8 @@ Preconditions:
 - The homepage wordmark is a reload button, not a link. Interior wordmarks are links to `/`.
 - The accessible headline is complete immediately (`aria-label="Hello, Nick Here."`). The visible letters type in once; reduced motion skips the type-in and hides `.intro-cursor`. Do not treat a mid-type screenshot as a missing heading.
 - Hover and Pokemon-overlap shuffles are gated on `audio.canPlay()`. A first hover before any click/key will not move the cards when Web Audio is present. The load intro uses `shuffle({ silent: true })` and is not gated.
-- `/about` is a production-only entry (Vercel redirect to `/#about`). Do not expect `GET /about` to 200 on local Vite.
+- `/about` is a production-only redirect (Vercel sends `/about` and `/about/` to `/#about`). Local Vite has no About rewrite: `GET /about` can still 200 the homepage shell, but the URL stays `/about` with no `#about` jump. Drive About with the header `About` link.
+- The first `#about img` is the Sumlino mark (`alt=""`). Read the selfie from `.about-portrait img`.
 - At `≤900px`, use `Open menu` / `#mobileMenu` instead of the inline header links. Desktop scroll adds `.is-compact` to `.site-header`. Recipes are in [Site chrome](./chrome.md).
 - Homepage highlights are title-and-date rows (`.highlights-row`), not card grids. Do not wait for `.writing-card` or `.til-home-card`.
 - The homepage musings CTA is `all musings`. The TIL CTA is `all notes`.
