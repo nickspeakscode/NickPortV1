@@ -126,7 +126,7 @@ app.innerHTML = `
         </div>
         <div class="hero-copy">
           <h1 class="hero-intro" aria-label="Hello, Nick Here."><span aria-hidden="true"><span class="intro-before">Hello, </span><span class="intro-name">Nick</span><span class="intro-after"> Here.</span><span class="intro-cursor"></span></span></h1>
-          <p>
+          <p class="hero-bio">
             I do financial planning and analysis for HVAC businesses, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.
           </p>
           <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>

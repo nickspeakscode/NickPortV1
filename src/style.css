@@ -699,6 +699,18 @@ p {
   line-height: 1.78;
 }
 
+.hero-copy .hero-bio {
+  max-width: 470px;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(14.5px, 1.18vw, 16px);
+  font-weight: 400;
+  line-height: 1.9;
+  letter-spacing: 0.015em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 .contact-action {
   min-height: 44px;
   width: fit-content;
@@ -1625,6 +1637,12 @@ p {
     max-width: 520px;
     font-size: clamp(15px, 1.12vw, 17.5px);
     line-height: 1.72;
+  }
+
+  .hero-copy .hero-bio {
+    font-size: 15px;
+    line-height: 1.9;
+    max-width: 470px;
   }
 
   .contact-action {
