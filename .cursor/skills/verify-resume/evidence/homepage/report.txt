@@ -1,17 +1,19 @@
 feature: homepage
 entry: /
-driven: 2026-09-04T13:06:00Z
-action: goto /, About, Musings, Home, Library, TIL, all notes, highlights-row, all musings, Pokemon, puzzle
+driven: 2026-09-17
+action: goto /, About, Sumlino teaser, GitHub href, Musings, Home, Library, TIL, highlights-row, all notes, all musings, Pokemon, portrait
 landing-title: Nicholas Thomas
 landing-h1: Hello, Nick Here.
 about-hash: #about
 about-h2: about me
+sumlino: click "redacted, Sumlino preview" -> .redacted-wrap.is-open; #sumlino-teaser href=https://x.com/sumlinoapp logo=/sumlino-mark.svg
+github: https://github.com/nickspeakscode
 musings-h1: musings
 library-h1: library
 til-h1: today i learned
-featured-writing: empty "Nothing published yet."
-til-highlights: 2 rows (.highlights-row) -> /notes/<slug>
+featured-writing: 2 rows -> /writing/?article=
+til-highlights: 3 rows -> /notes/<slug>
 homepage-ctas: all musings, all notes
-pokemon: is-released alt=Flareon
-puzzle: named button remains after click
-note: Featured musings empty is a published-data miss. Old selectors .writing-card / .til-home-card / View all notes / Explore all musings are gone.
+pokemon: is-released alt=Blastoise
+portrait: named button remains after click
+note: Sumlino teaser and GitHub were missing from the map; both work on the live homepage.

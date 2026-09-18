@@ -1,5 +1,5 @@
-title: Learning Library | Nicholas Thomas
-url: http://127.0.0.1:5173/library/
+title: Resource Not Found | Nicholas Thomas
+url: http://127.0.0.1:5173/library/this-slug-does-not-exist-verify
 
 link: Nicholas Thomas
 navigation: Main navigation
@@ -11,8 +11,10 @@ navigation: Main navigation
 link: LinkedIn
 link: YouTube
 link: X
+link: GitHub
 link: Email Nicholas Thomas
 button: Release a random Pokemon
-heading h1: library
-link: The Machine Stops E.M. Forster Completed
-link: Thinking, Fast and Slow Daniel Kahneman Completed
+button: Open menu
+button: Close menu
+heading h1: nothing on this shelf
+link: Back to the Library

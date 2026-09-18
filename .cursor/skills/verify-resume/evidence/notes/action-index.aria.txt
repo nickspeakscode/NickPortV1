@@ -11,8 +11,13 @@ navigation: Main navigation
 link: LinkedIn
 link: YouTube
 link: X
+link: GitHub
 link: Email Nicholas Thomas
 button: Release a random Pokemon
+button: Open menu
+button: Close menu
 heading h1: today i learned
+link: In a World That Never Stops Sep 11, 2026
+link: Phone, Wallet, Keys Sep 5, 2026
 link: The Outcome Was Already in the Actions Sep 1, 2026
 link: It Was Never About the Mushroom Aug 24, 2026

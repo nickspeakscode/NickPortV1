@@ -1,11 +1,11 @@
 ---
 name: verify-resume
-description: Drive the NoticeTrades/resume public website (Vite multi-page UI at / , /writing , /library , /notes) the way a user does. Use when proving homepage, Musings, Library, TIL, ticker, or navigation behavior.
+description: Drive the nickspeakscode/NickPortV1 public website (Vite multi-page UI at / , /writing , /library , /notes) the way a user does. Use when proving homepage, About Sumlino teaser, Musings, Library, TIL, ticker, GitHub, or navigation behavior.
 ---
 
 # Verify resume
 
-This skill drives the public Nicholas Thomas portfolio in NoticeTrades/resume. The next agent reads it cold. Follow it literally.
+This skill drives the public Nicholas Thomas portfolio in nickspeakscode/NickPortV1 (https://www.bynickthomas.com/). The next agent reads it cold. Follow it literally.
 
 Primary surface: the public web UI. Secondary surfaces: `GET /api/market-data` (Yahoo proxy, also mounted by Vite in `npm run dev`) and Sanity Studio in `studio/` (auth-gated, do not drive). There is no public CLI.
 
@@ -88,6 +88,9 @@ Stable handles from this codebase (use these, not coordinates):
 | link name `Musings` | `/writing/` |
 | link name `Library` | `/library/` |
 | link name `TIL` | `/notes/` |
+| link name `GitHub` | `https://github.com/nickspeakscode` (header and `#mobileMenu`) |
+| button name `redacted, Sumlino preview` | About teaser `.redacted-mark` |
+| link name `Sumlino on X` | `#sumlino-teaser` → `https://x.com/sumlinoapp` |
 | link name `all musings` | Homepage CTA to `/writing/` |
 | link name `all notes` | Homepage CTA to `/notes/` |
 | homepage wordmark `#reloadSite` | Button that reloads `/` |
