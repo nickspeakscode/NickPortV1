@@ -699,6 +699,14 @@ p {
   line-height: 1.78;
 }
 
+.hero-copy .hero-bio {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(14px, 1.12vw, 16px);
+  font-weight: 400;
+  line-height: 1.85;
+  letter-spacing: 0;
+}
+
 .contact-action {
   min-height: 44px;
   width: fit-content;
@@ -1625,6 +1633,11 @@ p {
     max-width: 520px;
     font-size: clamp(15px, 1.12vw, 17.5px);
     line-height: 1.72;
+  }
+
+  .hero-copy .hero-bio {
+    font-size: clamp(13.5px, 1.02vw, 15px);
+    line-height: 1.85;
   }
 
   .contact-action {
