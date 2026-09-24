@@ -522,7 +522,8 @@ function dumpAria() {
       || (el.tagName === "A" && el.href ? "link" : "")
       || (el.tagName === "BUTTON" ? "button" : "")
       || (el.tagName === "NAV" ? "navigation" : "")
-      || (/^H[1-6]$/.test(el.tagName) ? "heading" : "");
+      || (/^H[1-6]$/.test(el.tagName) ? "heading" : "")
+      || (el.tagName === "DIALOG" ? "dialog" : "");
     const name = accessibleName(el);
     if (role && name) {
       const heading = el.tagName.startsWith("H") ? " " + el.tagName.toLowerCase() : "";
