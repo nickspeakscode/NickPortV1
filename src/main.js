@@ -1,10 +1,11 @@
-﻿import "./style.css";
+import "./style.css";
 import "./writing.css";
 import "./homeRefinements.css";
 import { initializeMarketTicker } from "./lib/marketTicker.js";
 import { initializeIndexPointer, initializeNavPrefetch, readCache, writeCache } from "./lib/pageData.js";
 import { initializePokemonRelease } from "./lib/pokemonRelease.js";
 import { createCardPortrait } from "./lib/cardPortrait.js";
+import { initializeSumlinoCharacter } from "./lib/sumlinoCharacter.js";
 import { syncHeaderOffset } from "./lib/pageUi.js";
 import { initializeMobileNav } from "./lib/mobileNav.js";
 import {
@@ -166,32 +167,12 @@ app.innerHTML = `
                 class="redacted-mark"
                 aria-expanded="false"
                 aria-controls="sumlino-teaser"
-                aria-haspopup="true"
-                aria-label="redacted, Sumlino preview"
+                aria-label="Preview Sumlino, a project by Nick"
               >
-                redacted
+                <span class="redacted-label" aria-hidden="true">redacted</span>
+                <span class="redacted-brand" aria-hidden="true">Sumlino</span>
               </button>
-              <a
-                class="redacted-popover"
-                id="sumlino-teaser"
-                href="https://x.com/sumlinoapp"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Sumlino on X"
-                tabindex="-1"
-              >
-                <span class="redacted-popover-card">
-                  <img
-                    class="redacted-popover-logo"
-                    src="/sumlino-mark.svg"
-                    alt=""
-                    width="40"
-                    height="32"
-                    decoding="async"
-                  />
-                  <span class="redacted-popover-label" aria-hidden="true">Sumlino</span>
-                </span>
-              </a>
+
             </span>
             that takes the month-end recon grind off their plate so they can
             keep the judgment calls.
@@ -261,7 +242,7 @@ const cardPortrait = createCardPortrait({
 
 initializeMobileNav();
 syncHeaderOffset();
-initializeRedactedTeaser();
+initializeSumlinoCharacter();
 
 const revealItems = document.querySelectorAll(".reveal-on-scroll");
 const revealObserver = new IntersectionObserver(
@@ -331,65 +312,6 @@ loadLearningNotes()
   .catch(() => {
     if (!cachedNotes?.length) fillHomeList("latestLearningNote", renderHomeRows([], () => "/notes/"));
   });
-
-function initializeRedactedTeaser() {
-  const wrap = document.querySelector(".redacted-wrap");
-  const trigger = wrap?.querySelector(".redacted-mark");
-  const popover = wrap?.querySelector(".redacted-popover");
-  if (!wrap || !trigger || !popover) return;
-
-  const fineHover = window.matchMedia("(hover: hover) and (pointer: fine)");
-  let lastPointerType = "mouse";
-
-  const setOpen = (open) => {
-    wrap.classList.toggle("is-open", open);
-    trigger.setAttribute("aria-expanded", open ? "true" : "false");
-    popover.tabIndex = open ? 0 : -1;
-    wrap.classList.remove("is-swinging");
-    if (open) {
-      void wrap.offsetWidth;
-      wrap.classList.add("is-swinging");
-    }
-  };
-
-  wrap.addEventListener("pointerdown", (event) => {
-    lastPointerType = event.pointerType || lastPointerType;
-  });
-
-  wrap.addEventListener("pointerenter", (event) => {
-    if (event.pointerType === "touch") return;
-    if (event.pointerType === "mouse" || fineHover.matches) setOpen(true);
-  });
-
-  wrap.addEventListener("pointerleave", (event) => {
-    if (event.pointerType === "touch") return;
-    if (wrap.contains(document.activeElement)) return;
-    setOpen(false);
-  });
-
-  wrap.addEventListener("focusout", (event) => {
-    if (!wrap.contains(event.relatedTarget)) setOpen(false);
-  });
-
-  trigger.addEventListener("click", (event) => {
-    const keyboard = event.detail === 0;
-    const touchLike =
-      lastPointerType === "touch" ||
-      lastPointerType === "pen" ||
-      !fineHover.matches;
-    if (!keyboard && !touchLike) return;
-    setOpen(!wrap.classList.contains("is-open"));
-  });
-
-  document.addEventListener("pointerdown", (event) => {
-    if (!wrap.contains(event.target)) setOpen(false);
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape" || !wrap.classList.contains("is-open")) return;
-    setOpen(false);
-  });
-}
 
 function getOverlap(a, b) {
   const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);

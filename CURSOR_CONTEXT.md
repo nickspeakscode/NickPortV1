@@ -1,6 +1,14 @@
 # Cursor Project Context — Nicholas Thomas Portfolio
 
-Last updated: September 8, 2026
+Last updated: September 24, 2026
+
+## Latest update: Sumlino project signature
+
+- The current Git checkout includes upstream changes through `1b6bd4e`, including the About teaser, Sumlino link, and JetBrains Mono hero bio.
+- Nick requested a professional brand presentation in place of the roaming “Catch me” character. Hover or tap on “redacted” now reveals a fixed, anchored product signature: the supplied cobalt GIF in a framed brand area, Sumlino typography, a concise reconciliation description, and a “Follow on X” link. The inline word resolves into Sumlino without changing paragraph width.
+- `src/lib/sumlinoCharacter.js` positions a body-level preview near the trigger, constrained to the viewport and sticky header. The only entrance effect is a short reveal; there is no roaming animation loop. Hover departure, outside tap, Escape, close, scrolling or page hiding dismiss it. Keyboard opening focuses the project link, and Escape restores focus.
+- The original GIF is preserved in `public/sumlino-cobalt.gif`. A native picture source selects its first-frame PNG for reduced motion. The link remains `https://x.com/sumlinoapp`. `tests/sumlinoCharacter.browser.cjs` checks Chromium/WebKit desktop and touch views, layout stability, positioning, keyboard/touch/hover, dismissal, reduced motion and the external destination.
+- Development runs from `.browser-cache/publish/resume`; the top-level directory remains an older source snapshot. Nick authorized publishing this update. The production build and Chromium/WebKit desktop and touch browser checks passed.
 
 Read this file before making changes. It summarizes the current architecture, working features, content workflow, and important implementation decisions.
 
