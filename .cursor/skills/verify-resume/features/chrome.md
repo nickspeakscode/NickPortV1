@@ -25,12 +25,12 @@ Preconditions:
 - **Close the drawer.** Run `control-resume browser click --role button --name "Close menu"`. The dialog is closed and `aria-expanded` is `false`. Escape and a backdrop click also close it. Following a link closes it immediately.
 - **Reset width.** Run `control-resume browser viewport --width 1280 --height 800`. `Open menu` stays in the DOM but is not the desktop control; the inline `nav[aria-label="Main navigation"]` is back in the header.
 - **Compact on scroll.** At `≥901px`, run `control-resume browser goto --path /` then `control-resume browser eval --js "window.scrollTo(0, 240)"` and `control-resume browser pause --ms 200`. `.site-header` has `desktop-scroll-header` and `is-compact`. Near the top (`scrollY < 80`), or after a visible keyboard focus in the header, `is-compact` is absent.
-- **Proof.** Capture the open drawer at `390px` and the compact header at `1280px`. Run `control-resume browser snapshot --aria --path .cursor/skills/verify-resume/evidence/chrome/menu.aria.txt` and `control-resume browser screenshot --path .cursor/skills/verify-resume/evidence/chrome/menu.png` while `#mobileMenu` is open. Repeat for the compact header as `compact.aria.txt` / `compact.png`.
+- **Proof.** Capture the open drawer at `390px` and the compact header at `1280px`. Run `control-resume browser snapshot --aria --path .cursor/skills/verify-resume/evidence/chrome/menu.aria.txt` and `control-resume browser screenshot --path .cursor/skills/verify-resume/evidence/chrome/menu.png` while `#mobileMenu` is open. The snapshot includes `dialog: Navigation`. Repeat for the compact header as `compact.aria.txt` / `compact.png`.
 
 ## Gotchas
 
 - `Open menu` is injected on every page that calls the shared chrome. It is only meant to be used at `≤900px`. Clicking it at `1280px` does not open the dialog.
-- Nav link accessible names are the labels `Home`, `About`, `Musings`, `Library`, and `TIL`. Decorative rank/suit marks inside the drawer are `aria-hidden`. `control-resume` skips `aria-hidden` text when matching `--name`. Do not look for a heading named `Navigation`; the ARIA snapshot names the open `<dialog>` itself.
+- Nav link accessible names are the labels `Home`, `About`, `Musings`, `Library`, and `TIL`. Decorative rank/suit marks inside the drawer are `aria-hidden`. `control-resume` skips `aria-hidden` text when matching `--name`. Do not look for a heading named `Navigation`. The open drawer is a `<dialog>` named from the span `#mobileMenuTitle`. A closed dialog is omitted from the ARIA snapshot, so `dialog: Navigation` means the drawer is open.
 - Interior About is `/#about`. Production also redirects `/about` and `/about/` to `/#about`. Local Vite has no `/about` route.
 - Desktop compaction only runs at `min-width: 901px`. Do not look for `.is-compact` in the mobile drawer recipe.
 - The homepage ticker row changes header height; interior headers stay a single row. Offset is measured, not hardcoded.

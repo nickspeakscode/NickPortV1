@@ -94,8 +94,9 @@ Stable handles from this codebase (use these, not coordinates):
 | interior wordmark `.wordmark` | Link to `/` named `Nicholas Thomas` |
 | `h1[aria-label="Hello, Nick Here."]` | Homepage headline |
 | button name `Shuffle Nicholas Thomas’s portrait cards` | Hero card deck |
-| button name `redacted, Sumlino preview` | About Sumlino teaser |
-| link name `Sumlino on X` | Open Sumlino preview (`https://x.com/sumlinoapp`) |
+| button name `Preview Sumlino, a project by Nick` | About Sumlino preview (`#sumlino-teaser`) |
+| link name `View Sumlino on X` | Preview destination (`https://x.com/sumlinoapp`) |
+| button name `Close Sumlino preview` | Dismiss the Sumlino preview |
 | button name `Release a random Pokemon` | `#pokeballRelease` |
 | `#pokemonWalker.is-released` | Pokemon is on screen |
 | `[aria-label="Market prices"]` | Homepage eight-symbol ticker |
@@ -160,6 +161,7 @@ control-resume doctor
 control-resume http --path /api/market-data --quiet
 control-resume browser goto --path /writing/
 control-resume browser click --role link --name "Library"
+control-resume browser hover --role button --name "Preview Sumlino, a project by Nick"
 control-resume browser viewport --width 390 --height 844
 control-resume stop
 ```

@@ -518,6 +518,7 @@ function dumpAria() {
   const lines = [];
   const walk = (el, depth) => {
     if (isAriaHidden(el)) return;
+    if (el.tagName === "DIALOG" && !el.open) return;
     const role = (el.getAttribute("role") || "").toLowerCase()
       || (el.tagName === "A" && el.href ? "link" : "")
       || (el.tagName === "BUTTON" ? "button" : "")
@@ -565,7 +566,7 @@ function writeOut(filePath, contents, encoding = "utf8") {
 
 async function cmdBrowser(flags) {
   const action = flags._[0];
-  if (!action) die("Usage: control-resume browser <goto|click|text|eval|snapshot|screenshot|wait|viewport>");
+  if (!action) die("Usage: control-resume browser <goto|click|hover|text|eval|snapshot|screenshot|wait|viewport>");
 
   if (action === "viewport") {
     const width = Number(flags.width || flags._[1]);
@@ -638,6 +639,63 @@ async function cmdBrowser(flags) {
       await waitForApp(cdp).catch(() => {});
       const page = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.textContent?.trim() || '' })");
       process.stdout.write(`ok click ${result.tag} ${result.name}\nhref=${result.href}\nurl=${page.url}\nh1=${page.h1}\n`);
+    });
+    return;
+  }
+
+  if (action === "hover") {
+    const role = flags.role;
+    const name = flags.name;
+    const selector = flags.selector;
+    const click = Boolean(flags.click);
+    if (!selector && !(role && name)) {
+      die('Usage: control-resume browser hover --role button --name "Preview Sumlino, a project by Nick"  OR  --selector ".hero-bio" [--click]');
+    }
+    await withPage(async (cdp) => {
+      const result = await evaluate(
+        cdp,
+        `(async () => {
+          ${PAGE_HELPERS}
+          const selector = ${JSON.stringify(selector || "")};
+          const role = ${JSON.stringify(role || "")};
+          const name = ${JSON.stringify(name || "")};
+          const started = Date.now();
+          let el = null;
+          while (Date.now() - started < 5000) {
+            el = selector ? document.querySelector(selector) : findByRole(role, name);
+            if (el) break;
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+          if (!el) throw new Error(selector ? "No node for " + selector : "No " + role + " named " + name);
+          const rect = el.getBoundingClientRect();
+          if (rect.width < 1 || rect.height < 1) throw new Error("Target has no box");
+          return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+            tag: el.tagName,
+            name: accessibleName(el),
+          };
+        })()`
+      );
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: result.x, y: result.y });
+      if (click) {
+        await cdp.send("Input.dispatchMouseEvent", {
+          type: "mousePressed",
+          x: result.x,
+          y: result.y,
+          button: "left",
+          clickCount: 1,
+        });
+        await cdp.send("Input.dispatchMouseEvent", {
+          type: "mouseReleased",
+          x: result.x,
+          y: result.y,
+          button: "left",
+          clickCount: 1,
+        });
+      }
+      await delay(160);
+      process.stdout.write(`ok hover ${Math.round(result.x)},${Math.round(result.y)} ${result.tag} ${result.name}${click ? " click" : ""}\n`);
     });
     return;
   }
@@ -721,6 +779,8 @@ function usage() {
   browser goto --path /
   browser click --role link --name "Musings"
   browser click --selector ".index-row"
+  browser hover --role button --name "Preview Sumlino, a project by Nick"
+  browser hover --selector ".hero-bio" [--click]
   browser text --selector h1
   browser pause --ms 2000
   browser wait --selector .index-row
