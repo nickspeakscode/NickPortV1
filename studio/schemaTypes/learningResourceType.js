@@ -2,7 +2,7 @@ import { defineArrayMember, defineField, defineType } from "sanity";
 
 export const learningResourceType = defineType({
   name: "learningResource",
-  title: "Learning Resource",
+  title: "Library Entry",
   type: "document",
   fields: [
     defineField({
@@ -28,6 +28,21 @@ export const learningResourceType = defineType({
         layout: "dropdown",
       },
       validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: "customResourceType",
+      title: "Custom resource type",
+      type: "string",
+      description: "When type is Other, enter a label such as Essay or Project. It becomes a library filter automatically. Use the same label for matching entries.",
+      hidden: ({ document }) => document?.resourceType !== "Other",
+      validation: (rule) => rule.max(40),
+    }),
+    defineField({
+      name: "createdByMe",
+      title: "Written / created by me",
+      type: "boolean",
+      initialValue: false,
+      description: "Turn on only for your original work, including books you have written. This adds the entry to the Written by me filter. Leave off for books you read, courses you take, and certifications you earn.",
     }),
     defineField({
       name: "authorCreator",
@@ -69,7 +84,7 @@ export const learningResourceType = defineType({
       title: "Status",
       type: "string",
       options: {
-        list: ["Want to Learn", "Currently Learning", "Completed"],
+        list: ["Want to Learn", "Currently Learning", "Completed", "In Progress", "Published"],
         layout: "radio",
       },
       initialValue: "Want to Learn",
@@ -78,6 +93,7 @@ export const learningResourceType = defineType({
     defineField({
       name: "progress",
       title: "Progress percentage",
+      description: "Learning or creation progress. Use 100 for completed or published work.",
       type: "number",
       initialValue: 0,
       validation: (rule) => rule.required().integer().min(0).max(100),
@@ -175,13 +191,15 @@ export const learningResourceType = defineType({
     select: {
       title: "title",
       creator: "authorCreator",
+      resourceType: "resourceType",
+      createdByMe: "createdByMe",
       status: "status",
       media: "coverImage",
     },
-    prepare({ title, creator, status, media }) {
+    prepare({ title, creator, status, resourceType, createdByMe, media }) {
       return {
         title,
-        subtitle: [creator, status].filter(Boolean).join(" · "),
+        subtitle: [resourceType, createdByMe ? "My work" : creator, status].filter(Boolean).join(" · "),
         media,
       };
     },

@@ -1,4 +1,5 @@
 import { toHTML } from "@portabletext/to-html";
+import { safeHref } from "./safeUrl.js";
 
 const projectId = import.meta.env.VITE_SANITY_PROJECT_ID || "vzrug3c0";
 const dataset = import.meta.env.VITE_SANITY_DATASET || "production";
@@ -42,6 +43,8 @@ const learningResourceFields = `
   title,
   "slug": slug.current,
   resourceType,
+  customResourceType,
+  createdByMe,
   authorCreator,
   "coverImage": coverImage.asset->url,
   "coverAlt": coverImage.alt,
@@ -168,8 +171,9 @@ export function renderPortableText(body = []) {
       },
       marks: {
         link: ({ children, value }) => {
-          const href = typeof value?.href === "string" ? value.href : "#";
-          const external = href.startsWith("http");
+          const href = safeHref(value?.href);
+          if (!href) return children;
+          const external = /^(https?:)?\/\//i.test(href);
           return `<a href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noreferrer"' : ""}>${children}</a>`;
         },
       },

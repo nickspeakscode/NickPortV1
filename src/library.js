@@ -1,6 +1,9 @@
 import "./style.css";
 import "./writing.css";
 import "./learning.css";
+import "./libraryShelf.css";
+import { initializeLibraryShelf } from "./lib/libraryShelf.js";
+import { safeHref } from "./lib/safeUrl.js";
 import {
   buildSanityImageUrl,
   escapeHtml,
@@ -13,13 +16,81 @@ import {
   renderInteriorHeader,
   renderSiteFooter,
 } from "./lib/siteChrome.js";
-import { readCache, sameSlugList, writeCache } from "./lib/pageData.js";
+import { readCache, writeCache } from "./lib/pageData.js";
 import { getRouteSlug, initializeRevealAnimations, setPageTitle } from "./lib/pageUi.js";
 
 const app = document.querySelector("#app");
 const resourceSlug = getRouteSlug("library");
 let cleanupChrome = () => {};
 let cleanupReveals = () => {};
+let cleanupShelf = () => {};
+let cleanupFilters = () => {};
+let currentResources = [];
+let activeFilter = new URLSearchParams(location.search).get("shelf") || "all";
+
+function resourceTypeLabel(resource) {
+  return (resource.resourceType === "Other" && resource.customResourceType?.trim()) || resource.resourceType || "Other";
+}
+
+function libraryFilters(resources) {
+  const types = [...new Set(["Book", "Certification", ...resources.map(resourceTypeLabel)])];
+  const labels = { Book: "Books", Certification: "Certifications", Course: "Courses", "Research Paper": "Research papers", Video: "Videos", Podcast: "Podcasts" };
+  return [
+    { key: "all", label: "Everything", matches: () => true },
+    { key: "mine", label: "Written by me", matches: resource => resource.createdByMe === true },
+    ...types.map(type => ({ key: `type:${type}`, label: Object.hasOwn(labels, type) ? labels[type] : type, matches: resource => resourceTypeLabel(resource) === type })),
+  ];
+}
+
+function filteredResources(resources) {
+  const filter = libraryFilters(resources).find(item => item.key === activeFilter);
+  return filter ? resources.filter(filter.matches) : [];
+}
+
+function renderLibraryFilters(resources) {
+  return `<div class="library-filters" role="group" aria-label="Filter library">${libraryFilters(resources).map(filter => `
+    <button type="button" class="library-filter" data-filter="${escapeHtml(filter.key)}" aria-pressed="${activeFilter === filter.key}" aria-controls="library-results">
+      ${escapeHtml(filter.label)} <span>${resources.filter(filter.matches).length}</span>
+    </button>`).join("")}</div>`;
+}
+
+function initializeLibraryFilters() {
+  const update = () => {
+    const filters = app.querySelector(".library-filters");
+    if (!filters) return;
+    filters.querySelectorAll("[data-filter]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.filter === activeFilter)));
+    app.querySelector("#library-results").innerHTML = renderLibraryResults(currentResources);
+    const count = filteredResources(currentResources).length;
+    app.querySelector(".library-filter-status").textContent = `${count} ${count === 1 ? "entry" : "entries"} shown.`;
+  };
+  const onClick = event => {
+    const button = event.target.closest("[data-filter]");
+    if (!button || button.dataset.filter === activeFilter) return;
+    activeFilter = button.dataset.filter;
+    const url = new URL(location.href);
+    if (activeFilter === "all") url.searchParams.delete("shelf");
+    else url.searchParams.set("shelf", activeFilter);
+    history.pushState(null, "", url);
+    update();
+  };
+  const onPopState = () => {
+    activeFilter = new URLSearchParams(location.search).get("shelf") || "all";
+    const reader = document.querySelector(".library-reader[open]");
+    if (reader) {
+      reader.addEventListener("close", () => {
+        update();
+        app.querySelector('.library-filter[aria-pressed="true"]')?.focus({ preventScroll: true });
+      }, { once: true });
+      reader.dispatchEvent(new Event("cancel", { cancelable: true }));
+    } else update();
+  };
+  app.addEventListener("click", onClick);
+  window.addEventListener("popstate", onPopState);
+  return () => {
+    app.removeEventListener("click", onClick);
+    window.removeEventListener("popstate", onPopState);
+  };
+}
 
 const CMA_IDENTITY_PATTERN = /\b(cma|gleim|certified management accountant)\b/i;
 
@@ -61,7 +132,7 @@ function resourceInitials(title = "Learning") {
 function renderCover(resource, className = "resource-cover") {
   const image = resource.coverImage
     ? `<img src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 720))}" alt="${escapeHtml(resource.coverAlt || `${resource.title} cover`)}" loading="lazy" />`
-    : `<div class="resource-cover-placeholder" aria-hidden="true">${escapeHtml(resourceInitials(resource.title))}</div>`;
+    : `<div class="book-face book-face-fallback" aria-hidden="true"><span class="book-cover-type">${escapeHtml(resourceTypeLabel(resource))}</span><span class="book-cover-title">${escapeHtml(resource.title)}</span><span class="book-cover-author">${escapeHtml(resource.authorCreator || "")}</span></div>`;
 
   return `<div class="${className}">${image}</div>`;
 }
@@ -72,7 +143,7 @@ function renderProgress(resource) {
     <div
       class="resource-progress"
       role="progressbar"
-      aria-label="Learning progress"
+      aria-label="Progress"
       aria-valuemin="0"
       aria-valuemax="100"
       aria-valuenow="${progress}"
@@ -89,7 +160,7 @@ function renderProgress(resource) {
 }
 
 function renderRating(rating) {
-  if (!Number.isFinite(Number(rating))) return "";
+  if (rating == null || rating === "" || !Number.isFinite(Number(rating)) || Number(rating) < 1 || Number(rating) > 5) return "";
   return `<div class="resource-rating" aria-label="Rated ${escapeHtml(rating)} out of 5">★ ${escapeHtml(rating)} / 5</div>`;
 }
 
@@ -101,7 +172,7 @@ function renderResourceRow(resource, index) {
 
   return `
     <li>
-      <a class="index-row index-row-book index-enter" href="/library/${encodeURIComponent(resource.slug)}" style="--stagger: ${index + 1}">
+      <a class="index-row index-row-book index-enter" data-resource="${escapeHtml(resource.slug)}" href="/library/${encodeURIComponent(resource.slug)}" style="--stagger: ${index + 1}">
         ${cover}
         <span class="index-row-copy">
           <span class="index-row-title">${escapeHtml(resource.title)}</span>
@@ -124,26 +195,60 @@ function renderCmaStudyCallout(resource) {
   `;
 }
 
-function renderLibrary(resources, { pending = false } = {}) {
-  const cmaResource = findCurrentlyLearningCma(resources);
+function renderShelfBook(resource, index) {
+  const cover = resource.coverImage
+    ? `<img src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 720))}" alt="" loading="lazy" />`
+    : `<span class="book-cover-type">${escapeHtml(resourceTypeLabel(resource))}</span>
+       <span class="book-cover-title">${escapeHtml(resource.title)}</span>
+       <span class="book-cover-author">${escapeHtml(resource.authorCreator || "")}</span>`;
+  return `<li class="shelf-item" style="--book-delay: ${Math.min(index, 5) * 65}ms">
+    <a class="shelf-link" href="/library/${encodeURIComponent(resource.slug)}" data-resource="${escapeHtml(resource.slug)}" aria-label="Open ${escapeHtml(resource.title)}">
+      <span class="book-stage" aria-hidden="true">
+        <span class="book-object"><span class="book-face${resource.coverImage ? "" : " book-face-fallback"}">${cover}</span></span>
+      </span>
+      <span class="shelf-caption">
+        <span class="shelf-type">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>
+        <span class="shelf-title">${escapeHtml(resource.title)}</span>
+        ${resource.authorCreator ? `<span class="shelf-author">${escapeHtml(resource.authorCreator)}</span>` : ""}
+        ${resource.status ? `<span class="shelf-status" data-status="${statusKey(resource.status)}">${escapeHtml(resource.status)}</span>` : ""}
+      </span>
+    </a>
+  </li>`;
+}
+
+function renderLibraryResults(resources, { pending = false } = {}) {
+  const filtered = filteredResources(resources);
+  const cmaResource = activeFilter === "all" ? findCurrentlyLearningCma(filtered) : null;
   const shelf = cmaResource
-    ? resources.filter((resource) => resource.slug !== cmaResource.slug)
-    : resources;
+    ? filtered.filter((resource) => resource.slug !== cmaResource.slug)
+    : filtered;
+  const label = libraryFilters(resources).find(filter => filter.key === activeFilter)?.label || "Selected collection";
 
   return `
-    <main class="index-page">
-      <header class="index-intro index-enter">
-        <h1>library</h1>
-        <p>books, courses, and the other things still shaping what I know.</p>
-      </header>
       ${renderCmaStudyCallout(cmaResource)}
+      <div class="shelf-heading">
+        <h2>${activeFilter === "all" ? "On the shelf" : escapeHtml(label)} <span>${String(filtered.length).padStart(2, "0")}</span></h2>
+        <p>Pick a cover. Take a closer look.</p>
+      </div>
       ${
         shelf.length
-          ? `<ul class="index-list">${shelf.map((resource, index) => renderResourceRow(resource, index + (cmaResource ? 1 : 0))).join("")}</ul>`
+          ? `<ul class="library-shelf">${shelf.map(renderShelfBook).join("")}</ul>`
           : cmaResource || pending
-            ? ""
-            : `<p class="index-empty index-enter" style="--stagger: 1">Nothing on the shelf yet.</p>`
-      }
+            ? (pending ? `<p class="index-empty" role="status">Loading the shelf…</p>` : "")
+            : `<p class="index-empty index-enter" style="--stagger: 1">${activeFilter === "all" ? "Nothing on the shelf yet." : "Nothing in this collection yet. Choose another filter to explore the shelf."}</p>`
+      }`;
+}
+
+function renderLibrary(resources, options = {}) {
+  return `
+    <main class="index-page library-shelf-page">
+      <header class="index-intro index-enter">
+        <h1>library</h1>
+        <p>what I’m reading, learning, and creating. A closer look at the work behind the profile.</p>
+      </header>
+      ${renderLibraryFilters(resources)}
+      <p class="library-filter-status" role="status" aria-atomic="true"></p>
+      <div id="library-results">${renderLibraryResults(resources, options)}</div>
     </main>
   `;
 }
@@ -168,66 +273,68 @@ function renderRelatedNote(note, index) {
   `;
 }
 
-function renderResourceDetail(resource, notes) {
+function renderResourceDetail(resource, notes, { preview = false, loadingNotes = false } = {}) {
   if (!resource) {
     setPageTitle("Resource Not Found");
     return renderNotFound("That resource is not on this shelf.", "/library/", "Back to the Library");
   }
 
-  setPageTitle(`${resource.title} — Learning Library`);
+  if (!preview) setPageTitle(`${resource.title} — Learning Library`);
   const status = resource.status || "Want to Learn";
+  const externalUrl = safeHref(resource.externalUrl, ['http:', 'https:']);
+  const reveal = preview ? "" : "reveal-on-scroll";
   const thoughts = resource.personalSummary?.length
-    ? `<section class="learning-detail-section reveal-on-scroll">
+    ? `<section class="learning-detail-section ${reveal}">
         <h2>My thoughts</h2>
         <div class="article-body">${renderPortableText(resource.personalSummary)}</div>
       </section>`
     : "";
   const takeaways = resource.keyTakeaways?.length
-    ? `<section class="learning-detail-section reveal-on-scroll">
+    ? `<section class="learning-detail-section ${reveal}">
         <h2>Key takeaways</h2>
         <ul class="takeaway-list">${resource.keyTakeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
       </section>`
     : "";
 
   return `
-    <main class="learning-page resource-detail">
-      <a class="detail-back" href="/library/">← Learning Library</a>
+    <${preview ? "div" : "main"} class="learning-page resource-detail">
+      ${preview ? "" : `<a class="detail-back" href="/library/">← Learning Library</a>`}
       <div class="resource-detail-grid">
-        ${renderCover(resource, "resource-detail-cover reveal-on-scroll")}
-        <article class="resource-detail-copy reveal-on-scroll">
+        ${renderCover(resource, `resource-detail-cover ${reveal}`)}
+        <article class="resource-detail-copy ${reveal}">
           <div class="resource-card-topline">
-            <span class="resource-type-badge">${escapeHtml(resource.resourceType)}</span>
+            <span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>
             <span class="learning-status" data-status="${statusKey(status)}">${escapeHtml(status)}</span>
           </div>
-          <h1 class="learning-detail-title">${escapeHtml(resource.title)}</h1>
+          <${preview ? "h2" : "h1"} class="learning-detail-title" ${preview ? 'id="library-reader-title"' : ""}>${escapeHtml(resource.title)}</${preview ? "h2" : "h1"}>
           ${resource.authorCreator ? `<p class="resource-creator">By ${escapeHtml(resource.authorCreator)}</p>` : ""}
           <p class="resource-detail-description">${escapeHtml(resource.description)}</p>
           ${renderProgress(resource)}
           ${renderRating(resource.rating)}
           <div class="resource-facts">
-            <div class="resource-fact"><span>Category</span><strong>${escapeHtml(resource.category)}</strong></div>
-            <div class="resource-fact"><span>Type</span><strong>${escapeHtml(resource.resourceType)}</strong></div>
-            <div class="resource-fact"><span>Started</span><strong>${escapeHtml(formatDate(resource.startDate))}</strong></div>
-            <div class="resource-fact"><span>Finished</span><strong>${escapeHtml(formatDate(resource.finishDate))}</strong></div>
+            ${resource.category ? `<div class="resource-fact"><span>Category</span><strong>${escapeHtml(resource.category)}</strong></div>` : ""}
+            <div class="resource-fact"><span>Type</span><strong>${escapeHtml(resourceTypeLabel(resource))}</strong></div>
+            ${resource.startDate ? `<div class="resource-fact"><span>Started</span><strong>${escapeHtml(formatDate(resource.startDate))}</strong></div>` : ""}
+            ${resource.finishDate ? `<div class="resource-fact"><span>${resource.status === "Published" ? "Published" : "Finished"}</span><strong>${escapeHtml(formatDate(resource.finishDate))}</strong></div>` : ""}
           </div>
           ${
-            resource.externalUrl
-              ? `<a class="resource-external" href="${escapeHtml(resource.externalUrl)}" target="_blank" rel="noreferrer">Open resource <span aria-hidden="true">↗</span></a>`
+            externalUrl
+              ? `<a class="resource-external" href="${escapeHtml(externalUrl)}" target="_blank" rel="noreferrer">${resource.resourceType === "Certification" ? "View credential" : "Open resource"} <span aria-hidden="true">↗</span></a>`
               : ""
           }
         </article>
       </div>
       ${thoughts}
       ${takeaways}
-      <section class="learning-detail-section reveal-on-scroll" aria-labelledby="resourceNotesTitle">
+      <section class="learning-detail-section ${reveal}" aria-labelledby="resourceNotesTitle">
         <h2 id="resourceNotesTitle">Notes From This Resource</h2>
         ${
           notes.length
             ? `<ul class="index-list">${notes.map(renderRelatedNote).join("")}</ul>`
-            : `<p class="index-empty">No notes yet.</p>`
+            : `<p class="index-empty" role="status">${loadingNotes ? "Loading related notes…" : "No notes yet."}</p>`
         }
       </section>
-    </main>
+    </${preview ? "div" : "main"}>
   `;
 }
 
@@ -244,11 +351,19 @@ function renderNotFound(message, href, label) {
 }
 
 function renderPage(content) {
+  cleanupFilters();
+  cleanupShelf();
   cleanupChrome();
   cleanupReveals();
   app.innerHTML = `${renderInteriorHeader("/library/")}${content}${renderSiteFooter()}`;
   cleanupChrome = initializeInteriorChrome();
   cleanupReveals = initializeRevealAnimations(app);
+  if (!resourceSlug) cleanupFilters = initializeLibraryFilters();
+  if (!resourceSlug) cleanupShelf = initializeLibraryShelf(app, {
+    findResource: slug => currentResources.find(resource => resource.slug === slug),
+    loadResource: loadLearningResource,
+    renderDetail: (resource, notes, options = {}) => renderResourceDetail(resource, notes, { ...options, preview: true }),
+  });
 }
 
 async function initializeLibrary() {
@@ -260,13 +375,24 @@ async function initializeLibrary() {
     }
 
     const cached = readCache("resources");
+    currentResources = cached ?? [];
     setPageTitle("Learning Library");
     renderPage(renderLibrary(cached ?? [], { pending: !cached }));
 
     const resources = await loadLearningResources();
     writeCache("resources", resources);
-    if (!cached || !sameSlugList(cached, resources)) renderPage(renderLibrary(resources));
+    currentResources = resources;
+    if (JSON.stringify(cached) !== JSON.stringify(resources)) {
+      const reader = document.querySelector(".library-reader[open]");
+      if (reader) reader.addEventListener("close", () => {
+        const selectedSlug = reader.dataset.resource;
+        renderPage(renderLibrary(resources));
+        [...app.querySelectorAll('[data-resource]')].find(link => link.dataset.resource === selectedSlug)?.focus({ preventScroll: true });
+      }, { once: true });
+      else renderPage(renderLibrary(resources));
+    }
   } catch {
+    if (!resourceSlug && currentResources.length) return;
     renderPage(renderNotFound("The Library could not be loaded right now. Please try again shortly.", "/library/", "Try the Library again"));
   }
 }
