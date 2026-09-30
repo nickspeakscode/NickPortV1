@@ -15,7 +15,7 @@ async function verify(engine, mobile) {
   const proof = [];
   page.on('pageerror', error => errors.push(error.message));
   try {
-    await page.goto(base);
+    await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.bringToFront();
     await page.waitForTimeout(3500);
     await page.locator('.portrait-shell[data-state="idle"]').waitFor();

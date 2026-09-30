@@ -1,7 +1,7 @@
 import "./style.css";
 import "./writing.css";
 import { escapeHtml, loadPublishedArticles, recordPageView } from "./lib/sanity.js";
-import { readCache, sameSlugList, writeCache } from "./lib/pageData.js";
+import { readCache, writeCache } from "./lib/pageData.js";
 import { getRouteSlug, initializeRevealAnimations } from "./lib/pageUi.js";
 import {
   initializeInteriorChrome,
@@ -117,7 +117,7 @@ async function initializeWriting() {
   try {
     const publishedArticles = await loadPublishedArticles();
     writeCache("articles", publishedArticles);
-    if (sameSlugList(writingArticles, publishedArticles) && cached.length) return;
+    if (JSON.stringify(writingArticles) === JSON.stringify(publishedArticles) && cached.length) return;
     writingArticles = publishedArticles;
     renderWritingPage();
   } catch {

@@ -53,7 +53,7 @@ const fs = require('node:fs/promises');
       assert.ok(!await header.evaluate(el => el.classList.contains('is-compact')));
       await page.getByRole('button', { name: 'Open menu' }).click();
       await page.getByRole('button', { name: 'Close menu' }).click();
-      await page.waitForFunction(() => !document.querySelector('dialog').open);
+      await page.waitForFunction(() => !document.querySelector('#mobileMenu').open);
       await page.setViewportSize({ width: 1440, height: 600 });
       await page.emulateMedia({ reducedMotion: 'reduce' });
       for (const route of ['/writing/', '/library/', '/notes/']) {

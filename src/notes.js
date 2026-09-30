@@ -13,7 +13,7 @@ import {
   renderInteriorHeader,
   renderSiteFooter,
 } from "./lib/siteChrome.js";
-import { readCache, sameSlugList, writeCache } from "./lib/pageData.js";
+import { readCache, writeCache } from "./lib/pageData.js";
 import { getRouteSlug, initializeRevealAnimations, setPageTitle } from "./lib/pageUi.js";
 
 const app = document.querySelector("#app");
@@ -115,12 +115,12 @@ function renderNoteDetail(note) {
   `;
 }
 
-function renderNotFound() {
+function renderNotFound(message = "this note could not be found. it may have been unpublished or moved.") {
   return `
     <main class="index-page">
       <header class="index-intro index-enter">
         <h1>still learning</h1>
-        <p>this note could not be found. it may have been unpublished or moved.</p>
+        <p>${escapeHtml(message)}</p>
         <p class="index-empty"><a href="/notes/">all notes</a></p>
       </header>
     </main>
@@ -136,6 +136,8 @@ function renderPage(content) {
 }
 
 async function initializeNotes() {
+  const saved = noteSlug ? null : readCache("notes");
+  const cached = Array.isArray(saved) ? saved : null;
   try {
     if (noteSlug) {
       const note = await loadLearningNote(noteSlug);
@@ -144,15 +146,15 @@ async function initializeNotes() {
       return;
     }
 
-    const cached = readCache("notes");
     setPageTitle("Today I Learned");
     renderPage(renderNotesIndex(cached ?? [], { pending: !cached }));
 
     const notes = await loadLearningNotes();
     writeCache("notes", notes);
-    if (!cached || !sameSlugList(cached, notes)) renderPage(renderNotesIndex(notes));
+    if (JSON.stringify(cached) !== JSON.stringify(notes)) renderPage(renderNotesIndex(notes));
   } catch {
-    renderPage(renderNotFound());
+    if (!noteSlug && cached) return;
+    renderPage(renderNotFound("Notes could not be loaded right now. Please try again shortly."));
   }
 }
 

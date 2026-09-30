@@ -9,3 +9,4 @@ studio/.sanity/
 .npm-cache/
 .browser-cache/
 test-results/
+output/playwright/

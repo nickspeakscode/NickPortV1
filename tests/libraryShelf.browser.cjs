@@ -141,7 +141,10 @@ const resources = [
         assert.equal(await page.locator('#library-reader-title').textContent(), '<Systems & Learning>');
         assert.equal(await page.locator('.book-flight').count(), 0);
         assert.equal(await reader.locator('.resource-rating').count(), 0, 'unset ratings stay absent');
-        await page.getByRole('button', { name: 'Return to shelf' }).click();
+        await page.getByRole('button', { name: 'Return to shelf' }).click().catch(async error => {
+          console.error('Reader close failure', engine.name(), mobile, await reader.evaluate(el => ({ open: el.open, className: el.className, button: el.querySelector('button')?.outerHTML, inert: el.inert, html: el.outerHTML.slice(0, 600) })));
+          throw error;
+        });
         await page.waitForFunction(() => !document.querySelector('.library-reader').open);
 
         fail = true;

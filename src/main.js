@@ -130,7 +130,10 @@ app.innerHTML = `
           <p class="hero-bio">
             I do financial planning and analysis for HVAC businesses, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.
           </p>
-          <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
+          <div class="hero-actions">
+            <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
+            <a class="contact-action timeline-action" href="/timeline/" aria-label="Explore my timeline">My timeline <span aria-hidden="true">→</span></a>
+          </div>
         </div>
       </div>
     </section>

@@ -1,5 +1,9 @@
 /* Smaller components and less vertical padding, without browser zoom. */
 .hero .portrait-stage { width: min(245px, 23vw); }
+.hero-actions .timeline-action { display: inline-flex; align-items: center; gap: 16px; min-height: 44px; color: #b8d8d4; border-color: #527778; }
+.timeline-action span { display: inline-block; transition: transform 180ms; }
+.hero-actions .timeline-action:hover { color: #5dffd0; border-color: #5dffd0; }
+.timeline-action:hover span { transform: translateX(4px); }
 .hero .hero-copy h1 { font-size: clamp(32px, 3.6vw, 46px); }
 .hero .hero-copy .hero-bio { font-size: 15px; line-height: 1.9; max-width: 470px; }
 .hero .contact-action { font-size: 14px; margin-top: 22px; }
