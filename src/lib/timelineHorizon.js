@@ -12,14 +12,20 @@ export function createTimelineHorizon(canvas, chapters) {
     const a = points[index - 1], b = points[index];
     return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]);
   };
-  let width = 1, height = 1, previous = -1;
+  const landscape = document.createElement('canvas');
+  const landscapeContext = landscape.getContext('2d');
+  let width = 1, height = 1, previous = -1, ratio = 1;
+  let lastTime = 0, driftPhase = 0;
+  let cachedLandscape = false, cachedLight = false;
   function resize() {
     const rect = canvas.getBoundingClientRect();
     width = rect.width; height = rect.height;
-    const ratio = Math.min(devicePixelRatio || 1, 2);
+    ratio = Math.min(devicePixelRatio || 1, 2);
     canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
     context?.setTransform(ratio, 0, 0, ratio, 0, 0);
     previous = -1;
+    cachedLandscape = false;
+    lastTime = 0;
   }
   function draw(progress, now, reducedMotion) {
     const light = document.documentElement.dataset.timelineTheme === 'light';
@@ -31,6 +37,11 @@ export function createTimelineHorizon(canvas, chapters) {
     const elevation = Math.min(height * (stacked ? .1 : .16), width * .23) * zoom;
     const destination = { x: centerX, y: baseY - elevation * .12 };
     const arrival = Math.max(0, Math.min(1, (progress - .88) / .12));
+    // Add motion to the existing scroll phase instead of replacing it at
+    // arrival. A suspended tab contributes at most one small visible step.
+    const elapsed = lastTime ? Math.max(0, Math.min(50, now - lastTime)) : 0;
+    lastTime = now;
+    if (!reducedMotion) driftPhase = (driftPhase + elapsed * arrival / 19000) % 1;
     if (!context || (previous === progress && (!arrival || reducedMotion))) return destination;
     previous = progress;
     context.clearRect(0, 0, width, height);
@@ -49,7 +60,7 @@ export function createTimelineHorizon(canvas, chapters) {
       context.globalAlpha = branch ? arrival * .42 : .5;
       context.beginPath();
       for (let i = 0; i < 88; i++) {
-        const q = (i / 88 + (arrival && !reducedMotion ? -now / 19000 : progress * .37) + 100) % 1;
+        const q = (i / 88 + progress * .37 - driftPhase + 1) % 1;
         const depth = q * q;
         const x = centerX + branch * width * .19 * (1 - depth) * arrival;
         dot(x, vanishingY + (nearY - vanishingY) * depth, .38 + depth * .72);
@@ -62,47 +73,66 @@ export function createTimelineHorizon(canvas, chapters) {
       const y = vanishingY + height * .36 * depth;
       context.globalAlpha = depth * .45 * (1 - arrival);
       context.beginPath();
-      const side = index % 2 ? 1 : -1;
+      // Keep labels in the quiet lane left of the path. Alternating right
+      // placed some labels directly underneath the foreground illustration.
+      const side = -1;
       for (let d = 0; d < 60 * depth; d += 5) dot(centerX + side * d, y, .6);
       context.fill();
-      if (!stacked) {
+      if (!stacked && width > 1100) {
         context.font = `${Math.max(8, 11 * depth)}px sans-serif`;
-        context.textAlign = side > 0 ? 'left' : 'right';
+        context.textAlign = 'right';
         context.fillText(`${chapters[index].rank} ♠  ${chapters[index].label}`, centerX + side * (60 * depth + 8), y + 3);
       }
     }
-    context.globalAlpha = 1;
-    // The sun is dots too, with its lower edge disappearing behind the ridge.
-    const sunRadius = 31 * zoom;
-    const sunX = centerX + span * .15;
-    const sunY = Math.max((stacked ? 122 : 65) + sunRadius + 8, baseY - elevation * .8);
-    const halo = context.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius * 3.6);
-    halo.addColorStop(0, light ? '#c5a76d16' : '#bd95641c');
-    halo.addColorStop(1, '#bd956400');
-    context.fillStyle = halo; context.fillRect(sunX - sunRadius * 4, sunY - sunRadius * 4, sunRadius * 8, sunRadius * 8);
-    context.fillStyle = light ? '#9d713e' : '#d2b789';
-    context.globalAlpha = .65;
-    context.beginPath();
-    for (let i = 0; i < 420; i++) {
-      const radius = Math.sqrt((i + .5) / 420) * sunRadius, angle = i * 2.399963;
-      const px = sunX + Math.cos(angle) * radius;
-      const py = sunY + Math.sin(angle) * radius;
-      if (py < baseY - sample(ridges[0], (px - centerX) / span) * elevation) dot(px, py, .6 + progress * .2);
-    }
-    context.fill();
-    ridges.forEach((ridge, layer) => {
-      context.fillStyle = light ? (layer ? '#447c72' : '#748e8e') : (layer ? '#80b5aa' : '#537f88');
-      context.globalAlpha = .35 + progress * .3;
-      context.beginPath();
-      for (let row = 0; row <= 16; row++) for (let col = 0; col <= 120; col++) {
-        const x = -1 + col / 60, depth = row / 16;
-        const jitter = Math.sin(col * 12.37 + row * 7.13) * .008;
-        const terrain = sample(ridge, x) + Math.sin(x * 43 + row * .6) * .012;
-        const y = baseY + layer * elevation * .15 - terrain * elevation * (1 - depth) + jitter * elevation;
-        dot(centerX + (x + jitter) * span * (1 + layer * .1 - depth * .12), y, (.65 + zoom * .25) * (1 - depth * .55));
+    function drawLandscape(painter) {
+      painter.save();
+      const point = (x, y, size) => { painter.moveTo(x + size, y); painter.arc(x, y, size, 0, Math.PI * 2); };
+      painter.globalAlpha = 1;
+      // The sun is dots too, with its lower edge disappearing behind the ridge.
+      const sunRadius = 31 * zoom;
+      const sunX = centerX + span * .15;
+      const sunY = Math.max((stacked ? 122 : 65) + sunRadius + 8, baseY - elevation * .8);
+      const halo = painter.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius * 3.6);
+      halo.addColorStop(0, light ? '#c5a76d16' : '#bd95641c');
+      halo.addColorStop(1, '#bd956400');
+      painter.fillStyle = halo; painter.fillRect(sunX - sunRadius * 4, sunY - sunRadius * 4, sunRadius * 8, sunRadius * 8);
+      painter.fillStyle = light ? '#9d713e' : '#d2b789';
+      painter.globalAlpha = .65;
+      painter.beginPath();
+      for (let i = 0; i < 420; i++) {
+        const radius = Math.sqrt((i + .5) / 420) * sunRadius, angle = i * 2.399963;
+        const px = sunX + Math.cos(angle) * radius;
+        const py = sunY + Math.sin(angle) * radius;
+        if (py < baseY - sample(ridges[0], (px - centerX) / span) * elevation) point(px, py, .6 + progress * .2);
       }
-      context.fill();
-    });
+      painter.fill();
+      ridges.forEach((ridge, layer) => {
+        painter.fillStyle = light ? (layer ? '#447c72' : '#748e8e') : (layer ? '#80b5aa' : '#537f88');
+        painter.globalAlpha = .35 + progress * .3;
+        painter.beginPath();
+        for (let row = 0; row <= 16; row++) for (let col = 0; col <= 120; col++) {
+          const x = -1 + col / 60, depth = row / 16;
+          const jitter = Math.sin(col * 12.37 + row * 7.13) * .008;
+          const terrain = sample(ridge, x) + Math.sin(x * 43 + row * .6) * .012;
+          const y = baseY + layer * elevation * .15 - terrain * elevation * (1 - depth) + jitter * elevation;
+          point(centerX + (x + jitter) * span * (1 + layer * .1 - depth * .12), y, (.65 + zoom * .25) * (1 - depth * .55));
+        }
+        painter.fill();
+      });
+      painter.restore();
+    }
+    // At the final stop only the journey lines move. Reuse the static sun
+    // and mountain layer rather than resampling 4,000 ridge dots each frame.
+    if (progress === 1 && landscapeContext) {
+      if (!cachedLandscape || cachedLight !== light) {
+        landscape.width = canvas.width; landscape.height = canvas.height;
+        landscapeContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+        drawLandscape(landscapeContext);
+        cachedLandscape = true; cachedLight = light;
+      }
+      context.globalAlpha = 1;
+      context.drawImage(landscape, 0, 0, width, height);
+    } else drawLandscape(context);
     context.restore();
     return destination;
   }

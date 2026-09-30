@@ -16,7 +16,10 @@ const origin = process.env.TEST_ORIGIN || 'http://127.0.0.1:5173';
     });
     await page.goto(origin+'/timeline/');
     const waitChapter=async index=>{
-     await page.waitForFunction(i=>document.querySelector(`[data-chapter="${i}"]`)?.getAttribute('aria-current')==='step',index);
+     await page.waitForFunction(i=>document.querySelector(`[data-chapter="${i}"]`)?.getAttribute('aria-current')==='step',index).catch(async error=>{
+      console.error('Expected chapter',index,viewport,await page.evaluate(()=>({current:document.querySelector('[aria-current]')?.getAttribute('data-chapter'),progress:document.querySelector('.timeline-progress span')?.style.transform,hidden:document.hidden,url:location.href})));
+      throw error;
+     });
      await page.waitForTimeout(650);
      assert.equal(await page.locator('.story-chapter:not([aria-hidden="true"])').count(),1);
      const bounds=await page.evaluate(()=>({scrollY,overflow:document.documentElement.scrollWidth>innerWidth,scrollable:document.documentElement.scrollHeight>innerHeight+1}));
@@ -26,6 +29,11 @@ const origin = process.env.TEST_ORIGIN || 'http://127.0.0.1:5173';
      assert.ok(text.y>=55&&text.y+text.height<=controls.y,`text fits ${viewport.width}x${viewport.height}: ${JSON.stringify(text)}`);
      const rail=await page.locator('.timeline-chapters').boundingBox();
      assert.ok(rail.y>=60&&rail.y+rail.height<viewport.height);
+     const art=await page.locator('.timeline-artwork').boundingBox();
+     const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
+     assert.equal(overlaps(art,rail),false,'particle canvas stays clear of the chapter rail');
+     assert.equal(overlaps(art,text),false,'particle canvas stays clear of the story');
+     assert.equal(overlaps(art,controls),false,'particle canvas stays clear of the controls');
     };
     await waitChapter(0);
     assert.equal(await page.locator('[data-chapter]').count(),9);

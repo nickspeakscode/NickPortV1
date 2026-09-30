@@ -4,8 +4,8 @@ import { chapters } from './data/timeline.js';
 import { createTimelineHorizon } from './lib/timelineHorizon.js';
 
 const cardRank = rank => `<span class="chapter-card" aria-hidden="true"><span class="chapter-rank">${rank}</span><span class="chapter-suit">♠</span><span class="chapter-corner">${rank}</span></span>`;
-const colorScheme = matchMedia('(prefers-color-scheme: dark)');
-document.documentElement.dataset.timelineTheme = colorScheme.matches ? 'dark' : 'light';
+// Keep the portfolio's navy stage, including on phones using light mode.
+document.documentElement.dataset.timelineTheme = 'dark';
 
 document.querySelector('#app').innerHTML = `
   <main class="timeline-track" style="--chapters: ${chapters.length}" aria-label="Nick’s life timeline">
@@ -92,10 +92,6 @@ function select(index) {
 function paint(now = performance.now()) {
   frame = 0;
   if (document.hidden || !canvasVisible) return;
-  // Quiet idle motion needs only 30fps; transitions retain full frame rate.
-  if (!motion.matches && current === target && !transition && lastFrame && now - lastFrame < 30) {
-    frame = requestAnimationFrame(paint); return;
-  }
   // Time-based easing feels the same on 60Hz and high-refresh displays.
   const elapsed = lastFrame ? Math.min(50, now - lastFrame) : 16.7;
   lastFrame = now;
@@ -107,7 +103,9 @@ function paint(now = performance.now()) {
   else if (transition) {
     transition.start ??= now;
     const t = clamp((now - transition.start) / transition.duration, 0, 1);
-    const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    // A single gentle ease avoids the stop/rush/stop of a cubic ease layered
+    // over the particle engine's own release and assembly curves.
+    const eased = t * t * (3 - 2 * t);
     current = transition.from + (target - transition.from) * eased;
     if (t === 1) { current = target; transition = null; }
   } else current += (target - current) * (1 - Math.exp(-elapsed / 45));
@@ -119,7 +117,7 @@ function paint(now = performance.now()) {
   progressBar.style.transform = `scaleX(${current / last})`;
   select(Math.round(current));
   const caption = clamp((0.5 - Math.abs(current - Math.round(current))) / 0.28, 0, 1);
-  sections[active].style.opacity = motion.matches ? 1 : .55 + .45 * caption * caption * (3 - 2 * caption);
+  sections[active].style.opacity = motion.matches ? 1 : caption * caption * (3 - 2 * caption);
   previous.disabled = target <= 0;
   next.disabled = target >= last;
   if (current !== target || particlesMoving) frame = requestAnimationFrame(paint);
@@ -128,6 +126,16 @@ function paint(now = performance.now()) {
 
 function schedule() {
   if (!frame && !document.hidden && canvasVisible) frame = requestAnimationFrame(paint);
+}
+
+function pause() {
+  cancelAnimationFrame(frame); frame = 0; lastFrame = 0; touch = null;
+  particles.resetInteraction();
+  // Resume from the visible formation instead of rushing the remainder in a
+  // few frames after Safari returns from another tab or its back/forward cache.
+  if (transition) transition = {
+    from: current, start: null, duration: clamp(Math.abs(target - current) * 1150, 450, 1600),
+  };
 }
 
 function goTo(index, scrub = false) {
@@ -242,13 +250,9 @@ window.addEventListener('keydown', event => {
   }
 });
 window.addEventListener('resize', () => { particles.resize(); horizon.resize(); schedule(); });
-colorScheme.addEventListener('change', () => {
-  document.documentElement.dataset.timelineTheme = colorScheme.matches ? 'dark' : 'light';
-  particles.refreshTheme(); horizon.resize(); schedule();
-});
 const visibility = new IntersectionObserver(([entry]) => {
   canvasVisible = entry.isIntersecting;
-  if (!canvasVisible) { cancelAnimationFrame(frame); frame = 0; lastFrame = 0; }
+  if (!canvasVisible) pause();
   else schedule();
 });
 visibility.observe(artwork);
@@ -259,16 +263,12 @@ function updateMotion() {
 motion.addEventListener('change', updateMotion);
 artwork.setAttribute('aria-disabled', String(motion.matches));
 document.addEventListener('visibilitychange', () => {
-  cancelAnimationFrame(frame); frame = 0; lastFrame = 0; touch = null;
-  transition = null;
-  particles.resetInteraction();
+  pause();
   if (!document.hidden) schedule();
 });
 window.addEventListener('pagehide', () => {
-  cancelAnimationFrame(frame); frame = 0; lastFrame = 0; touch = null;
+  pause();
   clearTimeout(announcement);
-  transition = null;
-  particles.resetInteraction();
 });
 window.addEventListener('pageshow', schedule);
 paint();
