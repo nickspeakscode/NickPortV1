@@ -90,6 +90,11 @@ Stable handles from this codebase (use these, not coordinates):
 | link name `TIL` | `/notes/` |
 | link name `all musings` | Homepage CTA to `/writing/` |
 | link name `all notes` | Homepage CTA to `/notes/` |
+| link name `GitHub` | Header and mobile-drawer social link to `https://github.com/nickspeakscode` |
+| button name `Preview Sumlino, a project by Nick` | About teaser; opens `#sumlino-teaser` |
+| link name `View Sumlino on X` | Sumlino preview link |
+| button name `Close Sumlino preview` | Hides `#sumlino-teaser` |
+| `.hero-bio` | Homepage hero sentence; computed font is JetBrains Mono |
 | homepage wordmark `#reloadSite` | Button that reloads `/` |
 | interior wordmark `.wordmark` | Link to `/` named `Nicholas Thomas` |
 | `h1[aria-label="Hello, Nick Here."]` | Homepage headline |
@@ -100,12 +105,15 @@ Stable handles from this codebase (use these, not coordinates):
 | `.ticker-item small` | Per-item status: `loading`, `delayed`, `live`, `stale`, or `offline` |
 | button name `Open menu` | Mobile drawer toggle (`#mobileMenu`, `≤900px`) |
 | `.site-header.is-compact` | Desktop header after scroll (`≥901px`) |
-| `/writing/?article=<slug>` | Musing detail |
-| `.index-row` | Title-and-date (or title-and-cover) rows on `/writing/`, `/library/`, and `/notes/` |
+| `/writing/?article=<slug>` | Musing detail. `/writing/<slug>` stays in the address bar; Vite rewrites the request internally |
+| `.index-row` | Title-and-date rows on `/writing/` and `/notes/`. On `/library/`, only the CMA callout and related-note lists use this class |
+| `.shelf-link` | Library cover. A normal click opens `dialog.library-reader` and leaves the URL on `/library/` |
+| `dialog.library-reader` | Shelf reader. Close with `← Return to shelf`. `Open full page` goes to `/library/<slug>` |
+| `.library-filter` | Shelf filter button inside `Filter library`. Accessible name includes the count (`Books 3`). `aria-pressed="true"` is the active filter |
 | `.index-empty` | Empty index copy |
-| `.index-featured` / `#cmaStudyTitle` | Library currently-learning CMA callout |
+| `.index-featured` / `#cmaStudyTitle` | Library currently-learning CMA callout, only on the Everything filter |
 | `.article-back` | `← All musings` on a musing detail |
-| `[role="progressbar"][aria-label="Learning progress"]` | Resource progress |
+| `[role="progressbar"][aria-label="Progress"]` | Resource progress on the reader and the full resource page |
 | `.highlights-row` | Homepage musing and TIL highlight rows |
 | `.highlights-empty` | Homepage empty highlight copy |
 | `.detail-back` | `← Learning Library` or `← Today I Learned` |
@@ -132,7 +140,9 @@ Proof standards:
 - Market ticker: payload `status: "delayed"` means the proxy answered. Each `.ticker-item` carries its own status (`delayed`, `live`, `stale`, `offline`, or `loading`). There is no `.ticker-status` and no demo book. A `502` is a valid proxy miss; the UI shows `offline` / `—` or a `stale` cached price, not `feed offline` plus NQ `23785.25`. Confirm with the `/api/market-data` body. Do not mock Yahoo inside the page.
 - Production `/about` and `/about/` redirect to `/#about`. Local Vite does not. Mobile chrome is `Open menu` / `#mobileMenu` at `≤900px`; set `control-resume browser viewport --width 390 --height 844` before driving it.
 - Pokemon name is random. Proof is `#pokemonWalker` gaining `is-released` and `#pokemonSprite` getting a non-empty `alt`.
-- Card portrait proof is the click on the named portrait button plus a screenshot of the hero. Do not call `cardPortrait.disturb()` from eval.
+- Card portrait proof is the click on the named portrait button plus a screenshot of the hero. Do not call `cardPortrait.disturb()` from eval. Hover and Pokemon contact shuffle immediately once audio can play. There is no four-second dwell.
+- A library cover click opens `dialog.library-reader` and stays on `/library/`. Full-page proof is the `Open full page` link or a direct `/library/<slug>` visit. The progressbar is named `Progress`.
+- The About Sumlino control is the button `Preview Sumlino, a project by Nick`. Proof is `#sumlino-teaser` visible with `View Sumlino on X`, then hidden after `Close Sumlino preview`.
 
 ## Cleanup
 
