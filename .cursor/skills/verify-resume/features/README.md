@@ -14,12 +14,12 @@ This directory is the maintained source for verifying the user-facing behavior o
 ## Driving conventions
 
 - Start every recipe from the baseline unless its preconditions say otherwise.
-- Prefer ARIA names, `.index-row`, `.highlights-row`, and route paths over CSS position.
+- Prefer ARIA names, `.index-row`, `.shelf-link`, `.highlights-row`, and route paths over CSS position.
 - Treat every command as literal. Keep quoted names and flags unchanged.
 - Run browser actions through `control-resume browser`.
 - Run raw HTTP through `control-resume http`.
 - After a mutation-like UI action (poke ball, portrait click, opening a row), capture both the control state and the resulting view.
-- Interior indexes paint their `h1` before Sanity settles. After opening `/writing/`, `/library/`, or `/notes/`, wait for `.index-row`, `.index-empty`, or `.index-featured` before reading the list.
+- Interior indexes paint their `h1` before Sanity settles. After opening `/writing/` or `/notes/`, wait for `.index-row` or `.index-empty`. After opening `/library/`, wait for `.shelf-link`, `.index-empty`, or `.index-featured`. The library filter count is a persistent status, not a loading message.
 
 ## Proof and skip reporting
 
@@ -44,9 +44,9 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Features
 
-- [Homepage](./homepage.md) covers the landing hero, About, musings and TIL highlights, and header navigation.
-- [Site chrome](./chrome.md) covers the `Open menu` drawer (`≤900px`) and desktop `.is-compact` header.
+- [Homepage](./homepage.md) covers the landing hero, About (including the Sumlino preview), musings and TIL highlights, and header navigation.
+- [Site chrome](./chrome.md) covers the `Open menu` drawer (`≤900px`), the `GitHub` social link, and the desktop `.is-compact` header.
 - [Nick's Musings](./writing.md) covers the writing index, article detail, and missing-slug copy.
-- [Learning Library](./library.md) covers the shelf, currently-learning CMA callout, detail pages, and missing-slug copy.
+- [Learning Library](./library.md) covers the filtered shelf, cover reader, currently-learning CMA callout, full resource pages, and missing-slug copy.
 - [Today I Learned](./notes.md) covers the notes index, note detail, Learning From links, and missing-slug copy.
 - [Market ticker](./market-ticker.md) covers the homepage eight-symbol strip (`Market prices`) and `GET /api/market-data`.

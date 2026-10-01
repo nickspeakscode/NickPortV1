@@ -463,7 +463,11 @@ async function evaluate(cdp, expression, awaitPromise = true) {
 
 const PAGE_HELPERS = String.raw`
 function isAriaHidden(el) {
-  return el.nodeType === Node.ELEMENT_NODE && el.getAttribute("aria-hidden") === "true";
+  if (el.nodeType !== Node.ELEMENT_NODE) return false;
+  if (el.getAttribute("aria-hidden") === "true") return true;
+  if (el.closest("[hidden]")) return true;
+  const dialog = el.tagName === "DIALOG" ? el : el.closest("dialog");
+  return Boolean(dialog && !dialog.open);
 }
 function visibleText(el) {
   if (isAriaHidden(el)) return "";
@@ -522,6 +526,7 @@ function dumpAria() {
       || (el.tagName === "A" && el.href ? "link" : "")
       || (el.tagName === "BUTTON" ? "button" : "")
       || (el.tagName === "NAV" ? "navigation" : "")
+      || (el.tagName === "DIALOG" ? "dialog" : "")
       || (/^H[1-6]$/.test(el.tagName) ? "heading" : "");
     const name = accessibleName(el);
     if (role && name) {
@@ -544,8 +549,13 @@ async function waitForApp(cdp, extraSelector) {
       const started = Date.now();
       while (Date.now() - started < 20000) {
         const app = document.querySelector("#app");
-        const loading = document.querySelector('[role="status"]');
         const heading = document.querySelector("h1");
+        const loading = [...document.querySelectorAll('[role="status"]')].some((el) => {
+          if (el.hidden || el.closest("[hidden]")) return false;
+          const dialog = el.closest("dialog");
+          if (dialog && !dialog.open) return false;
+          return /loading/i.test(el.textContent || "");
+        });
         const extraOk = !extra || document.querySelector(extra);
         if (app && heading && heading.textContent.trim() && !loading && extraOk) return true;
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -595,7 +605,7 @@ async function cmdBrowser(flags) {
         // keep going; client render wait is the source of truth
       }
       await waitForApp(cdp, flags.wait);
-      const info = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.textContent?.trim() || '' })");
+      const info = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.getAttribute('aria-label') || document.querySelector('h1')?.textContent?.trim() || '' })");
       process.stdout.write(`ok goto ${info.url}\ntitle=${info.title}\nh1=${info.h1}\n`);
     });
     return;
@@ -624,8 +634,12 @@ async function cmdBrowser(flags) {
             await new Promise((resolve) => setTimeout(resolve, 100));
           }
           if (!el) throw new Error(selector ? "No node for " + selector : "No " + role + " named " + name);
+          const clickedName = accessibleName(el);
+          const clickedHref = el.href || "";
+          const clickedPressed = el.getAttribute("aria-pressed");
+          const clickedTag = el.tagName;
           el.click();
-          return { tag: el.tagName, name: accessibleName(el), href: el.href || "", pressed: el.getAttribute("aria-pressed") };
+          return { tag: clickedTag, name: clickedName, href: clickedHref, pressed: clickedPressed };
         })()`
       );
       try {
@@ -635,7 +649,7 @@ async function cmdBrowser(flags) {
         await delay(400);
       }
       await waitForApp(cdp).catch(() => {});
-      const page = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.textContent?.trim() || '' })");
+      const page = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.getAttribute('aria-label') || document.querySelector('h1')?.textContent?.trim() || '' })");
       process.stdout.write(`ok click ${result.tag} ${result.name}\nhref=${result.href}\nurl=${page.url}\nh1=${page.h1}\n`);
     });
     return;
