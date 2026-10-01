@@ -1,15 +1,8 @@
 feature: writing
-entry: header link Musings
-driven: 2026-09-04T13:06:00Z
-action: clicked Main navigation link named Musings
-action-url: http://127.0.0.1:5173/writing/
-action-h1: musings
-action-title: Nick's Musings | Nicholas Thomas
-index-empty: Nothing published yet.
-index-rows: 0
-filters: none
-samples: none
-unknown-slug-url: http://127.0.0.1:5173/writing/?article=this-slug-does-not-exist-verify
-unknown-slug-copy: this article could not be found. it may have been unpublished or moved.
-unknown-slug-back: all musings
-note: No published articles. writing-detail from an index row was skipped as a published-data miss. Sample musings and category filters are gone.
+entry: / then Musings; /writing/?article=; /writing/<slug>
+driven: 2026-09-17
+index: h1 musings, title Nick's Musings | Nicholas Thomas, 2 .index-row links with ?article=
+detail: The Art of Becoming Uncomfortable, ← All musings, .article-detail opacity 1
+back: /writing/ without article
+404: /writing/?article=this-slug-does-not-exist-verify h1 musings, "this article could not be found.", all musings
+path-slug: /writing/right-about-the-technology-wrong-about-the-trade same article, not a raw 404

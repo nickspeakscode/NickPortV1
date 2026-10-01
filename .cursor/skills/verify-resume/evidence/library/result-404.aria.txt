@@ -11,7 +11,10 @@ navigation: Main navigation
 link: LinkedIn
 link: YouTube
 link: X
+link: GitHub
 link: Email Nicholas Thomas
 button: Release a random Pokemon
+button: Open menu
+button: Close menu
 heading h1: nothing on this shelf
 link: Back to the Library

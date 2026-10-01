@@ -1,5 +1,5 @@
 title: Nick's Musings | Nicholas Thomas
-url: http://127.0.0.1:5173/writing/?article=this-slug-does-not-exist-verify
+url: http://127.0.0.1:5173/writing/?article=the-art-of-becoming-uncomfortable
 
 link: Nicholas Thomas
 navigation: Main navigation
@@ -11,7 +11,10 @@ navigation: Main navigation
 link: LinkedIn
 link: YouTube
 link: X
+link: GitHub
 link: Email Nicholas Thomas
 button: Release a random Pokemon
-heading h1: musings
-link: all musings
+button: Open menu
+button: Close menu
+link: ← All musings
+heading h1: The Art of Becoming Uncomfortable

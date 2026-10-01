@@ -11,15 +11,23 @@ navigation: Main navigation
 link: LinkedIn
 link: YouTube
 link: X
+link: GitHub
 link: Email Nicholas Thomas
 button: Release a random Pokemon
-button: Scatter the puzzle portrait and let it rebuild itself
+button: Open menu
+button: Close menu
+button: Shuffle Nicholas Thomas’s portrait cards
 heading h1: Hello, Nick Here.
 link: Contact me
 heading h2: about me
+button: redacted, Sumlino preview
+link: Sumlino on X
 heading h2: today i learned
 link: It Was Never About the Mushroom Aug 24, 2026
-link: The Outcome Was Already in the Actions Sep 1, 2026
+link: In a World That Never Stops Sep 11, 2026
+link: Phone, Wallet, Keys Sep 5, 2026
 link: all notes
 heading h2: musings
+link: Right About the Technology, Wrong About the Trade Sep 5, 2026
+link: The Art of Becoming Uncomfortable Sep 8, 2026
 link: all musings

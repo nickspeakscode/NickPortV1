@@ -1,16 +1,7 @@
 feature: notes
-entry: header link TIL
-driven: 2026-09-04T13:06:00Z
-action: clicked Main navigation link named TIL, waited for .index-row, clicked first row
-action-url: http://127.0.0.1:5173/notes/
-action-h1: today i learned
-index-rows: The Outcome Was Already in the Actions, It Was Never About the Mushroom
-result-url: http://127.0.0.1:5173/notes/the-outcome-was-already-in-the-actions
-result-h1: The Outcome Was Already in the Actions
-result-back: ← Today I Learned
-learning-from: absent on both published notes
-unknown-slug-h1: still learning
-unknown-slug-copy: this note could not be found. it may have been unpublished or moved.
-unknown-slug-back: all notes
-homepage-cta: all notes
-note: Learning From absent is a published-data miss. Old .note-card / View all notes / Opening the notebook are gone.
+entry: / then TIL; /notes/<slug>; unknown slug
+driven: 2026-09-17
+index: h1 today i learned, 4 .index-row
+detail: In a World That Never Stops, ← Today I Learned, .article-body non-empty
+learning-from: absent on all four published notes (phone-wallet-keys, the-outcome-was-already-in-the-actions, it-was-never-about-the-mushroom, in-a-world-that-never-stops). Prerequisite: a published note with relatedResource. Recorded, not invented.
+404: /notes/this-slug-does-not-exist-verify h1 still learning, this note could not be found., all notes
