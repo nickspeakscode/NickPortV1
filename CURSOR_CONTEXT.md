@@ -2,6 +2,10 @@
 
 Last updated: September 30, 2026
 
+## Timeline temporarily hidden
+
+- Nick asked to remove **My timeline** from the homepage for now while preserving the implementation. `showTimelineLink` in `src/main.js` is `false`, so the link is not rendered on desktop or mobile. Keep its markup, styling, story, assets, and `/timeline/` route in code for later. Restore the entry only when Nick asks.
+
 ## Timeline polish: September 30
 
 - Nick rejected the phone's white timeline. The timeline now stays navy/aqua regardless of system light/dark preference, including initial HTML paint and browser theme color. This supersedes the earlier request to support a separate light palette.
@@ -12,7 +16,7 @@ Last updated: September 30, 2026
 
 ## Latest update: My timeline
 
-- `/timeline/` is a standalone Vite entry. **My timeline** sits beside **Contact me** in the homepage hero, clear of the portrait shuffle. Nick rejected both a dangling attachment and a link directly beneath the cards. Existing primary navigation is unchanged.
+- `/timeline/` is a standalone Vite entry. When enabled, **My timeline** sits beside **Contact me** in the homepage hero, clear of the portrait shuffle. The homepage link is currently disabled as noted above. Nick rejected both a dangling attachment and a link directly beneath the cards. Existing primary navigation is unchanged.
 - Nine concise first-person chapters in `src/data/timeline.js` use Nick's latest account: South Carolina and competitive basketball; a **4.0 high-school GPA**, graduating during COVID without a set plan; college-era crypto/NFT interest; **The Tribe, now Primate Trading, and over $150,000 in revenue**; missing face-to-face work after two or three years and joining HVAC accounting/FP&A; studying for the CMA and statistics; trading his own live account, primarily index futures; founding **Sumlino in August 2026** (Nick said a month ago on September 29); and a closing chapter about always being a student, learning and being excited for the future. Do not describe the CMA as earned or move the 4.0 GPA to college.
 - Sumlino's description was checked against its local README: a browser month-end close assistant for accountants using QuickBooks. The supplied `public/sumlino-founder.png` is an offscreen sampling source only; its blue character is rendered entirely in dots, without showing the image or its white background.
 - Nick's final reference shows a central dotted timeline receding toward a mountain/sunset, then branching at the end. This supersedes his intermediate request to remove the background. `timelineHorizon.js` draws the mountains, sun, perspective chapter stops and branching path entirely as dots; the mountain grows closer with progress. The final chapter streams points upward into the horizon, suggesting the story continues.
@@ -25,7 +29,7 @@ Last updated: September 30, 2026
 - `tests/timelineThemes.browser.cjs` checks desktop Chromium and a 390px WebKit phone under both system themes, verifies the stage remains navy, captures both ends of the journey, and checks DPR, idle motion, offscreen/hidden pausing and reduced motion.
 - Final kit checks pass in desktop Chromium and 390px WebKit, including all nine chapter interactions, and all four desktop/phone light/dark visual scenarios. The visibility test waits for IntersectionObserver delivery before asserting an offscreen pause. The mobile horizon/path fades behind copy. The production build and 22 API/unit tests pass; these are browser-emulated phone checks, not a fresh physical-iPhone test.
 - The header contains only a top-right Close link and a screen-reader heading. Desktop pairs story and artwork; phone/tablet stack them. The chapter rail uses miniature spade cards ranked A, 2–9, with matching ranks in the story and counter. Story text remains accessible DOM content; the decorative canvas sits inside an accessible scatter button.
-- `tests/timeline.browser.cjs` covers desktop, portrait/narrow mobile and landscape in Chromium/WebKit: fixed document, continuous dot morphing, hover and click/tap/keyboard dispersion and return, card ranks, scroll settling, all nine chapters, touch, reduced motion, restoration, text bounds and a homepage link clear of the shuffle. It normalizes Chromium's DPR-scaled emulated wheel input. Native superseded cross-document transition cancellation is logged separately from application errors.
+- `tests/timeline.browser.cjs` covers desktop, portrait/narrow mobile and landscape in Chromium/WebKit: fixed document, continuous dot morphing, hover and click/tap/keyboard dispersion and return, card ranks, scroll settling, all nine chapters, touch, reduced motion, restoration, text bounds and the hidden homepage entry. It normalizes Chromium's DPR-scaled emulated wheel input. Native superseded cross-document transition cancellation is logged separately from application errors.
 - Nick requested pushing this update after the final checks. Dev server: `http://localhost:5173/timeline/`; same-Wi-Fi phone: `http://192.168.1.74:5173/timeline/`.
 
 ## Local review: published content and site reliability

@@ -15,6 +15,8 @@ import {
 } from "./lib/sanity.js";
 
 const app = document.querySelector("#app");
+// Keep the timeline available in code while its homepage entry is on hold.
+const showTimelineLink = false;
 function selectHighlights(source) {
   return [...source]
     .sort((left, right) => {
@@ -132,7 +134,7 @@ app.innerHTML = `
           </p>
           <div class="hero-actions">
             <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
-            <a class="contact-action timeline-action" href="/timeline/" aria-label="Explore my timeline">My timeline <span aria-hidden="true">→</span></a>
+            ${showTimelineLink ? '<a class="contact-action timeline-action" href="/timeline/" aria-label="Explore my timeline">My timeline <span aria-hidden="true">→</span></a>' : ''}
           </div>
         </div>
       </div>

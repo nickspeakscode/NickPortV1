@@ -158,23 +158,13 @@ const origin = process.env.TEST_ORIGIN || 'http://127.0.0.1:5173';
     await page.keyboard.press('End'); await waitChapter(8);
     await page.getByRole('link',{name:'Close timeline and return home'}).click();
     await page.waitForURL(origin+'/#home');
-    const entry=page.getByRole('link',{name:'Explore my timeline'});
-    await entry.waitFor();
+    await page.locator('.hero-actions').waitFor();
     assert.equal(await page.locator('.portrait-stage a').count(),0);
-    assert.equal(await page.locator('.portrait-shell a').count(),0,'timeline is a separate control, not nested in the shuffle button');
+    assert.equal(await page.locator('.portrait-shell a').count(),0);
     assert.equal(await page.locator('.hero-actions a[href^="mailto:"]').count(),1);
-    assert.equal(await page.locator('.hero-actions a[href="/timeline/"]').count(),1);
-    const link=await entry.boundingBox();
-    const card=await page.locator('.portrait-shell').boundingBox();
-    assert.ok(link.width>=44&&link.height>=44&&link.x>=0&&link.x+link.width<=viewport.width,'portrait link fits with a full touch target');
-    assert.ok(link.x>=card.x+card.width+20||link.y>=card.y+card.height+30,'timeline link is well clear of the portrait');
-    await page.emulateMedia({reducedMotion:'no-preference'});
-    await page.locator('.portrait-shell').click();
-    await page.locator('.portrait-shell[data-state="shuffling"]').waitFor();
-    await entry.click();
-    await page.waitForURL(origin+'/timeline/');
+    assert.equal(await page.locator('a[href="/timeline/"]').count(),0,'timeline entry is temporarily hidden on the homepage');
     assert.deepEqual(errors,[]);
-    console.log(`PASS ${engine.name()} ${viewport.width}x${viewport.height}: continuous morph, click/tap burst, card ranks, nine chapters, keys, touch, reduced motion, restore, portrait link`);
+    console.log(`PASS ${engine.name()} ${viewport.width}x${viewport.height}: continuous morph, click/tap burst, card ranks, nine chapters, keys, touch, reduced motion, restore, hidden homepage entry`);
     await page.close();
    }
   }finally{await browser.close();}
