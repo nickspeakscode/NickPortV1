@@ -463,7 +463,11 @@ async function evaluate(cdp, expression, awaitPromise = true) {
 
 const PAGE_HELPERS = String.raw`
 function isAriaHidden(el) {
-  return el.nodeType === Node.ELEMENT_NODE && el.getAttribute("aria-hidden") === "true";
+  if (el.nodeType !== Node.ELEMENT_NODE) return false;
+  if (el.getAttribute("aria-hidden") === "true") return true;
+  if (el.closest("[hidden]")) return true;
+  const dialog = el.tagName === "DIALOG" ? el : el.closest("dialog");
+  return Boolean(dialog && !dialog.open);
 }
 function visibleText(el) {
   if (isAriaHidden(el)) return "";
@@ -522,6 +526,7 @@ function dumpAria() {
       || (el.tagName === "A" && el.href ? "link" : "")
       || (el.tagName === "BUTTON" ? "button" : "")
       || (el.tagName === "NAV" ? "navigation" : "")
+      || (el.tagName === "DIALOG" ? "dialog" : "")
       || (/^H[1-6]$/.test(el.tagName) ? "heading" : "");
     const name = accessibleName(el);
     if (role && name) {
@@ -544,8 +549,13 @@ async function waitForApp(cdp, extraSelector) {
       const started = Date.now();
       while (Date.now() - started < 20000) {
         const app = document.querySelector("#app");
-        const loading = document.querySelector('[role="status"]');
         const heading = document.querySelector("h1");
+        const loading = [...document.querySelectorAll('[role="status"]')].some((el) => {
+          if (el.hidden || el.closest("[hidden]")) return false;
+          const dialog = el.closest("dialog");
+          if (dialog && !dialog.open) return false;
+          return /loading/i.test(el.textContent || "");
+        });
         const extraOk = !extra || document.querySelector(extra);
         if (app && heading && heading.textContent.trim() && !loading && extraOk) return true;
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -564,7 +574,7 @@ function writeOut(filePath, contents, encoding = "utf8") {
 
 async function cmdBrowser(flags) {
   const action = flags._[0];
-  if (!action) die("Usage: control-resume browser <goto|click|text|eval|snapshot|screenshot|wait|viewport>");
+  if (!action) die("Usage: control-resume browser <goto|click|hover|text|eval|snapshot|screenshot|wait|viewport>");
 
   if (action === "viewport") {
     const width = Number(flags.width || flags._[1]);
@@ -595,7 +605,7 @@ async function cmdBrowser(flags) {
         // keep going; client render wait is the source of truth
       }
       await waitForApp(cdp, flags.wait);
-      const info = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.textContent?.trim() || '' })");
+      const info = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.getAttribute('aria-label') || document.querySelector('h1')?.textContent?.trim() || '' })");
       process.stdout.write(`ok goto ${info.url}\ntitle=${info.title}\nh1=${info.h1}\n`);
     });
     return;
@@ -624,8 +634,12 @@ async function cmdBrowser(flags) {
             await new Promise((resolve) => setTimeout(resolve, 100));
           }
           if (!el) throw new Error(selector ? "No node for " + selector : "No " + role + " named " + name);
+          const clickedName = accessibleName(el);
+          const clickedHref = el.href || "";
+          const clickedPressed = el.getAttribute("aria-pressed");
+          const clickedTag = el.tagName;
           el.click();
-          return { tag: el.tagName, name: accessibleName(el), href: el.href || "", pressed: el.getAttribute("aria-pressed") };
+          return { tag: clickedTag, name: clickedName, href: clickedHref, pressed: clickedPressed };
         })()`
       );
       try {
@@ -635,8 +649,68 @@ async function cmdBrowser(flags) {
         await delay(400);
       }
       await waitForApp(cdp).catch(() => {});
-      const page = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.textContent?.trim() || '' })");
+      const page = await evaluate(cdp, "({ title: document.title, url: location.href, h1: document.querySelector('h1')?.getAttribute('aria-label') || document.querySelector('h1')?.textContent?.trim() || '' })");
       process.stdout.write(`ok click ${result.tag} ${result.name}\nhref=${result.href}\nurl=${page.url}\nh1=${page.h1}\n`);
+    });
+    return;
+  }
+
+  if (action === "hover") {
+    const role = flags.role;
+    const name = flags.name;
+    const selector = flags.selector;
+    const click = Boolean(flags.click);
+    if (!selector && !(role && name)) {
+      die('Usage: control-resume browser hover --role button --name "Preview Sumlino, a project by Nick"  OR  --selector ".hero-bio" [--click]');
+    }
+    await withPage(async (cdp) => {
+      const result = await evaluate(
+        cdp,
+        `(async () => {
+          ${PAGE_HELPERS}
+          const selector = ${JSON.stringify(selector || "")};
+          const role = ${JSON.stringify(role || "")};
+          const name = ${JSON.stringify(name || "")};
+          const started = Date.now();
+          let el = null;
+          while (Date.now() - started < 5000) {
+            el = selector ? document.querySelector(selector) : findByRole(role, name);
+            if (el) break;
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+          if (!el) throw new Error(selector ? "No node for " + selector : "No " + role + " named " + name);
+          el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          const rect = el.getBoundingClientRect();
+          if (rect.width < 1 || rect.height < 1) throw new Error("Target has no box");
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          const outsideX = rect.left > 30 ? 8 : Math.min(innerWidth - 8, rect.right + 24);
+          const outsideY = rect.top > 30 ? 8 : Math.min(innerHeight - 8, rect.bottom + 24);
+          return { x, y, outsideX, outsideY, tag: el.tagName, name: accessibleName(el) };
+        })()`
+      );
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: result.outsideX, y: result.outsideY, pointerType: "mouse" });
+      await delay(40);
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: result.x, y: result.y, pointerType: "mouse" });
+      if (click) {
+        await cdp.send("Input.dispatchMouseEvent", {
+          type: "mousePressed",
+          x: result.x,
+          y: result.y,
+          button: "left",
+          clickCount: 1,
+        });
+        await cdp.send("Input.dispatchMouseEvent", {
+          type: "mouseReleased",
+          x: result.x,
+          y: result.y,
+          button: "left",
+          clickCount: 1,
+        });
+      }
+      await delay(160);
+      process.stdout.write(`ok hover ${Math.round(result.x)},${Math.round(result.y)} ${result.tag} ${result.name}${click ? " click" : ""}\n`);
     });
     return;
   }
@@ -720,6 +794,8 @@ function usage() {
   browser goto --path /
   browser click --role link --name "Musings"
   browser click --selector ".index-row"
+  browser hover --role button --name "Preview Sumlino, a project by Nick"
+  browser hover --selector ".hero-bio" [--click]
   browser text --selector h1
   browser pause --ms 2000
   browser wait --selector .index-row

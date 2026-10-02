@@ -1,11 +1,11 @@
 ---
 name: verify-resume
-description: Drive the NoticeTrades/resume public website (Vite multi-page UI at / , /writing , /library , /notes) the way a user does. Use when proving homepage, Musings, Library, TIL, ticker, or navigation behavior.
+description: Drive the nickspeakscode/NickPortV1 public website (Vite multi-page UI at / , /writing , /library , /notes) the way a user does. Use when proving homepage, About Sumlino preview, Musings, Library shelf, TIL, ticker, GitHub, or navigation behavior.
 ---
 
 # Verify resume
 
-This skill drives the public Nicholas Thomas portfolio in NoticeTrades/resume. The next agent reads it cold. Follow it literally.
+This skill drives the public Nicholas Thomas portfolio in nickspeakscode/NickPortV1. The next agent reads it cold. Follow it literally.
 
 Primary surface: the public web UI. Secondary surfaces: `GET /api/market-data` (Yahoo proxy, also mounted by Vite in `npm run dev`) and Sanity Studio in `studio/` (auth-gated, do not drive). There is no public CLI.
 
@@ -88,8 +88,13 @@ Stable handles from this codebase (use these, not coordinates):
 | link name `Musings` | `/writing/` |
 | link name `Library` | `/library/` |
 | link name `TIL` | `/notes/` |
+| link name `GitHub` | Header and `#mobileMenu` link to `https://github.com/nickspeakscode` |
+| button name `Preview Sumlino, a project by Nick` | About teaser; opens `#sumlino-teaser` |
+| link name `View Sumlino on X` | Preview link to `https://x.com/sumlinoapp` |
+| button name `Close Sumlino preview` | Hides `#sumlino-teaser` |
 | link name `all musings` | Homepage CTA to `/writing/` |
 | link name `all notes` | Homepage CTA to `/notes/` |
+| `.hero-bio` | Homepage hero sentence; computed font is JetBrains Mono |
 | homepage wordmark `#reloadSite` | Button that reloads `/` |
 | interior wordmark `.wordmark` | Link to `/` named `Nicholas Thomas` |
 | `h1[aria-label="Hello, Nick Here."]` | Homepage headline |
@@ -100,12 +105,15 @@ Stable handles from this codebase (use these, not coordinates):
 | `.ticker-item small` | Per-item status: `loading`, `delayed`, `live`, `stale`, or `offline` |
 | button name `Open menu` | Mobile drawer toggle (`#mobileMenu`, `≤900px`) |
 | `.site-header.is-compact` | Desktop header after scroll (`≥901px`) |
-| `/writing/?article=<slug>` | Musing detail |
-| `.index-row` | Title-and-date (or title-and-cover) rows on `/writing/`, `/library/`, and `/notes/` |
+| `/writing/?article=<slug>` | Musing detail. `/writing/<slug>` stays in the address bar |
+| `.index-row` | Title-and-date rows on `/writing/` and `/notes/`. On `/library/`, the CMA callout and related-note lists |
+| `.shelf-link` | Library cover. A click opens `dialog.library-reader` and leaves the URL on `/library/` |
+| `dialog.library-reader` | Shelf reader. Close with `← Return to shelf`. `Open full page` goes to `/library/<slug>` |
+| `.library-filter` | Shelf filter inside `Filter library`. The accessible name includes the count (`Books 3`) |
 | `.index-empty` | Empty index copy |
-| `.index-featured` / `#cmaStudyTitle` | Library currently-learning CMA callout |
+| `.index-featured` / `#cmaStudyTitle` | Library currently-learning CMA callout, only on the Everything filter |
 | `.article-back` | `← All musings` on a musing detail |
-| `[role="progressbar"][aria-label="Learning progress"]` | Resource progress |
+| `[role="progressbar"][aria-label="Progress"]` | Resource progress on the reader and the full resource page |
 | `.highlights-row` | Homepage musing and TIL highlight rows |
 | `.highlights-empty` | Homepage empty highlight copy |
 | `.detail-back` | `← Learning Library` or `← Today I Learned` |
@@ -132,7 +140,9 @@ Proof standards:
 - Market ticker: payload `status: "delayed"` means the proxy answered. Each `.ticker-item` carries its own status (`delayed`, `live`, `stale`, `offline`, or `loading`). There is no `.ticker-status` and no demo book. A `502` is a valid proxy miss; the UI shows `offline` / `—` or a `stale` cached price, not `feed offline` plus NQ `23785.25`. Confirm with the `/api/market-data` body. Do not mock Yahoo inside the page.
 - Production `/about` and `/about/` redirect to `/#about`. Local Vite does not. Mobile chrome is `Open menu` / `#mobileMenu` at `≤900px`; set `control-resume browser viewport --width 390 --height 844` before driving it.
 - Pokemon name is random. Proof is `#pokemonWalker` gaining `is-released` and `#pokemonSprite` getting a non-empty `alt`.
-- Card portrait proof is the click on the named portrait button plus a screenshot of the hero. Do not call `cardPortrait.disturb()` from eval.
+- Card portrait proof is the click on the named portrait button plus a screenshot of the hero. Do not call `cardPortrait.disturb()` from eval. Hover and Pokemon contact shuffle immediately once audio can play. There is no four-second dwell. `browser click` is not a trusted gesture, so prove a hover replay with `browser hover --click`.
+- A library cover click opens `dialog.library-reader` and stays on `/library/`. Full-page proof is the `Open full page` link or a direct `/library/<slug>` visit. The progressbar is named `Progress`. `goto /library/` must succeed even though `.library-filter-status` is a persistent `[role="status"]`.
+- The About Sumlino control is the button `Preview Sumlino, a project by Nick`. Proof is `#sumlino-teaser` visible with `View Sumlino on X`, then hidden after `Close Sumlino preview`. The open mobile drawer is `dialog: Navigation`, from the span `#mobileMenuTitle`.
 
 ## Cleanup
 
@@ -158,6 +168,7 @@ control-resume doctor
 control-resume http --path /api/market-data --quiet
 control-resume browser goto --path /writing/
 control-resume browser click --role link --name "Library"
+control-resume browser hover --role button --name "Preview Sumlino, a project by Nick"
 control-resume browser viewport --width 390 --height 844
 control-resume stop
 ```
