@@ -1,11 +1,13 @@
 # Homepage
 
-The homepage is the public landing page. A visitor sees a `Hello, Nick Here.` headline that types in with a caret, the HVAC hero sentence, an interactive card portrait, About, Today I Learned highlights, musings highlights, an eight-symbol market ticker, and header links to the rest of the site.
+The homepage is the public landing page. A visitor sees a `Hello, Nick Here.` headline that types in with a caret, the HVAC hero sentence in JetBrains Mono, an interactive card portrait, About with a Sumlino preview, Today I Learned highlights, musings highlights, an eight-symbol market ticker, and header links to the rest of the site.
 
 ## Sub-features
 
 - `home-hero` shows the headline, the HVAC one-liner, and Contact me mailto action.
 - `home-about` lands on the About section from the header About link.
+- `home-sumlino` opens and closes the Sumlino project preview from the About button.
+- `home-github` shows a header link named `GitHub` to `https://github.com/nickspeakscode`.
 - `home-nav` reaches Musings, Library, and TIL from the main navigation.
 - `home-featured-writing` lists up to three musing highlight rows that open `/writing/?article=<slug>`, or empty copy when none are published.
 - `home-til-teaser` lists up to three note highlight rows that open `/notes/<slug>`, or empty copy, plus `all notes`.
@@ -19,6 +21,7 @@ The homepage is the public landing page. A visitor sees a `Hello, Nick Here.` he
 - Choose `Home` in the header on the homepage (jumps to `#home`).
 - Choose `Home` or the `Nicholas Thomas` wordmark on an interior page.
 - Choose the homepage wordmark button `Nicholas Thomas` to reload `/`.
+- On `/`, choose `About`, then hover or choose `Preview Sumlino, a project by Nick`.
 - On production only, open `/about` or `/about/`. Vercel redirects that path to `/#about`. Local Vite has no `/about` page.
 
 ## Driving it with control-resume
@@ -28,10 +31,12 @@ Preconditions:
 - Resume is healthy at `http://127.0.0.1:5173`.
 - `control-resume doctor` reports `ok`.
 
-- **Open landing.** Go to `/`. Run `control-resume browser goto --path /`. Title is `Nicholas Thomas`. An `h1` named `Hello, Nick Here.` exists. A button named `Shuffle Nicholas Thomas’s portrait cards` is present.
-- **Read the hero sentence.** The first hero paragraph is `I do financial planning and analysis for HVAC businesses, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.`
+- **Open landing.** Go to `/`. Run `control-resume browser goto --path /`. Title is `Nicholas Thomas`. An `h1` named `Hello, Nick Here.` exists. `control-resume` prints that accessible name, not the partial visible letters. A button named `Shuffle Nicholas Thomas’s portrait cards` is present. A link named `GitHub` points at `https://github.com/nickspeakscode`. Do not follow it off-site.
+- **Read the hero sentence.** The first hero paragraph, `.hero-bio`, is `I do financial planning and analysis for HVAC businesses, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.` Its computed `font-family` starts with `JetBrains Mono`. The headline stays Oxanium.
 - **Watch the type-in.** Visual text in `.intro-before`, `.intro-name`, and `.intro-after` types in once. `.intro-cursor` is visible and blinks. The accessible name stays `Hello, Nick Here.` while characters appear. With `prefers-reduced-motion: reduce`, the full sentence is painted immediately and `.intro-cursor` is hidden.
-- **Read About.** Choose `About`. Run `control-resume browser click --role link --name "About"`. URL contains `#about`. Heading `about me` is visible. The About photo alt is `Nick and his girlfriend taking a mirror selfie`.
+- **Read About.** Choose `About`. Run `control-resume browser click --role link --name "About"`. URL contains `#about`. Heading `about me` is visible. The About photo alt is `Nick and his girlfriend taking a mirror selfie`. A button named `Preview Sumlino, a project by Nick` is in the copy. Its visible label can read `redacted` until the preview opens.
+- **Open Sumlino.** After the About scroll has finished, hover that button. Run `control-resume browser pause --ms 800` then `control-resume browser hover --role button --name "Preview Sumlino, a project by Nick"`. `#sumlino-teaser` is not hidden. `aria-expanded` on the button is `true`. The preview shows `A project by Nick`, `Sumlino`, and `Month-end reconciliation for accountants.` A link named `View Sumlino on X` points at `https://x.com/sumlinoapp`. The character image is `/sumlino-cobalt.gif`, or `/sumlino-cobalt-still.png` when reduced motion is on. `control-resume browser click --role button --name "Preview Sumlino, a project by Nick"` is a keyboard open and also shows the preview.
+- **Close Sumlino.** Run `control-resume browser click --role button --name "Close Sumlino preview"`. `#sumlino-teaser` is hidden and `aria-expanded` is `false`. Leaving the control also hides it: `control-resume browser hover --selector ".site-header"` then `control-resume browser pause --ms 400`. Escape and scrolling hide it too. Do not follow the external link.
 - **Open Musings from header.** Choose `Musings`. Run `control-resume browser click --role link --name "Musings"`. URL is `/writing/`. Heading is `musings`.
 - **Return home.** Choose `Home`. Run `control-resume browser click --role link --name "Home"`. URL is `/` and the headline is back.
 - **Open Library.** Choose `Library`. Run `control-resume browser click --role link --name "Library"`. URL is `/library/`. Heading is `library` or the missing-resource heading.
@@ -41,7 +46,7 @@ Preconditions:
 - **Release Pokemon.** Choose `Release a random Pokemon`. Run `control-resume browser click --role button --name "Release a random Pokemon"`. `#pokemonWalker` has class `is-released`. `#pokemonSprite` `alt` is one of Bulbasaur, Shinx, Flareon, Gengar, Pikachu, Blastoise, Dragonite, Mewtwo, Charizard, Giratina.
 - **Shuffle portrait.** Choose `Shuffle Nicholas Thomas’s portrait cards`. Run `control-resume browser click --role button --name "Shuffle Nicholas Thomas’s portrait cards"`. Capture a screenshot of the hero. The button remains on the page.
 - **One intro, then idle.** Leave the visible portrait untouched for at least 14 seconds. It shuffles once on load (silent), settles after three seconds, and does not replay. Fan, riffle, and Hindu techniques remain unchanged.
-- **Interactions.** Click/tap and Enter/Space shuffle without an audio check. Hover and Pokemon-collision replay call `audio.canPlay()` first: they do nothing until a trusted gesture has unlocked Web Audio and the context is `running`. After unlock, enter the hero with a mouse, then after four seconds enter the card, then after another four seconds move at least 12px over it. Each unlocked action triggers a shuffle; a still cursor does not. In-flight actions never restart or queue motion. Touch pointerenter does not shuffle.
+- **Interactions.** Click/tap and Enter/Space shuffle without an audio check. Hover and Pokemon-collision replay call `audio.canPlay()` first: they do nothing until a trusted gesture has unlocked Web Audio and the context is `running`. After unlock, entering the hero or the card with a mouse shuffles immediately. Moving at least 12px over the card also shuffles. There is no dwell and no four-second wait. A still cursor does not. In-flight actions never restart or queue motion. Touch pointerenter does not shuffle. Prove the hover with `control-resume browser hover --role button --name "Shuffle Nicholas Thomas’s portrait cards" --click`, wait until `.portrait-shell` `data-state` is `idle` (the trick lasts three seconds), `control-resume browser hover --selector ".site-header"`, then `control-resume browser hover --selector ".hero-bio"`. Within a couple hundred milliseconds `data-state` is `shuffling`. `browser click` is not trusted, so it does not unlock audio.
 - **Photo rotation.** Verify on local port 5173. The childhood photo is visible initially. The next decoded photo is staged while the Joker is face-down, before the final flip. Observe at least two full shuffles: the new photo must already be present at the reveal, with no post-settle pop or letterboxing. Completion commits the new photo node. Cancel a shuffle by scrolling offscreen and confirm the current photo remains. Enabling reduced motion restores the childhood photo, and subsequent activation does not change it.
 - **Skin.** Verify the custom tick-mark SVG back and Oxanium NT/ranks. No eyebrow or replacement tagline, large suit centers, metaphor captions, sparkles, or glass contact button. The type-in caret, childhood photo, market ticker, and Pokemon remain.
 - **Reduced motion.** With the browser's reduced-motion preference enabled, the portrait remains assembled, even when activated. Enabling the preference during a shuffle cancels it immediately. The headline caret is hidden.
@@ -52,8 +57,11 @@ Preconditions:
 
 - Header labels render in CSS uppercase. Drive them as `Home`, `About`, `Musings`, `Library`, and `TIL` as in the markup. `control-resume` matches those names case-insensitively.
 - The homepage wordmark is a reload button, not a link. Interior wordmarks are links to `/`.
-- The accessible headline is complete immediately (`aria-label="Hello, Nick Here."`). The visible letters type in once; reduced motion skips the type-in and hides `.intro-cursor`. Do not treat a mid-type screenshot as a missing heading.
-- Hover and Pokemon-overlap shuffles are gated on `audio.canPlay()`. A first hover before any click/key will not move the cards when Web Audio is present. The load intro uses `shuffle({ silent: true })` and is not gated.
+- The accessible headline is complete immediately (`aria-label="Hello, Nick Here."`). The visible letters type in once; reduced motion skips the type-in and hides `.intro-cursor`. Do not treat a mid-type screenshot as a missing heading. `control-resume` prints that accessible name, not the partial visible letters.
+- Any scroll hides the Sumlino preview, including the scroll that is still landing on `#about`. Pause until that scroll stops before opening the preview, or the next command will not find an open preview.
+- The Sumlino button's accessible name is `Preview Sumlino, a project by Nick`, not `redacted`. The words `redacted` and `Sumlino` inside it are `aria-hidden`.
+- Hover and Pokemon-overlap shuffles are gated on `audio.canPlay()` and then run immediately. A first hover before any trusted click or key will not move the cards when Web Audio is present. Do not wait four seconds between entering the hero and entering the card. The load intro uses `shuffle({ silent: true })` and is not gated.
+- There is no `My timeline` link on the homepage. `/timeline/` is not a public entry point while that link is absent. Do not treat a direct visit as coverage of a homepage action.
 - `/about` is a production-only entry (Vercel redirect to `/#about`). Do not expect `GET /about` to 200 on local Vite.
 - At `≤900px`, use `Open menu` / `#mobileMenu` instead of the inline header links. Desktop scroll adds `.is-compact` to `.site-header`. Recipes are in [Site chrome](./chrome.md).
 - Homepage highlights are title-and-date rows (`.highlights-row`), not card grids. Do not wait for `.writing-card` or `.til-home-card`.
