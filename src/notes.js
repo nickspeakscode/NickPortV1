@@ -14,7 +14,7 @@ import {
   renderSiteFooter,
 } from "./lib/siteChrome.js";
 import { readCache, writeCache } from "./lib/pageData.js";
-import { getRouteSlug, initializeRevealAnimations, setPageTitle } from "./lib/pageUi.js";
+import { getRouteSlug, initializeRevealAnimations, setPageMeta, setPageTitle } from "./lib/pageUi.js";
 
 const app = document.querySelector("#app");
 const noteSlug = getRouteSlug("notes");
@@ -58,7 +58,7 @@ function renderNotesIndex(notes, { pending = false } = {}) {
         notes.length
           ? `<ul class="index-list">${notes.map(renderNoteRow).join("")}</ul>`
           : pending
-            ? ""
+            ? `<p class="index-empty" role="status">Loading notes…</p>`
             : `<p class="index-empty index-enter" style="--stagger: 1">Nothing published yet.</p>`
       }
     </main>
@@ -89,7 +89,11 @@ function renderNoteDetail(note) {
     return renderNotFound();
   }
 
-  setPageTitle(`${note.title} — Today I Learned`);
+  setPageMeta({
+    title: `${note.title} — Today I Learned`,
+    description: note.excerpt,
+    path: `/notes/${encodeURIComponent(note.slug)}`,
+  });
   return `
     <main class="learning-page note-detail">
       <article class="note-detail-inner reveal-on-scroll">
@@ -127,6 +131,16 @@ function renderNotFound(message = "this note could not be found. it may have bee
   `;
 }
 
+function renderPending(label) {
+  return `
+    <main class="index-page">
+      <header class="index-intro">
+        <p class="index-empty" role="status">${escapeHtml(label)}</p>
+      </header>
+    </main>
+  `;
+}
+
 function renderPage(content) {
   cleanupChrome();
   cleanupReveals();
@@ -140,13 +154,14 @@ async function initializeNotes() {
   const cached = Array.isArray(saved) ? saved : null;
   try {
     if (noteSlug) {
+      renderPage(renderPending("Loading note…"));
       const note = await loadLearningNote(noteSlug);
       renderPage(renderNoteDetail(note));
       if (note) recordPageView("note", note.slug);
       return;
     }
 
-    setPageTitle("Today I Learned");
+    setPageMeta({ title: "Today I Learned", path: "/notes/" });
     renderPage(renderNotesIndex(cached ?? [], { pending: !cached }));
 
     const notes = await loadLearningNotes();

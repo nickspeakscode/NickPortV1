@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { recordDocumentView } from "./server/recordView.js";
 import { fetchYahooQuotes } from "./server/yahooQuotes.js";
+import { buildSitemap } from "./server/sitemap.js";
 
 function yahooFinanceDevProxy() {
   return {
@@ -65,6 +66,22 @@ function learningRouteFallbacks() {
   };
 }
 
+function sitemapDevProxy() {
+  const configure = (server) => {
+    server.middlewares.use("/sitemap.xml", async (_request, response) => {
+      const { xml } = await buildSitemap();
+      response.setHeader("Content-Type", "application/xml; charset=utf-8");
+      response.end(xml);
+    });
+  };
+
+  return {
+    name: "sitemap-dev-proxy",
+    configureServer: configure,
+    configurePreviewServer: configure,
+  };
+}
+
 function recordViewDevProxy() {
   return {
     name: "record-view-dev-proxy",
@@ -100,7 +117,7 @@ function recordViewDevProxy() {
 }
 
 export default defineConfig({
-  plugins: [learningRouteFallbacks(), yahooFinanceDevProxy(), recordViewDevProxy()],
+  plugins: [learningRouteFallbacks(), yahooFinanceDevProxy(), recordViewDevProxy(), sitemapDevProxy()],
   build: {
     rollupOptions: {
       input: {

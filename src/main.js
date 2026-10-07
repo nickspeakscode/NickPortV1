@@ -52,7 +52,7 @@ function renderHomeRows(items, hrefFor) {
 const cachedArticles = (readCache("articles") ?? []).filter((article) => article && !article.sample);
 const featuredWritingCards = renderHomeRows(
   selectHighlights(cachedArticles),
-  (article) => `/writing/?article=${encodeURIComponent(article.slug)}`
+  (article) => `/writing/${encodeURIComponent(article.slug)}`
 );
 const cachedNotes = readCache("notes");
 const featuredNotes = renderHomeRows(
@@ -130,7 +130,7 @@ app.innerHTML = `
         <div class="hero-copy">
           <h1 class="hero-intro" aria-label="Hello, Nick Here."><span aria-hidden="true"><span class="intro-before">Hello, </span><span class="intro-name">Nick</span><span class="intro-after"> Here.</span><span class="intro-cursor"></span></span></h1>
           <p class="hero-bio">
-            I do financial planning and analysis for HVAC businesses, then spend probably too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.
+            I do financial planning and analysis for HVAC businesses, then probably spend too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.
           </p>
           <div class="hero-actions">
             <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
@@ -159,8 +159,8 @@ app.innerHTML = `
             automation as tools for better analysis.
           </p>
           <p>
-            I am also studying for the <strong>CMA</strong>, Certified Management
-            Accountant, license to keep sharpening how I think about finance,
+            I am also studying for the <strong>CMA</strong> (Certified Management
+            Accountant) certification to keep sharpening how I think about finance,
             strategy, and business performance.
           </p>
           <p>
@@ -297,7 +297,7 @@ loadPublishedArticles()
     writeCache("articles", publishedArticles);
     fillHomeList(
       "featuredWritingGrid",
-      renderHomeRows(selectHighlights(publishedArticles), (article) => `/writing/?article=${encodeURIComponent(article.slug)}`)
+      renderHomeRows(selectHighlights(publishedArticles), (article) => `/writing/${encodeURIComponent(article.slug)}`)
     );
   })
   .catch(() => {

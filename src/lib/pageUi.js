@@ -1,5 +1,8 @@
 import { initializeDesktopHeader } from './desktopHeader.js';
 
+// Canonical and share URLs always point at production, even on previews.
+export const SITE_ORIGIN = "https://www.bynickthomas.com";
+
 export function initializeRevealAnimations(root = document) {
   const items = root.querySelectorAll(".reveal-on-scroll");
 
@@ -64,4 +67,26 @@ export function getRouteSlug(section, queryName = "slug") {
 
 export function setPageTitle(title) {
   document.title = title ? `${title} | Nicholas Thomas` : "Nicholas Thomas";
+}
+
+function setHeadContent(selector, value) {
+  if (value) document.head.querySelector(selector)?.setAttribute("content", value);
+}
+
+// Detail pages share one HTML shell, so keep the tab title, description,
+// share tags and canonical URL in step with the item actually shown.
+export function setPageMeta({ title, description, path } = {}) {
+  setPageTitle(title);
+  setHeadContent('meta[property="og:title"]', document.title);
+  setHeadContent('meta[name="twitter:title"]', document.title);
+  if (description) {
+    setHeadContent('meta[name="description"]', description);
+    setHeadContent('meta[property="og:description"]', description);
+    setHeadContent('meta[name="twitter:description"]', description);
+  }
+  if (path) {
+    const url = new URL(path, SITE_ORIGIN).href;
+    setHeadContent('meta[property="og:url"]', url);
+    document.head.querySelector('link[rel="canonical"]')?.setAttribute("href", url);
+  }
 }

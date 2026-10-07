@@ -36,13 +36,27 @@ export function createCardPortrait({ hero, shell, image }) {
   const photoFrame = image.parentElement;
   image.classList.add('portrait-photo');
   // Keep the actual decoded image nodes: no network/decode work at reveal time.
-  PORTRAIT_PHOTOS.slice(1).forEach(src => {
-    const preload = new Image();
-    preload.alt = '';
-    preload.className = 'portrait-photo';
-    preload.src = src;
-    preload.decode().then(() => loadedPhotos.set(src, preload)).catch(() => {});
-  });
+  // Alternates are only seen after a shuffle, so they load once the page is
+  // idle, and not at all for reduced-motion or Save-Data visitors.
+  let photosRequested = false;
+  function preloadPhotos() {
+    if (photosRequested || motionQuery.matches || window.navigator?.connection?.saveData) return;
+    photosRequested = true;
+    PORTRAIT_PHOTOS.slice(1).forEach(src => {
+      const preload = new Image();
+      preload.alt = '';
+      preload.className = 'portrait-photo';
+      preload.src = src;
+      preload.decode().then(() => loadedPhotos.set(src, preload)).catch(() => {});
+    });
+  }
+  // The silent intro shuffle runs for DURATION, so no new photo can be needed
+  // before it ends; wait for it, then for an idle moment.
+  const whenIdle = callback => window.requestIdleCallback
+    ? window.requestIdleCallback(callback, { timeout: 2000 })
+    : callback();
+  if (window.setTimeout) window.setTimeout(() => whenIdle(preloadPhotos), DURATION);
+  else preloadPhotos();
 
   function preparePhoto(variation) {
     if (motionQuery.matches || loadedPhotos.size < 2) return;
@@ -240,6 +254,7 @@ export function createCardPortrait({ hero, shell, image }) {
 
   motionQuery.addEventListener('change', () => {
     settle();
+    preloadPhotos();
     if (motionQuery.matches) {
       photoIndex = 0;
       const original = loadedPhotos.get(PORTRAIT_PHOTOS[0]);

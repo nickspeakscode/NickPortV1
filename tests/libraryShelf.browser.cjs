@@ -97,10 +97,14 @@ const resources = [
         await page.locator('[data-filter="type:Book"]').click();
         assert.equal(await page.locator('.shelf-link').count(), 2, 'books include both read and authored work');
         await page.goto('http://127.0.0.1:5173/library/?shelf=type:Missing');
-        await page.getByText('Nothing in this collection yet.', { exact: false }).waitFor();
-        assert.equal(await page.locator('.shelf-link').count(), 0);
-        await page.locator('[data-filter="all"]').click();
+        await first.waitFor();
+        assert.equal(await page.locator('[data-filter="all"]').getAttribute('aria-pressed'), 'true', 'unknown shelves fall back to everything');
         assert.equal(await page.locator('.shelf-link').count(), 4);
+        assert.deepEqual(
+          await page.locator('.library-filter span').evaluateAll(counts => counts.filter(count => count.textContent.trim() === '0').length),
+          0,
+          'empty collections are not offered as filters'
+        );
         assert.equal(await page.locator('.library-filter[aria-pressed="true"]').count(), 1);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
         await first.scrollIntoViewIfNeeded();

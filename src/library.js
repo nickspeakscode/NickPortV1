@@ -17,7 +17,7 @@ import {
   renderSiteFooter,
 } from "./lib/siteChrome.js";
 import { readCache, writeCache } from "./lib/pageData.js";
-import { getRouteSlug, initializeRevealAnimations, setPageTitle } from "./lib/pageUi.js";
+import { getRouteSlug, initializeRevealAnimations, setPageMeta, setPageTitle } from "./lib/pageUi.js";
 
 const app = document.querySelector("#app");
 const resourceSlug = getRouteSlug("library");
@@ -48,7 +48,10 @@ function filteredResources(resources) {
 }
 
 function renderLibraryFilters(resources) {
-  return `<div class="library-filters" role="group" aria-label="Filter library">${libraryFilters(resources).map(filter => `
+  // Empty collections stay hidden until they have an entry, unless linked to directly.
+  const visible = libraryFilters(resources).filter(filter =>
+    filter.key === "all" || filter.key === activeFilter || resources.some(filter.matches));
+  return `<div class="library-filters" role="group" aria-label="Filter library">${visible.map(filter => `
     <button type="button" class="library-filter" data-filter="${escapeHtml(filter.key)}" aria-pressed="${activeFilter === filter.key}" aria-controls="library-results">
       ${escapeHtml(filter.label)} <span>${resources.filter(filter.matches).length}</span>
     </button>`).join("")}</div>`;
@@ -240,6 +243,7 @@ function renderLibraryResults(resources, { pending = false } = {}) {
 }
 
 function renderLibrary(resources, options = {}) {
+  if (resources.length && !libraryFilters(resources).some(filter => filter.key === activeFilter)) activeFilter = "all";
   return `
     <main class="index-page library-shelf-page">
       <header class="index-intro index-enter">
@@ -279,7 +283,13 @@ function renderResourceDetail(resource, notes, { preview = false, loadingNotes =
     return renderNotFound("That resource is not on this shelf.", "/library/", "Back to the Library");
   }
 
-  if (!preview) setPageTitle(`${resource.title} — Learning Library`);
+  if (!preview) {
+    setPageMeta({
+      title: `${resource.title} — Learning Library`,
+      description: resource.description,
+      path: `/library/${encodeURIComponent(resource.slug)}`,
+    });
+  }
   const status = resource.status || "Want to Learn";
   const externalUrl = safeHref(resource.externalUrl, ['http:', 'https:']);
   const reveal = preview ? "" : "reveal-on-scroll";
@@ -369,6 +379,7 @@ function renderPage(content) {
 async function initializeLibrary() {
   try {
     if (resourceSlug) {
+      renderPage(`<main class="index-page"><header class="index-intro"><p class="index-empty" role="status">Loading…</p></header></main>`);
       const { resource, notes } = await loadLearningResource(resourceSlug);
       renderPage(renderResourceDetail(resource, notes));
       return;
@@ -376,7 +387,7 @@ async function initializeLibrary() {
 
     const cached = readCache("resources");
     currentResources = cached ?? [];
-    setPageTitle("Learning Library");
+    setPageMeta({ title: "Learning Library", path: "/library/" });
     renderPage(renderLibrary(cached ?? [], { pending: !cached }));
 
     const resources = await loadLearningResources();

@@ -2,7 +2,7 @@ import "./style.css";
 import "./writing.css";
 import { escapeHtml, loadPublishedArticles, recordPageView } from "./lib/sanity.js";
 import { readCache, writeCache } from "./lib/pageData.js";
-import { getRouteSlug, initializeRevealAnimations } from "./lib/pageUi.js";
+import { getRouteSlug, initializeRevealAnimations, setPageMeta } from "./lib/pageUi.js";
 import {
   initializeInteriorChrome,
   renderInteriorHeader,
@@ -11,6 +11,9 @@ import {
 
 const app = document.querySelector("#app");
 let writingArticles = [];
+// "pending" with nothing to show, "cached" while a session copy is shown,
+// then "ready" once Sanity answers or "error" if it cannot.
+let loadState = "pending";
 let cleanupPokemonRelease = () => {};
 let cleanupReveals = () => {};
 
@@ -26,7 +29,7 @@ function articleDateTime(article) {
 function renderArticleRow(article, index) {
   return `
     <li>
-      <a class="index-row index-enter" href="/writing/?article=${encodeURIComponent(article.slug)}" style="--stagger: ${index + 1}">
+      <a class="index-row index-enter" href="/writing/${encodeURIComponent(article.slug)}" style="--stagger: ${index + 1}">
         <span class="index-row-title">${escapeHtml(article.title)}</span>
         <time class="index-row-meta"${articleDateTime(article)}>${escapeHtml(article.displayDate)}</time>
       </a>
@@ -44,8 +47,26 @@ function renderLibrary() {
       ${
         writingArticles.length
           ? `<ul class="index-list">${writingArticles.map(renderArticleRow).join("")}</ul>`
-          : `<p class="index-empty index-enter" style="--stagger: 1">Nothing published yet.</p>`
+          : renderListStatus()
       }
+    </main>
+  `;
+}
+
+function renderListStatus() {
+  if (loadState === "pending") return `<p class="index-empty" role="status">Loading musings…</p>`;
+  if (loadState === "error") {
+    return `<p class="index-empty index-enter" role="status" style="--stagger: 1">Musings could not be loaded right now. Please try again shortly.</p>`;
+  }
+  return `<p class="index-empty index-enter" style="--stagger: 1">Nothing published yet.</p>`;
+}
+
+function renderArticlePending() {
+  return `
+    <main class="index-page">
+      <header class="index-intro">
+        <p class="index-empty" role="status">Loading article…</p>
+      </header>
     </main>
   `;
 }
@@ -74,12 +95,12 @@ function renderArticle(article) {
   `;
 }
 
-function renderNotFound() {
+function renderNotFound(message = "this article could not be found. it may have been unpublished or moved.") {
   return `
     <main class="index-page">
       <header class="index-intro index-enter">
         <h1>musings</h1>
-        <p>this article could not be found. it may have been unpublished or moved.</p>
+        <p>${escapeHtml(message)}</p>
         <p class="index-empty"><a href="/writing/">all musings</a></p>
       </header>
     </main>
@@ -93,11 +114,27 @@ function renderWritingPage() {
   const selectedArticle = selectedSlug
     ? writingArticles.find((article) => article.slug === selectedSlug)
     : null;
-  const content = selectedSlug
-    ? selectedArticle
-      ? renderArticle(selectedArticle)
-      : renderNotFound()
-    : renderLibrary();
+  let content;
+  if (!selectedSlug) {
+    setPageMeta({ title: "Nick's Musings", path: "/writing/" });
+    content = renderLibrary();
+  } else if (selectedArticle) {
+    setPageMeta({
+      title: selectedArticle.title,
+      description: selectedArticle.excerpt,
+      path: `/writing/${encodeURIComponent(selectedArticle.slug)}`,
+    });
+    content = renderArticle(selectedArticle);
+  } else if (loadState === "pending" || loadState === "cached") {
+    // A session cache can predate a newly published article.
+    content = renderArticlePending();
+  } else if (loadState === "error") {
+    setPageMeta({ title: "Nick's Musings" });
+    content = renderNotFound("this article could not be loaded right now. please try again shortly.");
+  } else {
+    setPageMeta({ title: "Article Not Found" });
+    content = renderNotFound();
+  }
 
   app.innerHTML = `
     ${renderInteriorHeader("/writing/")}
@@ -109,22 +146,38 @@ function renderWritingPage() {
   if (selectedArticle) recordPageView("article", selectedArticle.slug);
 }
 
+// Old links used /writing/?article=slug; show the clean URL instead.
+function canonicalizeArticleUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get("article");
+  if (!slug) return;
+  params.delete("article");
+  const query = params.toString();
+  history.replaceState(null, "", `/writing/${encodeURIComponent(slug)}${query ? `?${query}` : ""}${window.location.hash}`);
+}
+
 async function initializeWriting() {
+  canonicalizeArticleUrl();
+  const selectedSlug = getRouteSlug("writing", "article");
   const cached = realArticles(readCache("articles"));
-  if (cached.length) writingArticles = cached;
+  if (cached.length) {
+    writingArticles = cached;
+    loadState = "cached";
+  }
   renderWritingPage();
+  const showingPending = () => selectedSlug && !writingArticles.some((article) => article.slug === selectedSlug);
 
   try {
     const publishedArticles = await loadPublishedArticles();
     writeCache("articles", publishedArticles);
-    if (JSON.stringify(writingArticles) === JSON.stringify(publishedArticles) && cached.length) return;
+    const unchanged = cached.length && JSON.stringify(writingArticles) === JSON.stringify(publishedArticles);
     writingArticles = publishedArticles;
-    renderWritingPage();
+    loadState = "ready";
+    if (!unchanged || showingPending()) renderWritingPage();
   } catch {
-    if (!cached.length) {
-      writingArticles = [];
-      renderWritingPage();
-    }
+    const wasPending = !cached.length || showingPending();
+    loadState = "error";
+    if (wasPending) renderWritingPage();
   }
 }
 
