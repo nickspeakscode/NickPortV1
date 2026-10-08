@@ -2,7 +2,7 @@ import "./style.css";
 import "./writing.css";
 import "./homeRefinements.css";
 import { initializeMarketTicker } from "./lib/marketTicker.js";
-import { initializeIndexPointer, initializeNavPrefetch, readCache, writeCache } from "./lib/pageData.js";
+import { initializeIndexPointer, initializeNavPrefetch, readCache, sameContent, writeCache } from "./lib/pageData.js";
 import { initializePokemonRelease } from "./lib/pokemonRelease.js";
 import { createCardPortrait } from "./lib/cardPortrait.js";
 import { initializeSumlinoCharacter } from "./lib/sumlinoCharacter.js";
@@ -11,8 +11,8 @@ import { selectHighlights } from "./lib/highlights.js";
 import { initializeMobileNav } from "./lib/mobileNav.js";
 import {
   escapeHtml,
-  loadLearningNotes,
-  loadPublishedArticles,
+  loadArticleSummaries,
+  loadNoteSummaries,
 } from "./lib/sanity.js";
 
 const app = document.querySelector("#app");
@@ -40,7 +40,7 @@ function renderHomeRows(items, hrefFor) {
   `;
 }
 
-const cachedArticles = (readCache("articles") ?? []).filter((article) => article && !article.sample);
+const cachedArticles = readCache("articles") ?? [];
 const featuredWritingCards = renderHomeRows(
   selectHighlights(cachedArticles),
   (article) => `/writing/${encodeURIComponent(article.slug)}`
@@ -283,12 +283,14 @@ function fillHomeList(id, html) {
 initializeNavPrefetch();
 initializeIndexPointer();
 
-loadPublishedArticles()
-  .then((publishedArticles) => {
-    writeCache("articles", publishedArticles);
+loadArticleSummaries()
+  .then((articles) => {
+    writeCache("articles", articles);
+    const picks = selectHighlights(articles);
+    if (sameContent(selectHighlights(cachedArticles), picks)) return;
     fillHomeList(
       "featuredWritingGrid",
-      renderHomeRows(selectHighlights(publishedArticles), (article) => `/writing/${encodeURIComponent(article.slug)}`)
+      renderHomeRows(picks, (article) => `/writing/${encodeURIComponent(article.slug)}`)
     );
   })
   .catch(() => {
@@ -297,12 +299,14 @@ loadPublishedArticles()
     }
   });
 
-loadLearningNotes()
+loadNoteSummaries()
   .then((notes) => {
     writeCache("notes", notes);
+    const picks = selectHighlights(notes);
+    if (sameContent(selectHighlights(cachedNotes ?? []), picks)) return;
     fillHomeList(
       "latestLearningNote",
-      renderHomeRows(selectHighlights(notes), (note) => `/notes/${encodeURIComponent(note.slug)}`)
+      renderHomeRows(picks, (note) => `/notes/${encodeURIComponent(note.slug)}`)
     );
   })
   .catch(() => {

@@ -16,8 +16,8 @@ import {
   renderInteriorHeader,
   renderSiteFooter,
 } from "./lib/siteChrome.js";
-import { readCache, writeCache } from "./lib/pageData.js";
-import { getRouteSlug, initializeRevealAnimations, setPageMeta, setPageTitle } from "./lib/pageUi.js";
+import { readCache, sameContent, writeCache } from "./lib/pageData.js";
+import { getRouteSlug, initializeRevealAnimations, setNoIndex, setPageMeta, setPageTitle } from "./lib/pageUi.js";
 
 const app = document.querySelector("#app");
 const resourceSlug = getRouteSlug("library");
@@ -280,6 +280,7 @@ function renderRelatedNote(note, index) {
 function renderResourceDetail(resource, notes, { preview = false, loadingNotes = false } = {}) {
   if (!resource) {
     setPageTitle("Resource Not Found");
+    setNoIndex();
     return renderNotFound("That resource is not on this shelf.", "/library/", "Back to the Library");
   }
 
@@ -393,7 +394,7 @@ async function initializeLibrary() {
     const resources = await loadLearningResources();
     writeCache("resources", resources);
     currentResources = resources;
-    if (JSON.stringify(cached) !== JSON.stringify(resources)) {
+    if (!cached || !sameContent(cached, resources)) {
       const reader = document.querySelector(".library-reader[open]");
       if (reader) reader.addEventListener("close", () => {
         const selectedSlug = reader.dataset.resource;

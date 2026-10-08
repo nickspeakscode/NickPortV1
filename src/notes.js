@@ -5,7 +5,7 @@ import {
   buildSanityImageUrl,
   escapeHtml,
   loadLearningNote,
-  loadLearningNotes,
+  loadNoteSummaries,
   recordPageView,
 } from "./lib/sanity.js";
 import {
@@ -13,8 +13,8 @@ import {
   renderInteriorHeader,
   renderSiteFooter,
 } from "./lib/siteChrome.js";
-import { readCache, writeCache } from "./lib/pageData.js";
-import { getRouteSlug, initializeRevealAnimations, setPageMeta, setPageTitle } from "./lib/pageUi.js";
+import { readCache, sameContent, writeCache } from "./lib/pageData.js";
+import { getRouteSlug, initializeRevealAnimations, setNoIndex, setPageMeta, setPageTitle } from "./lib/pageUi.js";
 
 const app = document.querySelector("#app");
 const noteSlug = getRouteSlug("notes");
@@ -86,6 +86,7 @@ function renderLearningFrom(resource) {
 function renderNoteDetail(note) {
   if (!note) {
     setPageTitle("Note Not Found");
+    setNoIndex();
     return renderNotFound();
   }
 
@@ -164,9 +165,9 @@ async function initializeNotes() {
     setPageMeta({ title: "Today I Learned", path: "/notes/" });
     renderPage(renderNotesIndex(cached ?? [], { pending: !cached }));
 
-    const notes = await loadLearningNotes();
+    const notes = await loadNoteSummaries();
     writeCache("notes", notes);
-    if (JSON.stringify(cached) !== JSON.stringify(notes)) renderPage(renderNotesIndex(notes));
+    if (!cached || !sameContent(cached, notes)) renderPage(renderNotesIndex(notes));
   } catch {
     if (!noteSlug && cached) return;
     renderPage(renderNotFound("Notes could not be loaded right now. Please try again shortly."));

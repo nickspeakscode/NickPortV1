@@ -73,6 +73,17 @@ function setHeadContent(selector, value) {
   if (value) document.head.querySelector(selector)?.setAttribute("content", value);
 }
 
+// Not-found states are served with a 200 by the shared shell; keep them out of search results.
+export function setNoIndex() {
+  let robots = document.head.querySelector('meta[name="robots"]');
+  if (!robots) {
+    robots = document.createElement("meta");
+    robots.name = "robots";
+    document.head.append(robots);
+  }
+  robots.content = "noindex";
+}
+
 // Detail pages share one HTML shell, so keep the tab title, description,
 // share tags and canonical URL in step with the item actually shown.
 export function setPageMeta({ title, description, path } = {}) {

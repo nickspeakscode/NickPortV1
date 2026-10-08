@@ -129,6 +129,9 @@ function recordViewDevProxy() {
 }
 
 export default defineConfig({
+  define: {
+    __BUILD_ID__: JSON.stringify(Date.now().toString(36)),
+  },
   plugins: [learningRouteFallbacks(), yahooFinanceDevProxy(), recordViewDevProxy(), sitemapDevProxy()],
   build: {
     rollupOptions: {
@@ -138,6 +141,7 @@ export default defineConfig({
         library: "library/index.html",
         notes: "notes/index.html",
         timeline: "timeline/index.html",
+        notFound: "404.html",
       },
     },
   },

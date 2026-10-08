@@ -12,7 +12,8 @@ const block=text=>[{_type:'block',style:'normal',markDefs:[],children:[{_type:'s
    await new Promise(resolve=>setTimeout(resolve,180));
    if(fail)return r.fulfill({status:503,body:'{}'});
    const doc={_id:'cache-fixture',slug:'cache-fixture',title,category:'Learning',publishedAt:'2026-01-01',body:block(body)};
-   return r.fulfill({json:{result:[doc]}});
+   // Detail requests pass $slug and expect one document; lists expect an array.
+   return r.fulfill({json:{result:new URL(r.request().url()).searchParams.has('$slug')?doc:[doc]}});
   });
   await page.goto(origin+'/'+section+'/');
   await page.getByRole('link',{name:'Original CMS title',exact:false}).waitFor();

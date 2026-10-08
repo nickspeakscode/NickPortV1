@@ -1,21 +1,21 @@
 import {
-  loadLearningNotes,
+  loadArticleSummaries,
   loadLearningResources,
-  loadPublishedArticles,
+  loadNoteSummaries,
 } from "./sanity.js";
 
-const PREFIX = "nt-cache-v1:";
+// Scoped to the deploy, so a release never renders a previous build's data shape.
+const PREFIX = `nt-cache-${typeof __BUILD_ID__ === "undefined" ? "dev" : __BUILD_ID__}:`;
 
 const WARMERS = {
   "/writing/": async () => {
-    const data = await loadPublishedArticles();
-    if (data.length) writeCache("articles", data);
+    writeCache("articles", await loadArticleSummaries());
   },
   "/library/": async () => {
     writeCache("resources", await loadLearningResources());
   },
   "/notes/": async () => {
-    writeCache("notes", await loadLearningNotes());
+    writeCache("notes", await loadNoteSummaries());
   },
 };
 
@@ -36,9 +36,11 @@ export function writeCache(key, value) {
   }
 }
 
-export function sameSlugList(left = [], right = []) {
-  if (left.length !== right.length) return false;
-  return left.every((item, index) => item.slug === right[index]?.slug);
+// View counts change on every visit; they alone should not re-render a page
+// (and replay its entrance animations) that a visitor is already reading.
+export function sameContent(left, right) {
+  const withoutViews = (value) => JSON.stringify(value, (key, field) => (key === "views" ? undefined : field));
+  return withoutViews(left) === withoutViews(right);
 }
 
 export function initializeNavPrefetch(root = document) {
