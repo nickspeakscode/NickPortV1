@@ -140,6 +140,51 @@ function renderCover(resource, className = "resource-cover") {
   return `<div class="${className}">${image}</div>`;
 }
 
+const RARITY_LABELS = {
+  legendary: "Legendary", epic: "Epic", rare: "Rare", active: "In progress", unique: "Unique", common: "Common",
+};
+
+// Your own work is unique; in-progress items glow aqua; finished items earn
+// their tier from your rating.
+function rarityFor(resource) {
+  let key = "common";
+  const rating = Number(resource.rating);
+  if (resource.createdByMe) key = "unique";
+  else if (resource.status === "Currently Learning" || resource.status === "In Progress") key = "active";
+  else if (rating >= 5) key = "legendary";
+  else if (rating >= 4) key = "epic";
+  else if (rating >= 3) key = "rare";
+  return { key, label: RARITY_LABELS[key] };
+}
+
+function renderTier(resource) {
+  const { key, label } = rarityFor(resource);
+  return `<span class="item-tier" data-rarity="${key}"><span aria-hidden="true">◆</span> ${escapeHtml(label)}</span>`;
+}
+
+// Progress as a ten-segment XP bar.
+function renderXp(resource) {
+  const progress = clampProgress(resource.progress);
+  const filled = Math.round(progress / 10);
+  return `
+    <div class="item-xp" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}">
+      <div class="item-xp-label"><span>Progress</span><span>${progress}%</span></div>
+      <div class="item-xp-track" aria-hidden="true">${Array.from({ length: 10 }, (_, index) => `<i${index < filled ? ' class="is-filled"' : ""}></i>`).join("")}</div>
+    </div>
+  `;
+}
+
+// Rating as five diamond pips (halves allowed).
+function renderPips(rating) {
+  if (rating == null || rating === "" || !Number.isFinite(Number(rating)) || Number(rating) < 1 || Number(rating) > 5) return "";
+  const value = Number(rating);
+  const pips = Array.from({ length: 5 }, (_, index) => {
+    const state = value >= index + 1 ? "is-full" : value >= index + 0.5 ? "is-half" : "";
+    return `<i${state ? ` class="${state}"` : ""}></i>`;
+  }).join("");
+  return `<div class="resource-rating item-pips" role="img" aria-label="Rated ${escapeHtml(rating)} out of 5"><span class="item-pips-row" aria-hidden="true">${pips}</span><span class="item-pips-value" aria-hidden="true">${escapeHtml(rating)} / 5</span></div>`;
+}
+
 function renderProgress(resource) {
   const progress = clampProgress(resource.progress);
   return `
@@ -175,7 +220,7 @@ function renderResourceRow(resource, index) {
 
   return `
     <li>
-      <a class="index-row index-row-book index-enter" data-resource="${escapeHtml(resource.slug)}" href="/library/${encodeURIComponent(resource.slug)}" style="--stagger: ${index + 1}">
+      <a class="index-row index-row-book index-enter" data-resource="${escapeHtml(resource.slug)}" data-rarity="${rarityFor(resource).key}" href="/library/${encodeURIComponent(resource.slug)}" style="--stagger: ${index + 1}">
         ${cover}
         <span class="index-row-copy">
           <span class="index-row-title">${escapeHtml(resource.title)}</span>
@@ -206,14 +251,15 @@ function shorten(text = "", length = 96) {
 // The page under the cover, glimpsed when a hovered book falls slightly open.
 function renderBookPage(resource) {
   const progress = clampProgress(resource.progress);
+  const { label: tier } = rarityFor(resource);
   const label = resource.status === "Currently Learning" && progress
-    ? `Currently learning · ${progress}%`
-    : resource.status || resourceTypeLabel(resource);
-  const line = shorten(resource.keyTakeaways?.[0] || resource.description);
+    ? `${tier} · ${progress}%`
+    : `${tier} · ${resource.status || resourceTypeLabel(resource)}`;
+  const line = shorten(resource.keyTakeaways?.[0] || resource.description, 74);
   return `<span class="book-page">
     <span class="book-page-label">${escapeHtml(label)}</span>
     ${line ? `<span class="book-page-line">${escapeHtml(line)}</span>` : ""}
-    <span class="book-page-cta">Open the book →</span>
+    <span class="book-page-cta">Inspect <span aria-hidden="true">›</span></span>
   </span>`;
 }
 
@@ -224,12 +270,13 @@ function renderShelfBook(resource, index) {
        <span class="book-cover-title">${escapeHtml(resource.title)}</span>
        <span class="book-cover-author">${escapeHtml(resource.authorCreator || "")}</span>`;
   return `<li class="shelf-item" style="--book-delay: ${Math.min(index, 5) * 65}ms">
-    <a class="shelf-link" href="/library/${encodeURIComponent(resource.slug)}" data-resource="${escapeHtml(resource.slug)}">
+    <a class="shelf-link" href="/library/${encodeURIComponent(resource.slug)}" data-resource="${escapeHtml(resource.slug)}" data-rarity="${rarityFor(resource).key}">
       <span class="book-stage" aria-hidden="true">
+        <span class="book-sparks"><i></i><i></i><i></i><i></i><i></i></span>
         <span class="book-object">${renderBookPage(resource)}<span class="book-face${resource.coverImage ? "" : " book-face-fallback"}">${cover}</span>${resource.status === "Currently Learning" ? '<span class="book-ribbon"></span>' : ""}</span>
       </span>
       <span class="shelf-caption">
-        <span class="shelf-type">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>
+        <span class="shelf-meta">${renderTier(resource)}<span class="shelf-type">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span></span>
         <span class="shelf-title">${escapeHtml(resource.title)}</span>
         ${resource.authorCreator ? `<span class="shelf-author">${escapeHtml(resource.authorCreator)}</span>` : ""}
         ${resource.status ? `<span class="shelf-status" data-status="${statusKey(resource.status)}">${escapeHtml(resource.status)}</span>` : ""}
@@ -379,39 +426,40 @@ function renderReaderPages(resource, notes, { loadingNotes = false } = {}) {
   const pages = [
     readerPage("title", `
       ${renderCover(resource, "resource-detail-cover")}
-      <div class="resource-card-topline">
-        <span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>
-        <span class="learning-status" data-status="${statusKey(status)}">${escapeHtml(status)}</span>
+      <div class="item-heading">
+        <div class="item-tags">${renderTier(resource)}<span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span></div>
+        <h2 class="item-name" id="library-reader-title">${escapeHtml(resource.title)}</h2>
+        ${resource.authorCreator ? `<p class="item-creator">${escapeHtml(resource.authorCreator)}</p>` : ""}
       </div>
-      <h2 class="learning-detail-title" id="library-reader-title">${escapeHtml(resource.title)}</h2>
-      ${resource.authorCreator ? `<p class="resource-creator">By ${escapeHtml(resource.authorCreator)}</p>` : ""}
-      ${renderProgress(resource)}
-      ${renderRating(resource.rating)}`),
+      <div class="item-status"><span>Status</span><strong>${escapeHtml(status)}</strong></div>
+      ${renderXp(resource)}
+      ${renderPips(resource.rating)}`),
     readerPage("about", `
-      <p class="reader-kicker">About this ${escapeHtml(resourceTypeLabel(resource).toLowerCase())}</p>
-      <p class="resource-detail-description">${escapeHtml(resource.description)}</p>
-      <div class="resource-facts">
-        ${resource.category ? `<div class="resource-fact"><span>Category</span><strong>${escapeHtml(resource.category)}</strong></div>` : ""}
-        <div class="resource-fact"><span>Type</span><strong>${escapeHtml(resourceTypeLabel(resource))}</strong></div>
-        ${resource.startDate ? `<div class="resource-fact"><span>Started</span><strong>${escapeHtml(formatDate(resource.startDate))}</strong></div>` : ""}
-        ${resource.finishDate ? `<div class="resource-fact"><span>${resource.status === "Published" ? "Published" : "Finished"}</span><strong>${escapeHtml(formatDate(resource.finishDate))}</strong></div>` : ""}
-      </div>
+      <h3 class="reader-kicker">Item description</h3>
+      <p class="item-description">${escapeHtml(resource.description)}</p>
+      <h3 class="reader-kicker">Stats</h3>
+      <dl class="item-stats">
+        ${resource.category ? `<div><dt>Category</dt><dd>${escapeHtml(resource.category)}</dd></div>` : ""}
+        <div><dt>Type</dt><dd>${escapeHtml(resourceTypeLabel(resource))}</dd></div>
+        ${resource.startDate ? `<div><dt>Started</dt><dd>${escapeHtml(formatDate(resource.startDate))}</dd></div>` : ""}
+        ${resource.finishDate ? `<div><dt>${resource.status === "Published" ? "Published" : "Finished"}</dt><dd>${escapeHtml(formatDate(resource.finishDate))}</dd></div>` : ""}
+      </dl>
       ${externalUrl ? `<a class="resource-external" href="${escapeHtml(externalUrl)}" target="_blank" rel="noreferrer">${resource.resourceType === "Certification" ? "View credential" : "Open resource"} <span aria-hidden="true">↗</span></a>` : ""}`, "About"),
   ];
   if (resource.personalSummary?.length) {
-    pages.push(readerPage("section", `<section class="learning-detail-section"><h2>My thoughts</h2><div class="article-body">${renderPortableText(resource.personalSummary)}</div></section>`, "My thoughts"));
+    pages.push(readerPage("section", `<section class="learning-detail-section"><h2 class="reader-heading">My thoughts</h2><div class="article-body">${renderPortableText(resource.personalSummary)}</div></section>`, "My thoughts"));
   }
   if (resource.keyTakeaways?.length) {
-    pages.push(readerPage("section", `<section class="learning-detail-section"><h2>Key takeaways</h2><ul class="takeaway-list">${resource.keyTakeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></section>`, "Key takeaways"));
+    pages.push(readerPage("section", `<section class="learning-detail-section"><h2 class="reader-heading">Key takeaways</h2><ul class="takeaway-list">${resource.keyTakeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></section>`, "Key takeaways"));
   }
   pages.push(readerPage("section", `<section class="learning-detail-section" aria-labelledby="resourceNotesTitle">
-      <h2 id="resourceNotesTitle">Notes from this ${escapeHtml(resourceTypeLabel(resource).toLowerCase())}</h2>
+      <h2 class="reader-heading" id="resourceNotesTitle">Notes from this ${escapeHtml(resourceTypeLabel(resource).toLowerCase())}</h2>
       ${notes.length
         ? `<ul class="index-list">${notes.map(renderRelatedNote).join("")}</ul>`
         : `<p class="index-empty" role="status">${loadingNotes ? "Loading related notes…" : "No notes yet."}</p>`}
     </section>`, "Notes"));
   // Spreads show two pages; close an odd count with a quiet end page.
-  if (pages.length % 2) pages.push(readerPage("end", `<p class="reader-end" aria-hidden="true">♠</p>`));
+  if (pages.length % 2) pages.push(readerPage("end", `<p class="reader-end" aria-hidden="true">◆</p>`));
   return pages;
 }
 

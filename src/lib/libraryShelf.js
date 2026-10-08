@@ -309,6 +309,7 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     closing = false;
     content.style.removeProperty('opacity');
     dialog.dataset.resource = resource.slug;
+    dialog.dataset.rarity = link.dataset.rarity || 'common';
     notice.hidden = true;
     renderBook(resource, [], { loadingNotes: true });
     position.setAttribute('aria-live', 'off');
@@ -344,6 +345,13 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
       const titlePage = visible[0];
       const spread = visible.length === 2;
       const leaf = makeLeaf(slot, coverFace(source), spread ? pageClone(titlePage) : null, 'left');
+      const glow = getComputedStyle(dialog).getPropertyValue('--rarity-rgb').trim() || '89 241 215';
+      await animatePage(leaf.firstElementChild, [
+        { boxShadow: `0 0 0 1px rgb(${glow} / 0), 0 0 0 0 rgb(${glow} / 0)` },
+        { boxShadow: `0 0 0 1px rgb(${glow} / .9), 0 0 60px 6px rgb(${glow} / .55)`, offset: 0.45 },
+        { boxShadow: `0 0 0 1px rgb(${glow} / .5), 0 0 24px 0 rgb(${glow} / .2)` },
+      ], { duration: 420, easing: 'ease-out' });
+      if (token !== version || !dialog.open) return;
       book.classList.remove('is-closed');
       (spread ? visible[1] : titlePage).style.removeProperty('visibility');
       await swing(leaf, 0, -180, spread ? 820 : 700);
