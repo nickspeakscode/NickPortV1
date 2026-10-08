@@ -198,6 +198,25 @@ function renderCmaStudyCallout(resource) {
   `;
 }
 
+function shorten(text = "", length = 96) {
+  const clean = String(text ?? "").replace(/\s+/g, " ").trim();
+  return clean.length > length ? `${clean.slice(0, length).replace(/\s+\S*$/, "")}…` : clean;
+}
+
+// The page under the cover, glimpsed when a hovered book falls slightly open.
+function renderBookPage(resource) {
+  const progress = clampProgress(resource.progress);
+  const label = resource.status === "Currently Learning" && progress
+    ? `Currently learning · ${progress}%`
+    : resource.status || resourceTypeLabel(resource);
+  const line = shorten(resource.keyTakeaways?.[0] || resource.description);
+  return `<span class="book-page">
+    <span class="book-page-label">${escapeHtml(label)}</span>
+    ${line ? `<span class="book-page-line">${escapeHtml(line)}</span>` : ""}
+    <span class="book-page-cta">Open the book →</span>
+  </span>`;
+}
+
 function renderShelfBook(resource, index) {
   const cover = resource.coverImage
     ? `<img src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 720))}" alt="" loading="lazy" />`
@@ -207,7 +226,7 @@ function renderShelfBook(resource, index) {
   return `<li class="shelf-item" style="--book-delay: ${Math.min(index, 5) * 65}ms">
     <a class="shelf-link" href="/library/${encodeURIComponent(resource.slug)}" data-resource="${escapeHtml(resource.slug)}">
       <span class="book-stage" aria-hidden="true">
-        <span class="book-object"><span class="book-face${resource.coverImage ? "" : " book-face-fallback"}">${cover}</span></span>
+        <span class="book-object">${renderBookPage(resource)}<span class="book-face${resource.coverImage ? "" : " book-face-fallback"}">${cover}</span>${resource.status === "Currently Learning" ? '<span class="book-ribbon"></span>' : ""}</span>
       </span>
       <span class="shelf-caption">
         <span class="shelf-type">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>
@@ -277,23 +296,21 @@ function renderRelatedNote(note, index) {
   `;
 }
 
-function renderResourceDetail(resource, notes, { preview = false, loadingNotes = false } = {}) {
+function renderResourceDetail(resource, notes) {
   if (!resource) {
     setPageTitle("Resource Not Found");
     setNoIndex();
     return renderNotFound("That resource is not on this shelf.", "/library/", "Back to the Library");
   }
 
-  if (!preview) {
-    setPageMeta({
-      title: `${resource.title} — Learning Library`,
-      description: resource.description,
-      path: `/library/${encodeURIComponent(resource.slug)}`,
-    });
-  }
+  setPageMeta({
+    title: `${resource.title} — Learning Library`,
+    description: resource.description,
+    path: `/library/${encodeURIComponent(resource.slug)}`,
+  });
   const status = resource.status || "Want to Learn";
   const externalUrl = safeHref(resource.externalUrl, ['http:', 'https:']);
-  const reveal = preview ? "" : "reveal-on-scroll";
+  const reveal = "reveal-on-scroll";
   const thoughts = resource.personalSummary?.length
     ? `<section class="learning-detail-section ${reveal}">
         <h2>My thoughts</h2>
@@ -308,8 +325,8 @@ function renderResourceDetail(resource, notes, { preview = false, loadingNotes =
     : "";
 
   return `
-    <${preview ? "div" : "main"} class="learning-page resource-detail">
-      ${preview ? "" : `<a class="detail-back" href="/library/">← Learning Library</a>`}
+    <main class="learning-page resource-detail">
+      <a class="detail-back" href="/library/">← Learning Library</a>
       <div class="resource-detail-grid">
         ${renderCover(resource, `resource-detail-cover ${reveal}`)}
         <article class="resource-detail-copy ${reveal}">
@@ -317,7 +334,7 @@ function renderResourceDetail(resource, notes, { preview = false, loadingNotes =
             <span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>
             <span class="learning-status" data-status="${statusKey(status)}">${escapeHtml(status)}</span>
           </div>
-          <${preview ? "h2" : "h1"} class="learning-detail-title" ${preview ? 'id="library-reader-title"' : ""}>${escapeHtml(resource.title)}</${preview ? "h2" : "h1"}>
+          <h1 class="learning-detail-title">${escapeHtml(resource.title)}</h1>
           ${resource.authorCreator ? `<p class="resource-creator">By ${escapeHtml(resource.authorCreator)}</p>` : ""}
           <p class="resource-detail-description">${escapeHtml(resource.description)}</p>
           ${renderProgress(resource)}
@@ -342,11 +359,60 @@ function renderResourceDetail(resource, notes, { preview = false, loadingNotes =
         ${
           notes.length
             ? `<ul class="index-list">${notes.map(renderRelatedNote).join("")}</ul>`
-            : `<p class="index-empty" role="status">${loadingNotes ? "Loading related notes…" : "No notes yet."}</p>`
+            : `<p class="index-empty" role="status">No notes yet.</p>`
         }
       </section>
-    </${preview ? "div" : "main"}>
+    </main>
   `;
+}
+
+function readerPage(kind, inner, label = "") {
+  return `<section class="reader-page reader-page--${kind}"${label ? ` aria-label="${escapeHtml(label)}"` : ""}>${inner}</section>`;
+}
+
+// The opened-book reader on the shelf: a title page, an about page, then one
+// page per section. Content mirrors renderResourceDetail, which stays the
+// canonical full page at /library/<slug>.
+function renderReaderPages(resource, notes, { loadingNotes = false } = {}) {
+  const status = resource.status || "Want to Learn";
+  const externalUrl = safeHref(resource.externalUrl, ["http:", "https:"]);
+  const pages = [
+    readerPage("title", `
+      ${renderCover(resource, "resource-detail-cover")}
+      <div class="resource-card-topline">
+        <span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>
+        <span class="learning-status" data-status="${statusKey(status)}">${escapeHtml(status)}</span>
+      </div>
+      <h2 class="learning-detail-title" id="library-reader-title">${escapeHtml(resource.title)}</h2>
+      ${resource.authorCreator ? `<p class="resource-creator">By ${escapeHtml(resource.authorCreator)}</p>` : ""}
+      ${renderProgress(resource)}
+      ${renderRating(resource.rating)}`),
+    readerPage("about", `
+      <p class="reader-kicker">About this ${escapeHtml(resourceTypeLabel(resource).toLowerCase())}</p>
+      <p class="resource-detail-description">${escapeHtml(resource.description)}</p>
+      <div class="resource-facts">
+        ${resource.category ? `<div class="resource-fact"><span>Category</span><strong>${escapeHtml(resource.category)}</strong></div>` : ""}
+        <div class="resource-fact"><span>Type</span><strong>${escapeHtml(resourceTypeLabel(resource))}</strong></div>
+        ${resource.startDate ? `<div class="resource-fact"><span>Started</span><strong>${escapeHtml(formatDate(resource.startDate))}</strong></div>` : ""}
+        ${resource.finishDate ? `<div class="resource-fact"><span>${resource.status === "Published" ? "Published" : "Finished"}</span><strong>${escapeHtml(formatDate(resource.finishDate))}</strong></div>` : ""}
+      </div>
+      ${externalUrl ? `<a class="resource-external" href="${escapeHtml(externalUrl)}" target="_blank" rel="noreferrer">${resource.resourceType === "Certification" ? "View credential" : "Open resource"} <span aria-hidden="true">↗</span></a>` : ""}`, "About"),
+  ];
+  if (resource.personalSummary?.length) {
+    pages.push(readerPage("section", `<section class="learning-detail-section"><h2>My thoughts</h2><div class="article-body">${renderPortableText(resource.personalSummary)}</div></section>`, "My thoughts"));
+  }
+  if (resource.keyTakeaways?.length) {
+    pages.push(readerPage("section", `<section class="learning-detail-section"><h2>Key takeaways</h2><ul class="takeaway-list">${resource.keyTakeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></section>`, "Key takeaways"));
+  }
+  pages.push(readerPage("section", `<section class="learning-detail-section" aria-labelledby="resourceNotesTitle">
+      <h2 id="resourceNotesTitle">Notes from this ${escapeHtml(resourceTypeLabel(resource).toLowerCase())}</h2>
+      ${notes.length
+        ? `<ul class="index-list">${notes.map(renderRelatedNote).join("")}</ul>`
+        : `<p class="index-empty" role="status">${loadingNotes ? "Loading related notes…" : "No notes yet."}</p>`}
+    </section>`, "Notes"));
+  // Spreads show two pages; close an odd count with a quiet end page.
+  if (pages.length % 2) pages.push(readerPage("end", `<p class="reader-end" aria-hidden="true">♠</p>`));
+  return pages;
 }
 
 function renderNotFound(message, href, label) {
@@ -373,7 +439,7 @@ function renderPage(content) {
   if (!resourceSlug) cleanupShelf = initializeLibraryShelf(app, {
     findResource: slug => currentResources.find(resource => resource.slug === slug),
     loadResource: loadLearningResource,
-    renderDetail: (resource, notes, options = {}) => renderResourceDetail(resource, notes, { ...options, preview: true }),
+    renderPages: renderReaderPages,
   });
 }
 

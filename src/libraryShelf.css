@@ -22,13 +22,12 @@
 .book-object { position: relative; display: block; width: 158px; height: 234px; transform-style: preserve-3d; transform: rotateY(-14deg) rotateZ(-1deg); transform-origin: 10% 90%; transition: transform 380ms cubic-bezier(.2,.8,.25,1), opacity 180ms; }
 .book-object::before { content: ''; position: absolute; top: 3px; bottom: 3px; right: -7px; width: 10px; background: repeating-linear-gradient(#c3d0cd 0 1px, #7f969b 1px 2px); transform: rotateY(30deg); border-radius: 0 2px 2px 0; }
 .book-object::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 12px; background: linear-gradient(90deg, #020c2080, #ffffff18 45%, transparent); border-right: 1px solid #04122320; pointer-events: none; }
-.book-face { position: relative; display: flex; flex-direction: column; justify-content: space-between; width: 100%; height: 100%; overflow: hidden; border-radius: 2px 4px 4px 2px; background: #122940; box-shadow: 8px 12px 20px #020a155c, inset 1px 0 0 #ffffff22; }
+.book-face { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: space-between; width: 100%; height: 100%; overflow: hidden; border-radius: 2px 4px 4px 2px; background: #122940; box-shadow: 8px 12px 20px #020a155c, inset 1px 0 0 #ffffff22; }
 .book-face img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .book-face-fallback { padding: 22px 16px; border: 1px solid #41616c; box-sizing: border-box; background: linear-gradient(130deg, #17394a, #0d2338); color: #d9f5ed; }
 .book-cover-type { color: var(--aqua); font: 9px/1.5 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .07em; }
 .book-cover-title { font: 600 20px/1.3 Oxanium, sans-serif; overflow-wrap: anywhere; }
 .book-cover-author { font-size: 10px; color: #96b8c0; }
-@media (hover: hover) and (pointer: fine) { .shelf-link:hover .book-object { transform: translateY(-12px) translateZ(18px) rotateY(-5deg) rotateZ(0); } }
 .shelf-link:focus-visible .book-object { transform: translateY(-10px) rotateY(-4deg); }
 .is-selected .book-object { opacity: .16; }
 .shelf-caption { display: flex; flex-direction: column; padding: 24px 6px 0; }
@@ -37,40 +36,6 @@
 .shelf-author { margin-top: 7px; color: #8f9eb8; font-size: 12px; line-height: 1.5; }
 .shelf-status { margin-top: 14px; color: #91b5b5; font-size: 10px; line-height: 1.5; }
 .shelf-status::before { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 50%; margin-right: 7px; background: var(--aqua); vertical-align: middle; }
-.library-reader { width: min(980px, calc(100vw - 48px)); max-width: none; max-height: min(860px, calc(100dvh - 56px)); padding: 0; margin: auto; border: 1px solid #345268; border-radius: 12px; color: #dce7f5; background: #0b1b2c; box-shadow: 0 35px 100px #0008; overscroll-behavior: contain; scrollbar-color: #395b6c #0b1b2c; }
-.library-reader::backdrop { background: #020b17b8; backdrop-filter: blur(5px); transition: background 220ms ease, backdrop-filter 220ms ease; }
-.library-reader.is-closing { opacity: 0; }
-.library-reader.is-closing::backdrop { background: transparent; backdrop-filter: blur(0); }
-.reader-toolbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 24px; border-bottom: 1px solid #263e50; background: #0b1b2cf5; }
-.reader-close { min-height: 44px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: #b9e3db; font: 500 12px/1.4 Sora, sans-serif; cursor: pointer; }
-.reader-close:hover { color: var(--aqua); }
-.reader-permalink { padding: 12px 4px; color: #93a6c0; font-size: 11px; text-decoration: none; }
-.reader-permalink span { color: var(--aqua); margin-left: 6px; }
-.reader-close:focus-visible, .reader-permalink:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; }
-.reader-content { padding: 32px 36px 40px; }
-.library-reader.is-closing .reader-content { opacity: 0; }
-.library-reader .resource-detail-cover.is-in-flight { visibility: hidden; }
-.library-reader .resource-detail-copy { transform-origin: left center; padding-left: 24px; border-left: 1px solid #3b5a654d; background: linear-gradient(90deg, #18334440, transparent 42px); }
-.library-reader .learning-page { min-height: 0; padding: 0; }
-.library-reader .resource-detail-grid { grid-template-columns: 192px minmax(0, 1fr); gap: 36px; }
-.library-reader .resource-detail-cover { position: relative; top: auto; width: 100%; aspect-ratio: 2 / 3; border-radius: 3px 6px 6px 3px; background: #13293b; box-shadow: 10px 16px 28px #02081260; }
-.library-reader .resource-detail-cover img { object-fit: contain; }
-.library-reader .resource-card-topline { justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
-.library-reader .learning-detail-title { margin: 16px 0 12px; font-size: clamp(26px, 3vw, 38px); line-height: 1.12; }
-.library-reader .resource-detail-description { font-size: 14px; line-height: 1.8; margin: 14px 0 24px; }
-.library-reader .resource-facts { gap: 8px; margin: 24px 0 16px; }
-.library-reader .resource-fact { border-radius: 5px; padding: 12px; }
-.library-reader .resource-fact strong { font-size: 12px; }
-.library-reader .learning-detail-section { max-width: none; margin-top: 32px; padding-top: 28px; }
-.library-reader .learning-detail-section h2 { font-size: 23px; margin-bottom: 18px; }
-.library-reader .article-body { font-size: 14px; }
-.library-reader .article-body p, .library-reader .article-body li { font-size: 16px; line-height: 1.85; }
-.library-reader .article-body h2, .library-reader .article-body h3 { font-size: 22px; }
-.library-reader .takeaway-list li { font-size: 13px; border-radius: 5px; }
-.reader-notice { padding: 0 36px 26px; margin: 0; color: #9eafc5; font-size: 12px; line-height: 1.6; }
-.book-flight { position: fixed; z-index: 5; pointer-events: none; transform-origin: top left; }
-.book-flight > * { width: 100% !important; height: 100% !important; margin: 0; transform: none !important; position: relative !important; top: auto !important; border-radius: 3px !important; }
-.book-flight img { width: 100%; height: 100%; object-fit: contain; display: block; }
 @keyframes shelf-arrive { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 680px) {
   .library-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 22px; }
@@ -84,18 +49,121 @@
   .book-stage::after { left: -11px; right: -11px; }
   .shelf-title { font-size: 14px; }
   .shelf-caption { padding-inline: 0; }
-  .library-reader { width: calc(100vw - 20px); max-height: calc(100dvh - 24px); border-radius: 9px; }
-  .reader-toolbar { padding: 8px 10px; }
-  .reader-content { padding: 24px 20px 30px; }
-  .library-reader .resource-detail-grid { grid-template-columns: 1fr; gap: 26px; }
-  .library-reader .resource-detail-copy { padding-left: 14px; }
-  .library-reader .resource-detail-cover { width: 150px; justify-self: center; }
-  .library-reader .resource-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .reader-notice { padding-inline: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .shelf-item { animation: none; }
-  .book-object, .reader-content, .library-filter { transition: none; }
+}
+
+/* ── The book on the shelf ─────────────────────────────────────────────── */
+@property --leaf-shade { syntax: '<number>'; inherits: true; initial-value: 0; }
+
+/* A page waits under every cover; a hovered book falls slightly open onto it. */
+.book-page { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; padding: 20px 12px 16px 44%; border-radius: 2px 4px 4px 2px; background: linear-gradient(90deg, #0d2133, #15304a 18%, #132b42); box-shadow: inset 6px 0 10px #01081266, inset 0 0 0 1px #2c4a5f; color: #cfe0ef; text-align: left; overflow: hidden; }
+.book-page-label { color: var(--aqua); font: 8.5px/1.4 'JetBrains Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
+.book-page-line { color: #b9cadc; font-size: 10.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden; }
+.book-page-cta { margin-top: auto; color: #8fdccb; font-size: 9.5px; letter-spacing: .02em; }
+.book-face { transform-origin: left center; transform: translateZ(1px); transition: transform 460ms cubic-bezier(.3,.7,.2,1); }
+/* Light catches the cover where the cursor is. */
+.book-face::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; background: radial-gradient(circle at var(--glare-x, 30%) var(--glare-y, 20%), #ffffff3d, #ffffff0a 38%, transparent 62%); transition: opacity 260ms; }
+/* "Currently Learning" volumes carry a bookmark ribbon. */
+.book-ribbon { position: absolute; z-index: 3; top: -6px; right: 22px; width: 11px; height: 54px; background: linear-gradient(#7affe0, #38c9ad); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); transform: translateZ(3px); filter: drop-shadow(0 3px 4px #0007); pointer-events: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .shelf-link:hover .book-object { transform: translateY(-14px) translateZ(24px) rotateX(var(--tilt-x, 0deg)) rotateY(calc(-6deg + var(--tilt-y, 0deg))) rotateZ(0); transition-duration: 160ms, 180ms; }
+  .shelf-link:hover .book-face::after { opacity: 1; }
+  /* After a beat, the cover lifts on its spine to show the first page. */
+  .shelf-link:hover .book-face { transform: translateZ(1px) rotateY(-62deg); transition-delay: 300ms; }
+  /* Neighbours lean back so the chosen volume feels pulled from the shelf. */
+  .book-object { transition: transform 380ms cubic-bezier(.2,.8,.25,1), opacity 180ms, filter 300ms; }
+  .library-shelf:has(.shelf-link:hover) .shelf-link:not(:hover) .book-object { transform: translateZ(-14px) rotateY(-26deg) rotateZ(-2deg) scale(.95); filter: brightness(.58) saturate(.8); }
+  .library-shelf:has(.shelf-link:hover) .shelf-link:not(:hover) .shelf-caption { opacity: .55; }
+  .shelf-caption { transition: opacity 300ms; }
+}
+.shelf-link:focus-visible .book-face { transform: translateZ(1px) rotateY(-62deg); }
+
+/* ── The reader: an opened book ────────────────────────────────────────── */
+.library-reader { display: flex; flex-direction: column; width: min(1100px, calc(100vw - 48px)); max-width: none; height: min(780px, calc(100dvh - 40px)); max-height: none; padding: 0; margin: auto; overflow: hidden; border: 0; border-radius: 14px; color: #dce7f5; background: transparent; overscroll-behavior: contain; }
+/* The panel is a layer of its own so it can fade while the book stays visible. */
+.library-reader::before { content: ''; position: absolute; inset: 0; z-index: -1; border: 1px solid #2b465a; border-radius: inherit; background: radial-gradient(ellipse at 50% 0%, #11283c, #08172a 70%); box-shadow: 0 35px 100px #0009; }
+.library-reader.is-closing::before { opacity: 0; transition: opacity 260ms ease 80ms; }
+.library-reader:not([open]) { display: none; }
+.library-reader::backdrop { background: #020b17c4; backdrop-filter: blur(6px); transition: background 240ms ease, backdrop-filter 240ms ease; }
+.library-reader.is-closing::backdrop { background: transparent; backdrop-filter: blur(0); }
+.reader-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 22px; border-bottom: 1px solid #22394b; }
+.reader-close { min-height: 44px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: #b9e3db; font: 500 12px/1.4 Sora, sans-serif; cursor: pointer; }
+.reader-close:hover { color: var(--aqua); }
+.reader-permalink { padding: 12px 4px; color: #93a6c0; font-size: 11px; text-decoration: none; }
+.reader-permalink span { color: var(--aqua); margin-left: 6px; }
+.reader-close:focus-visible, .reader-permalink:focus-visible, .page-turn:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; }
+.reader-content { flex: 1; min-height: 0; padding: 26px 34px 6px; }
+.reader-book { position: relative; display: grid; grid-template-columns: 1fr 1fr; height: 100%; filter: drop-shadow(0 22px 30px #01060ea6); }
+/* Page edges stacked behind the spread. */
+/* While the closed book lands, only its right half exists. */
+.reader-book.is-closed::before { left: calc(50% - 5px); }
+.reader-book::before { content: ''; position: absolute; inset: 6px -5px -6px; z-index: -1; border-radius: 6px; background: repeating-linear-gradient(0deg, #1d3a52 0 1px, #10273b 1px 3px); }
+.reader-page { position: relative; min-width: 0; overflow-y: auto; padding: 38px 44px 54px; background: linear-gradient(90deg, #102538, #142c43); scrollbar-width: thin; scrollbar-color: #2f5064 transparent; }
+.reader-page[hidden] { display: none; }
+.reader-page:focus-visible { outline: 2px solid var(--aqua); outline-offset: -4px; }
+.reader-page[data-side="left"] { grid-column: 1; border-radius: 6px 0 0 6px; box-shadow: inset -26px 0 30px -18px #01070fcc, inset 1px 0 0 #2a4a5e; }
+.reader-page[data-side="right"] { grid-column: 2; border-radius: 0 6px 6px 0; background: linear-gradient(90deg, #142c43, #102538); box-shadow: inset 26px 0 30px -18px #01070fcc, inset -1px 0 0 #2a4a5e; }
+.reader-page[data-side="single"] { grid-column: 1 / -1; border-radius: 6px; box-shadow: inset 18px 0 24px -16px #01070fcc; }
+/* Folio: a page number at the foot of every page. */
+.reader-page::after { content: attr(data-number); position: absolute; bottom: 18px; left: 0; right: 0; text-align: center; color: #5f7d93; font: 10px 'JetBrains Mono', monospace; letter-spacing: .1em; }
+.reader-page.is-clone { height: 100%; overflow: hidden; }
+.reader-kicker { margin: 0 0 14px; color: var(--aqua); font: 10px/1.5 'JetBrains Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
+.reader-end { display: grid; place-items: center; height: 100%; margin: 0; color: #2f5064; font-size: 34px; }
+.reader-page--end { display: grid; }
+.library-reader .resource-detail-cover { position: relative; top: auto; width: 132px; aspect-ratio: 2 / 3; margin-bottom: 26px; border-radius: 3px 6px 6px 3px; background: #13293b; box-shadow: 10px 14px 24px #02081266; }
+.library-reader .resource-detail-cover img { object-fit: contain; }
+.library-reader .resource-card-topline { justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+.library-reader .learning-detail-title { margin: 16px 0 10px; font-size: clamp(26px, 2.7vw, 36px); line-height: 1.12; }
+.library-reader .resource-detail-description { font-size: 15px; line-height: 1.85; margin: 0 0 26px; }
+.library-reader .resource-facts { gap: 8px; margin: 0 0 22px; }
+.library-reader .resource-fact { border-radius: 5px; padding: 12px; }
+.library-reader .resource-fact strong { font-size: 12px; }
+.library-reader .learning-detail-section { max-width: none; margin: 0; padding: 0; border: 0; }
+.library-reader .learning-detail-section h2 { font-size: 23px; margin: 0 0 20px; }
+.library-reader .article-body p, .library-reader .article-body li { font-size: 15.5px; line-height: 1.85; }
+.library-reader .article-body h2, .library-reader .article-body h3 { font-size: 21px; }
+.library-reader .takeaway-list li { font-size: 13px; border-radius: 5px; }
+.reader-nav { display: flex; justify-content: center; align-items: center; gap: 18px; padding: 12px 24px 16px; }
+.page-turn { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #2f5064; border-radius: 50%; background: #0c1f31; color: #bfe9df; font-size: 16px; cursor: pointer; transition: border-color 160ms, color 160ms, opacity 160ms; }
+.page-turn:hover:not(:disabled) { border-color: var(--aqua); color: var(--aqua); }
+.page-turn:disabled { opacity: .3; cursor: default; }
+.reader-position { min-width: 130px; margin: 0; text-align: center; color: #8ea4bb; font: 11px 'JetBrains Mono', monospace; letter-spacing: .06em; }
+.reader-notice { padding: 0 36px 14px; margin: 0; color: #9eafc5; font-size: 12px; line-height: 1.6; text-align: center; }
+.library-reader.is-opening .reader-nav { visibility: visible; }
+
+/* In flight: the cover leaving the shelf, and pages turning on the spine. */
+.book-flight { position: fixed; z-index: 5; pointer-events: none; transform-origin: top left; }
+.book-flight > * { width: 100% !important; height: 100% !important; margin: 0; transform: none !important; position: relative !important; top: auto !important; border-radius: 3px !important; }
+.book-flight img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.book-leaf { position: fixed; z-index: 6; pointer-events: none; transform-style: preserve-3d; }
+.book-leaf--left { transform-origin: left center; }
+.book-leaf--right { transform-origin: right center; }
+.book-leaf-face { position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 6px; background: linear-gradient(90deg, #102538, #142c43); }
+.book-leaf-back { transform: rotateY(180deg); }
+.book-leaf-face::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, #00000080, transparent 70%); opacity: calc(var(--leaf-shade) * .7); }
+.book-leaf-back::after { background: linear-gradient(270deg, #00000080, transparent 70%); }
+.book-leaf-face > .reader-page { height: 100%; border-radius: 0; box-shadow: none; }
+.book-leaf-cover { position: relative !important; display: flex; width: 100% !important; height: 100% !important; margin: 0; transform: none !important; border-radius: 3px 6px 6px 3px; background: #122940; }
+.book-leaf-cover::after { display: none; }
+.book-leaf-cover img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+@media (max-width: 859px) {
+  .library-reader { width: calc(100vw - 20px); height: calc(100dvh - 24px); border-radius: 10px; }
+  .reader-toolbar { padding: 6px 10px; }
+  .reader-content { padding: 16px 14px 4px; }
+  .reader-book { grid-template-columns: 1fr; }
+  .reader-page { padding: 30px 24px 50px; }
+  .library-reader .resource-detail-cover { width: 120px; }
+  .library-reader .resource-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reader-nav { padding: 10px 14px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .book-object, .book-face, .book-face::after, .library-filter { transition: none; }
   .library-reader::backdrop { transition: none; }
   .shelf-link:hover .book-object, .shelf-link:focus-visible .book-object { transform: rotateY(-14deg); }
+  .shelf-link:hover .book-face, .shelf-link:focus-visible .book-face { transform: translateZ(1px); }
+  .library-shelf:has(.shelf-link:hover) .shelf-link:not(:hover) .book-object { transform: rotateY(-14deg) rotateZ(-1deg); filter: none; }
 }

@@ -1,28 +1,48 @@
-// Enhance real detail-page links with a reversible cover-to-reader transition.
-export function initializeLibraryShelf(root, { findResource, loadResource, renderDetail }) {
+// Enhance real detail-page links with a book that leaves the shelf, opens, and
+// turns its pages. Every step is reversible, interruptible and skipped with
+// reduced motion; the links still lead to full detail pages without script.
+export function initializeLibraryShelf(root, { findResource, loadResource, renderPages }) {
   const dialog = document.createElement('dialog');
   dialog.className = 'library-reader';
   dialog.setAttribute('aria-labelledby', 'library-reader-title');
   dialog.innerHTML = `<div class="reader-toolbar">
     <button type="button" class="reader-close" autofocus>← Return to shelf</button>
     <a class="reader-permalink">Open full page <span aria-hidden="true">↗</span></a>
-    </div><div class="reader-content"></div><p class="reader-notice" role="status" hidden></p>`;
+    </div>
+    <div class="reader-content"><div class="reader-book"></div></div>
+    <div class="reader-nav">
+      <button type="button" class="page-turn" data-turn="-1" aria-label="Previous page"><span aria-hidden="true">←</span></button>
+      <p class="reader-position" aria-live="polite"></p>
+      <button type="button" class="page-turn" data-turn="1" aria-label="Next page"><span aria-hidden="true">→</span></button>
+    </div>
+    <p class="reader-notice" role="status" hidden></p>`;
   document.body.append(dialog);
   const content = dialog.querySelector('.reader-content');
+  const book = dialog.querySelector('.reader-book');
   const notice = dialog.querySelector('.reader-notice');
   const closeButton = dialog.querySelector('.reader-close');
   const permalink = dialog.querySelector('.reader-permalink');
+  const position = dialog.querySelector('.reader-position');
+  const [previousButton, nextButton] = dialog.querySelectorAll('.page-turn');
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  const spreadQuery = matchMedia('(min-width: 860px)');
   let origin;
   let version = 0;
   let effect;
   const pageEffects = new Set();
+  const leaves = new Set();
   let ghost;
   let closing = false;
+  let turning = false;
+  let firstPage = 0;
   let savedOverflow;
   let savedPadding;
   let backdropDown = false;
+  let swipe;
   let disposed = false;
+
+  const pages = () => [...book.querySelectorAll('.reader-page')];
+  const perView = () => (spreadQuery.matches ? 2 : 1);
 
   async function finishWithin(animation, duration) {
     let timer;
@@ -43,7 +63,7 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
 
   async function animatePage(element, frames, timing) {
     if (!element || motion.matches) return;
-    const animation = element.animate(frames, { ...timing, fill: 'both', easing: 'cubic-bezier(.22,.7,.2,1)' });
+    const animation = element.animate(frames, { easing: 'cubic-bezier(.22,.7,.2,1)', ...timing, fill: 'both' });
     pageEffects.add(animation);
     await finishWithin(animation, timing.duration + (timing.delay || 0));
     pageEffects.delete(animation);
@@ -51,23 +71,121 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   }
 
   function cancelPages() {
+    book.classList.remove('is-closed');
     pageEffects.forEach(animation => animation.cancel());
     pageEffects.clear();
+    leaves.forEach(leaf => leaf.remove());
+    leaves.clear();
+    pages().forEach(page => page.style.removeProperty('visibility'));
+    turning = false;
   }
 
-  async function unfoldPages() {
-    const pages = content.querySelector('.resource-detail-copy');
-    const sections = [...content.querySelectorAll('.learning-detail-section')];
-    await Promise.all([
-      animatePage(pages, [
-        { opacity: 0, transform: 'perspective(1400px) rotateY(-24deg) translateX(-12px)' },
-        { opacity: 1, transform: 'perspective(1400px) rotateY(0deg) translateX(0)' },
-      ], { duration: 480, delay: 140 }),
-      ...sections.map((section, index) => animatePage(section, [
-        { opacity: 0, transform: 'translateY(10px)' },
-        { opacity: 1, transform: 'translateY(0)' },
-      ], { duration: 340, delay: 220 + Math.min(index, 2) * 30 })),
-    ]);
+  // Show the spread (or single page) starting at `first`; others are inert.
+  function showPages(first) {
+    const all = pages();
+    const step = perView();
+    firstPage = Math.max(0, Math.min(first - (first % step), all.length - step));
+    all.forEach((page, index) => {
+      const visible = index >= firstPage && index < firstPage + step;
+      page.hidden = !visible;
+      page.inert = !visible;
+      page.dataset.side = !visible ? '' : step === 2 ? (index === firstPage ? 'left' : 'right') : 'single';
+      page.dataset.number = String(index + 1);
+      if (visible) page.scrollTop = 0;
+    });
+    // A page with more than fits scrolls; keyboard users need to reach it.
+    requestAnimationFrame(() => all.forEach(page => {
+      if (!page.hidden && page.scrollHeight > page.clientHeight + 1) page.tabIndex = 0;
+      else page.removeAttribute('tabindex');
+    }));
+    previousButton.disabled = firstPage === 0;
+    nextButton.disabled = firstPage + step >= all.length;
+    const last = Math.min(firstPage + step, all.length);
+    position.textContent = step === 2 ? `Pages ${firstPage + 1}–${last} of ${all.length}` : `Page ${firstPage + 1} of ${all.length}`;
+  }
+
+  // A leaf is a two-sided page that rotates on the spine during a turn.
+  function makeLeaf(rect, front, back, hinge) {
+    const leaf = document.createElement('div');
+    leaf.className = `book-leaf book-leaf--${hinge}`;
+    leaf.setAttribute('aria-hidden', 'true');
+    leaf.innerHTML = '<div class="book-leaf-face book-leaf-front"></div><div class="book-leaf-face book-leaf-back"></div>';
+    if (front) leaf.firstElementChild.append(front);
+    if (back) leaf.lastElementChild.append(back);
+    Object.assign(leaf.style, {
+      left: `${rect.left}px`, top: `${rect.top}px`,
+      width: `${rect.width}px`, height: `${rect.height}px`,
+    });
+    dialog.append(leaf);
+    leaves.add(leaf);
+    return leaf;
+  }
+
+  function pageClone(page) {
+    const clone = page.cloneNode(true);
+    clone.hidden = false;
+    clone.inert = true;
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+    clone.classList.add('is-clone');
+    return clone;
+  }
+
+  async function swing(leaf, from, to, duration = 720) {
+    const shade = leaf.animate([
+      { '--leaf-shade': 0 }, { '--leaf-shade': 1, offset: 0.5 }, { '--leaf-shade': 0 },
+    ], { duration, fill: 'both' });
+    pageEffects.add(shade);
+    await animatePage(leaf, [
+      { transform: `perspective(2200px) rotateY(${from}deg)` },
+      { transform: `perspective(2200px) rotateY(${to}deg)` },
+    ], { duration, easing: 'cubic-bezier(.45,.05,.25,1)' });
+    shade.cancel();
+    pageEffects.delete(shade);
+  }
+
+  async function turn(direction) {
+    const all = pages();
+    const step = perView();
+    const target = firstPage + direction * step;
+    if (turning || closing || target < 0 || target >= all.length) return;
+    const token = version;
+    // Announce page turns, but not the initial position on opening.
+    position.setAttribute('aria-live', 'polite');
+    if (motion.matches) { showPages(target); return; }
+    turning = true;
+    const current = all.filter(page => !page.hidden);
+    if (step === 2) {
+      // Next: the right page lifts and lands as the next left page.
+      // Previous: the left page lifts back and lands as the previous right page.
+      const lifting = direction > 0 ? current[1] : current[0];
+      const rect = lifting.getBoundingClientRect();
+      const landing = all[direction > 0 ? target : target + 1];
+      const leaf = makeLeaf(rect, pageClone(lifting), pageClone(landing), direction > 0 ? 'left' : 'right');
+      showPages(target);
+      // Until the leaf lands, the page it carries stays hidden beneath it.
+      landing.style.visibility = 'hidden';
+      await swing(leaf, 0, direction > 0 ? -180 : 180);
+      landing.style.removeProperty('visibility');
+      leaf.remove();
+      leaves.delete(leaf);
+    } else {
+      // Single page: the current page turns away to reveal the next, or the
+      // previous page turns back over the current one.
+      const rect = current[0].getBoundingClientRect();
+      if (direction > 0) {
+        const leaf = makeLeaf(rect, pageClone(current[0]), null, 'left');
+        showPages(target);
+        await swing(leaf, 0, -180, 620);
+        leaf.remove(); leaves.delete(leaf);
+      } else {
+        const leaf = makeLeaf(rect, pageClone(all[target]), null, 'left');
+        await swing(leaf, -180, 0, 620);
+        showPages(target);
+        leaf.remove(); leaves.delete(leaf);
+      }
+    }
+    if (token === version) turning = false;
   }
 
   function cancelFlight() {
@@ -91,15 +209,31 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const flightGhost = ghost;
+    const duration = returning ? 280 : 520;
     const flightEffect = ghost.animate([
       { transform: 'translate3d(0,0,0) scale(1) rotate(0deg)' },
-      { transform: `translate3d(${dx * 0.3}px,${dy * 0.3 - 12}px,0) scale(1.04) rotate(${returning ? 1 : -2}deg)`, offset: 0.3 },
+      { transform: `translate3d(${dx * 0.3}px,${dy * 0.3 - 18}px,0) scale(${1 + (to.width / from.width - 1) * 0.25}) rotate(${returning ? 1 : -2}deg)`, offset: 0.3 },
       { transform: `translate3d(${dx}px,${dy}px,0) scale(${to.width / from.width},${to.height / from.height}) rotate(0deg)` },
-    ], { duration: returning ? 240 : 440, easing: 'cubic-bezier(.22,.7,.2,1)', fill: 'both' });
+    ], { duration, easing: 'cubic-bezier(.22,.7,.2,1)', fill: 'both' });
     effect = flightEffect;
-    await finishWithin(flightEffect, returning ? 240 : 440);
+    await finishWithin(flightEffect, duration);
     if (effect === flightEffect) cancelFlight();
     else flightGhost.remove();
+  }
+
+  // The closed book's position in the reader: the right-hand page of a spread,
+  // or the single page on narrow screens.
+  function coverSlot() {
+    const visible = pages().filter(page => !page.hidden);
+    return (visible[1] || visible[0])?.getBoundingClientRect();
+  }
+
+  function coverFace(source) {
+    const face = source?.querySelector('.book-face') || source;
+    if (!face) return null;
+    const clone = face.cloneNode(true);
+    clone.classList.add('book-leaf-cover');
+    return clone;
   }
 
   function restorePage() {
@@ -121,36 +255,64 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     cancelFlight();
     cancelPages();
     dialog.classList.remove('is-opening');
-    dialog.classList.add('is-closing');
-    const cover = content.querySelector('.resource-detail-cover');
     const target = origin?.querySelector('.book-object, .index-row-cover, .index-row-cover-fallback');
     const rect = target?.getBoundingClientRect();
-    const coverRect = cover?.getBoundingClientRect();
-    if (!immediately) {
-      const visibleCover = coverRect && coverRect.top >= dialog.getBoundingClientRect().top && coverRect.bottom > 0;
+    const onScreen = rect && rect.top >= 0 && rect.bottom <= innerHeight;
+    if (!immediately && !motion.matches) {
+      // The panel, backdrop and controls fade at once (CSS); the book itself
+      // stays fully visible while it folds shut and returns to the shelf.
+      dialog.classList.add('is-closing');
+      const chrome = Promise.all([...dialog.querySelectorAll('.reader-toolbar, .reader-nav, .reader-notice')]
+        .map(element => animatePage(element, [{ opacity: 1 }, { opacity: 0 }], { duration: 160 })));
+      let from = flyingRect;
+      let face = flyingFace;
+      const visible = pages().filter(page => !page.hidden);
+      if (!from && visible.length === 2 && onScreen) {
+        // Fold the left page shut over the right, landing cover-up.
+        const leaf = makeLeaf(visible[0].getBoundingClientRect(), pageClone(visible[0]), coverFace(target), 'right');
+        visible[0].style.visibility = 'hidden';
+        await swing(leaf, 0, 180, 340);
+        if (token !== version) return;
+        from = visible[1].getBoundingClientRect();
+        face = leaf.querySelector('.book-leaf-back')?.firstElementChild?.cloneNode(true);
+        leaf.remove(); leaves.delete(leaf);
+      } else if (!from && onScreen) {
+        from = coverSlot();
+        face = coverFace(target);
+      }
+      // The flying cover now carries the book; hide the pages it left behind.
+      if (from && onScreen) content.style.opacity = '0';
       await Promise.all([
-        animatePage(content, [{ opacity: 1 }, { opacity: 0 }], { duration: 180 }),
-        animatePage(dialog, [{ opacity: 1 }, { opacity: 0 }], { duration: 220 }),
-        rect && rect.top >= 0 && rect.bottom <= innerHeight && (flyingRect || visibleCover)
-          ? fly(flyingRect || coverRect, rect, flyingFace || cover, true)
-          : Promise.resolve(),
+        chrome,
+        from && onScreen ? Promise.resolve() : animatePage(content, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 }),
+        onScreen && from ? fly(from, rect, face, true) : Promise.resolve(),
       ]);
     }
     if (token !== version || disposed) return;
+    cancelPages();
     restorePage();
     dialog.close();
     dialog.classList.remove('is-closing');
+    content.style.removeProperty('opacity');
     origin?.focus({ preventScroll: true });
     closing = false;
+  }
+
+  function renderBook(resource, notes, options) {
+    book.innerHTML = renderPages(resource, notes, options).join('');
   }
 
   async function open(link, resource) {
     if (dialog.open || disposed) return;
     const token = ++version;
     origin = link;
+    closing = false;
+    content.style.removeProperty('opacity');
     dialog.dataset.resource = resource.slug;
     notice.hidden = true;
-    content.innerHTML = renderDetail(resource, [], { loadingNotes: true });
+    renderBook(resource, [], { loadingNotes: true });
+    position.setAttribute('aria-live', 'off');
+    showPages(0);
     permalink.href = link.href;
     const source = link.querySelector('.book-object, .index-row-cover, .index-row-cover-fallback');
     const rect = source?.getBoundingClientRect();
@@ -164,38 +326,56 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     dialog.showModal();
     dialog.scrollTop = 0;
     link.classList.add('is-selected');
-    // Handle rejection immediately, even if the reader closes before the flight ends.
+    // Handle rejection immediately, even if the reader closes before the motion ends.
     const request = loadResource(resource.slug).then(data => ({ data }), error => ({ error }));
-    const destination = content.querySelector('.resource-detail-cover');
-    const coverFlight = fly(rect, destination?.getBoundingClientRect(), source?.querySelector('.book-face') || source);
-    if (ghost) destination?.classList.add('is-in-flight');
-    const showCover = coverFlight.then(() => {
-      if (version === token) destination?.classList.remove('is-in-flight');
-    });
-    await Promise.all([showCover, unfoldPages()]);
-    if (version !== token || !dialog.open) return;
+
+    if (!motion.matches && rect?.width) {
+      const visible = pages().filter(page => !page.hidden);
+      const slot = coverSlot();
+      const face = source.querySelector('.book-face') || source;
+      // 1. The book leaves the shelf and lands, closed, where it will open.
+      visible.forEach(page => { page.style.visibility = 'hidden'; });
+      if (visible.length === 2) book.classList.add('is-closed');
+      const navFade = animatePage(dialog.querySelector('.reader-nav'), [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 760 });
+      await fly(rect, slot, face);
+      if (token !== version || !dialog.open) return;
+      // 2. The cover swings open on its spine. On a spread its inside becomes
+      // the left (title) page; on one page it turns away to reveal it.
+      const titlePage = visible[0];
+      const spread = visible.length === 2;
+      const leaf = makeLeaf(slot, coverFace(source), spread ? pageClone(titlePage) : null, 'left');
+      book.classList.remove('is-closed');
+      (spread ? visible[1] : titlePage).style.removeProperty('visibility');
+      await swing(leaf, 0, -180, spread ? 820 : 700);
+      if (token !== version || !dialog.open) return;
+      titlePage.style.removeProperty('visibility');
+      leaf.remove(); leaves.delete(leaf);
+      await navFade;
+    }
+    if (token !== version || !dialog.open) return;
     dialog.classList.remove('is-opening');
+    showPages(firstPage);
+
     const result = await request;
     if (version !== token || !dialog.open) return;
     if (result.error || !result.data.resource) {
-      const pending = content.querySelector('#resourceNotesTitle + .index-empty');
+      const pending = book.querySelector('#resourceNotesTitle + .index-empty');
       if (pending) pending.textContent = 'Related notes are unavailable right now.';
       notice.textContent = 'Could not refresh this resource. Your saved details are still available.';
       notice.hidden = false;
       return;
     }
-    const updated = document.createElement('div');
-    updated.innerHTML = renderDetail(result.data.resource, result.data.notes);
     // The index already carries the full resource. Usually only notes need updating;
-    // keep the cover and reader DOM in place to avoid image flashes and scroll jumps.
+    // keep the cover and pages in place to avoid image flashes and jumps.
     if (JSON.stringify(resource) === JSON.stringify(result.data.resource)) {
-      content.querySelector('[aria-labelledby="resourceNotesTitle"]')?.replaceWith(updated.querySelector('[aria-labelledby="resourceNotesTitle"]'));
+      const holder = document.createElement('div');
+      holder.innerHTML = renderPages(result.data.resource, result.data.notes).join('');
+      book.querySelector('[aria-labelledby="resourceNotesTitle"]')?.replaceWith(holder.querySelector('[aria-labelledby="resourceNotesTitle"]'));
     } else {
-      const scrollTop = dialog.scrollTop;
-      const focusedHref = content.contains(document.activeElement) ? document.activeElement.getAttribute('href') : null;
-      content.replaceChildren(...updated.childNodes);
-      dialog.scrollTop = scrollTop;
-      if (focusedHref) [...content.querySelectorAll('a')].find(a => a.getAttribute('href') === focusedHref)?.focus({ preventScroll: true });
+      const focusedHref = book.contains(document.activeElement) ? document.activeElement.getAttribute('href') : null;
+      renderBook(result.data.resource, result.data.notes);
+      showPages(firstPage);
+      if (focusedHref) [...book.querySelectorAll('a')].find(a => a.getAttribute('href') === focusedHref)?.focus({ preventScroll: true });
     }
   }
 
@@ -207,6 +387,35 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     event.preventDefault();
     open(link, resource);
   };
+
+  // Hovered books lean toward the cursor; the sheen follows it.
+  let tiltFrame = 0;
+  let tiltEvent;
+  const applyTilt = () => {
+    tiltFrame = 0;
+    const link = tiltEvent?.target.closest?.('.shelf-link');
+    const object = link?.querySelector('.book-object');
+    if (!object) return;
+    const box = link.querySelector('.book-stage').getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (tiltEvent.clientX - box.left) / box.width));
+    const y = Math.min(1, Math.max(0, (tiltEvent.clientY - box.top) / box.height));
+    object.style.setProperty('--tilt-y', `${((x - 0.5) * 16).toFixed(2)}deg`);
+    object.style.setProperty('--tilt-x', `${((0.5 - y) * 10).toFixed(2)}deg`);
+    object.style.setProperty('--glare-x', `${(x * 100).toFixed(1)}%`);
+    object.style.setProperty('--glare-y', `${(y * 100).toFixed(1)}%`);
+  };
+  const onPointerMove = event => {
+    if (event.pointerType !== 'mouse' || motion.matches) return;
+    tiltEvent = event;
+    if (!tiltFrame) tiltFrame = requestAnimationFrame(applyTilt);
+  };
+  const onPointerOut = event => {
+    const link = event.target.closest?.('.shelf-link');
+    if (!link || link.contains(event.relatedTarget)) return;
+    const object = link.querySelector('.book-object');
+    ['--tilt-x', '--tilt-y', '--glare-x', '--glare-y'].forEach(name => object?.style.removeProperty(name));
+  };
+
   const recoverCover = event => {
     if (event.target.tagName !== 'IMG') return;
     const face = event.target.closest('.book-face, .resource-detail-cover');
@@ -222,12 +431,21 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   root.addEventListener('error', recoverCover, true);
   dialog.addEventListener('error', recoverCover, true);
   root.addEventListener('click', activate);
+  root.addEventListener('pointermove', onPointerMove);
+  root.addEventListener('pointerout', onPointerOut);
   closeButton.addEventListener('click', () => close());
+  previousButton.addEventListener('click', () => turn(-1));
+  nextButton.addEventListener('click', () => turn(1));
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
   dialog.addEventListener('keydown', event => {
+    if ((event.key === 'ArrowRight' || event.key === 'ArrowLeft') && !event.altKey && !event.metaKey && !event.ctrlKey) {
+      event.preventDefault();
+      turn(event.key === 'ArrowRight' ? 1 : -1);
+      return;
+    }
     if (event.key !== 'Tab') return;
     const focusable = [...dialog.querySelectorAll('a[href], button:not([disabled]), [tabindex="0"]')]
-      .filter(element => element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden');
+      .filter(element => element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden' && !element.closest('[inert], .book-leaf, .book-flight'));
     if (!focusable.length) return;
     // Safari may skip links in its default Tab order; keep this reader consistent.
     const index = focusable.indexOf(document.activeElement);
@@ -235,6 +453,19 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     event.preventDefault();
     focusable[next].focus();
   });
+  // Horizontal swipes turn pages on touch screens.
+  book.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse') return;
+    swipe = { x: event.clientX, y: event.clientY, time: Date.now() };
+  });
+  book.addEventListener('pointerup', event => {
+    if (!swipe) return;
+    const dx = event.clientX - swipe.x;
+    const dy = event.clientY - swipe.y;
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4 && Date.now() - swipe.time < 700) turn(dx < 0 ? 1 : -1);
+    swipe = null;
+  });
+  book.addEventListener('pointercancel', () => { swipe = null; });
   dialog.addEventListener('close', () => {
     if (dialog.open) return; // A queued close event must not cancel a new opening.
     cancelFlight(); cancelPages(); restorePage();
@@ -250,8 +481,13 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   });
   const finishMotion = () => { effect?.finish(); pageEffects.forEach(animation => animation.finish()); };
   const onMotionChange = () => { if (motion.matches) finishMotion(); };
+  const onLayoutChange = () => {
+    finishMotion();
+    if (dialog.open && !closing) showPages(firstPage);
+  };
   const onPageHide = () => { close({ immediately: true }); };
   window.addEventListener('resize', finishMotion);
+  spreadQuery.addEventListener('change', onLayoutChange);
   window.addEventListener('pagehide', onPageHide);
   motion.addEventListener('change', onMotionChange);
   return () => {
@@ -260,9 +496,13 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     cancelFlight();
     cancelPages();
     restorePage();
+    cancelAnimationFrame(tiltFrame);
     root.removeEventListener('click', activate);
     root.removeEventListener('error', recoverCover, true);
+    root.removeEventListener('pointermove', onPointerMove);
+    root.removeEventListener('pointerout', onPointerOut);
     window.removeEventListener('resize', finishMotion);
+    spreadQuery.removeEventListener('change', onLayoutChange);
     window.removeEventListener('pagehide', onPageHide);
     motion.removeEventListener('change', onMotionChange);
     dialog.remove();

@@ -64,9 +64,10 @@ const resources = [
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => {
           const reader = document.querySelector('.library-reader');
-          return !reader.open || Number(getComputedStyle(reader).opacity) < 1;
-        }, null, { timeout: 700 });
-        await page.waitForFunction(() => !document.querySelector('.library-reader').open, null, { timeout: 700 });
+          return !reader.open || reader.classList.contains('is-closing');
+        }, null, { timeout: 300 });
+        // The book folds shut and flies home, then the reader is gone.
+        await page.waitForFunction(() => !document.querySelector('.library-reader').open, null, { timeout: 1200 });
         await page.locator('[data-filter="type:Certification"]').click();
         assert.equal(await page.locator('.shelf-link').count(), 1);
         assert.equal(await page.locator('.shelf-title').textContent(), 'CMA preparation');
@@ -89,7 +90,7 @@ const resources = [
         assert.equal(await reader.locator('#library-reader-title').textContent(), 'A custom resource');
         await reader.locator('.resource-detail-cover.book-face-fallback').waitFor();
         assert.equal(await reader.locator('.resource-external, a[href^="javascript:"]').count(), 0);
-        assert.ok((await reader.innerText()).includes('Unsafe link stays readable.'));
+        assert.ok((await reader.textContent()).includes('Unsafe link stays readable.'));
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.querySelector('.library-reader').open);
         await page.goBack();
@@ -116,10 +117,25 @@ const resources = [
           console.log('Reader diagnostics', await page.evaluate(() => ({ url: location.href, reader: document.querySelector('.library-reader')?.outerHTML, focused: document.activeElement?.outerHTML, scrollY })));
           throw error;
         }
-        await page.getByText('A related learning note', { exact: true }).waitFor();
+        await reader.getByText('A related learning note', { exact: true }).waitFor({ state: 'attached' });
         assert.equal(await page.locator('#library-reader-title').textContent(), 'Decision Notes');
-        assert.ok((await reader.innerText()).includes('My saved thoughts from Sanity.'));
-        assert.ok((await reader.innerText()).includes('A saved takeaway.'));
+        // The reader is a book: a title page, then pages turned with buttons or arrow keys.
+        const position = () => reader.locator('.reader-position').textContent();
+        const spread = !mobile;
+        assert.equal(await position(), spread ? 'Pages 1–2 of 6' : 'Page 1 of 6');
+        assert.equal(await reader.locator('.reader-page:not([hidden])').count(), spread ? 2 : 1);
+        assert.equal(await reader.getByRole('button', { name: 'Previous page' }).isDisabled(), true);
+        await reader.getByRole('button', { name: 'Next page' }).click();
+        await page.waitForFunction(() => !document.querySelector('.book-leaf'));
+        assert.equal(await position(), spread ? 'Pages 3–4 of 6' : 'Page 2 of 6');
+        assert.equal(await reader.locator('.reader-position').getAttribute('aria-live'), 'polite', 'turns are announced');
+        if (spread) await reader.getByRole('heading', { name: 'My thoughts' }).waitFor();
+        await page.keyboard.press('ArrowLeft');
+        await page.waitForFunction(() => !document.querySelector('.book-leaf'));
+        assert.equal(await position(), spread ? 'Pages 1–2 of 6' : 'Page 1 of 6');
+        assert.equal(await reader.locator('.reader-page[hidden] a, .reader-page[hidden] button').evaluateAll(els => els.every(el => el.closest('[inert]'))), true, 'hidden pages are inert');
+        assert.ok((await reader.textContent()).includes('My saved thoughts from Sanity.'));
+        assert.ok((await reader.textContent()).includes('A saved takeaway.'));
         assert.equal(await reader.locator('[role="progressbar"]').getAttribute('aria-valuenow'), '100');
         assert.match(await page.locator('.reader-permalink').getAttribute('href'), /\/library\/decision-notes$/);
         assert.equal(await page.evaluate(() => document.body.style.overflow), 'hidden');
@@ -154,8 +170,8 @@ const resources = [
         fail = true;
         await first.click();
         await page.locator('.reader-notice:not([hidden])').waitFor();
-        assert.ok((await reader.innerText()).includes('My saved thoughts from Sanity.'));
-        assert.ok((await reader.innerText()).includes('Related notes are unavailable'));
+        assert.ok((await reader.textContent()).includes('My saved thoughts from Sanity.'));
+        assert.ok((await reader.textContent()).includes('Related notes are unavailable'));
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.querySelector('.library-reader').open);
         fail = false;
@@ -163,7 +179,7 @@ const resources = [
         delay = 1100;
         await first.click();
         await reader.locator('.resource-detail-cover').evaluate(cover => { cover.dataset.retained = 'yes'; });
-        await page.getByText('A related learning note', { exact: true }).waitFor();
+        await reader.getByText('A related learning note', { exact: true }).waitFor({ state: 'attached' });
         assert.equal(await reader.locator('.resource-detail-cover').getAttribute('data-retained'), 'yes');
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.querySelector('.library-reader').open);
