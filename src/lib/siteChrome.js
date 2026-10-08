@@ -10,6 +10,7 @@ function navLink(href, label, activePath) {
 
 export function renderInteriorHeader(activePath) {
   return `
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="site-header writing-site-header">
       <div class="header-left">
         <a class="wordmark" href="/">Nicholas Thomas</a>
@@ -21,7 +22,7 @@ export function renderInteriorHeader(activePath) {
           ${navLink("/notes/", "TIL", activePath)}
         </nav>
       </div>
-      <div class="social-icons writing-socials" aria-label="Social links">
+      <div class="social-icons writing-socials" role="group" aria-label="Social links">
         <a href="https://www.linkedin.com/in/nicktrades/" target="_blank" rel="noreferrer" aria-label="LinkedIn">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.94 8.86H3.2V20h3.74V8.86ZM5.07 7.34c1.2 0 1.95-.8 1.95-1.8-.02-1.02-.75-1.8-1.92-1.8s-1.95.78-1.95 1.8c0 1 .75 1.8 1.9 1.8h.02ZM20.85 13.62c0-3.42-1.82-5.02-4.25-5.02-1.96 0-2.84 1.08-3.33 1.84V8.86H9.53c.05 1.05 0 11.14 0 11.14h3.74v-6.22c0-.33.02-.66.12-.9.27-.66.88-1.35 1.9-1.35 1.34 0 1.88 1.02 1.88 2.52V20h3.74l-.06-6.38Z"/></svg>
         </a>
@@ -57,6 +58,12 @@ export function renderSiteFooter() {
 }
 
 export function initializeInteriorChrome() {
+  // Pages render their own <main>; give it the skip link's target.
+  const main = document.querySelector("main");
+  if (main) {
+    main.id = "main-content";
+    main.tabIndex = -1;
+  }
   const stopMobileNav = initializeMobileNav();
   const stopHeaderSync = syncHeaderOffset();
   const stopPokemon = initializePokemonRelease();

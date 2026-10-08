@@ -23,6 +23,22 @@ export function initializeMarketTicker(track, endpoint = '/api/market-data') {
   duplicate.setAttribute('aria-hidden', 'true');
   track.replaceChildren(group, duplicate);
   const items = [...track.querySelectorAll('.ticker-item')];
+  // Moving content needs a pause control (WCAG 2.2.2): clicking or tapping the
+  // strip toggles it, and a button appears for keyboard users on focus.
+  const strip = track.parentElement;
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'ticker-toggle';
+  strip.prepend(toggle);
+  function setUserPaused(paused) {
+    strip.toggleAttribute('data-user-paused', paused);
+    toggle.textContent = paused ? 'Resume ticker' : 'Pause ticker';
+    toggle.setAttribute('aria-pressed', String(paused));
+    strip.title = paused ? 'Click to resume' : 'Click to pause';
+  }
+  setUserPaused(false);
+  const onStripClick = () => setUserPaused(!strip.hasAttribute('data-user-paused'));
+  strip.addEventListener('click', onStripClick);
   let disposed = false;
   let busy = false;
   let controller;
@@ -153,5 +169,7 @@ export function initializeMarketTicker(track, endpoint = '/api/market-data') {
     window.removeEventListener('online', resume);
     window.removeEventListener('pageshow', resume);
     window.removeEventListener('pagehide', pageHide);
+    strip.removeEventListener('click', onStripClick);
+    toggle.remove();
   };
 }

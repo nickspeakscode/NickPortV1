@@ -20,7 +20,7 @@ const path = require('node:path');
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
         await page.goto('http://127.0.0.1:5173/#about');
-        const trigger = page.getByRole('button', { name: 'Preview Sumlino, a project by Nick' });
+        const trigger = page.getByRole('button', { name: 'redacted: preview Sumlino, a project by Nick' });
         const preview = page.locator('.sumlino-preview');
         const link = page.getByRole('link', { name: 'View Sumlino on X' });
         await trigger.scrollIntoViewIfNeeded();

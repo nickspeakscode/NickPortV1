@@ -26,6 +26,11 @@
   .site-header > .social-icons { margin-left: auto; }
   .site-header > .market-strip { order: 3; flex-basis: 100%; min-width: 0; max-width: none; }
 }
+/* Just above the wrap breakpoint, a classic 15px scrollbar leaves the one-row
+   header a few pixels short; the scrolling ticker can give them up. */
+@media (min-width: 1200px) and (max-width: 1280px) {
+  .site-header > .market-strip { min-width: 200px; }
+}
 .site-header .market-strip { border-radius: 0; border: 0; border-inline: 1px solid var(--line); background: none; box-shadow: none; }
 .site-header .ticker-track { padding: 0; gap: 0; animation: ticker-scroll 68s linear infinite; }
 .ticker-group { display: flex; flex: 0 0 auto; align-items: center; }
@@ -41,7 +46,13 @@
 .site-header .ticker-item.is-stale .ticker-price { color: var(--muted); }
 @media (hover: hover) { .market-strip:hover .ticker-track { animation-play-state: paused; } }
 @media (hover: none) { .market-strip:hover .ticker-track { animation-play-state: running; } }
-.site-header .market-strip[data-paused] .ticker-track { animation-play-state: paused; }
+.site-header .market-strip[data-paused] .ticker-track,
+.site-header .market-strip[data-user-paused] .ticker-track,
+.site-header .market-strip:focus-within .ticker-track { animation-play-state: paused; }
+.site-header .market-strip { position: relative; cursor: pointer; }
+/* Visually hidden until keyboard focus, then shown over the strip's left edge. */
+.ticker-toggle { position: absolute; z-index: 3; inset: 50% auto auto 6px; translate: 0 -50%; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 1px solid var(--aqua); border-radius: 999px; background: var(--bg-deep); color: var(--aqua); font: 600 11px/1 Sora, sans-serif; letter-spacing: .02em; }
+.ticker-toggle:focus-visible { width: auto; height: auto; padding: 6px 10px; overflow: visible; clip-path: none; outline: 2px solid var(--aqua); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .site-header .market-strip { overflow-x: auto; }
   .site-header .ticker-track { animation: none; }

@@ -66,8 +66,35 @@ a {
   min-width: max-content;
 }
 
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 10px;
+  left: 10px;
+  padding: 10px 16px;
+  border: 1px solid var(--aqua);
+  border-radius: 999px;
+  background: var(--bg-deep);
+  color: var(--aqua);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-160%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+  outline: 2px solid var(--aqua);
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
 .wordmark {
   padding: 0;
+  text-decoration: none;
   border: 0;
   background: transparent;
   color: #edf4ff;
@@ -683,9 +710,13 @@ p {
   margin-left: 0.08em;
   vertical-align: -0.025em;
   background: var(--aqua);
-  animation: intro-cursor-blink 1.15s step-end infinite;
+  /* Blinks while the headline types, then fades: no endless blinking (WCAG 2.2.2). */
+  animation:
+    intro-cursor-blink 1.15s step-end 4,
+    intro-cursor-out 0.6s ease 4.6s forwards;
 }
 @keyframes intro-cursor-blink { 50% { opacity: 0; } }
+@keyframes intro-cursor-out { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .intro-cursor { display: none; animation: none; }
 }
@@ -1815,6 +1846,12 @@ p {
     opacity: 1;
     transform: none;
     animation: none;
+  }
+
+  /* Only the index entrance animates colour; revealed labels keep theirs. */
+  .index-enter,
+  .index-enter .index-row-title,
+  .index-intro.index-enter h1 {
     color: inherit;
   }
 

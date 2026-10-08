@@ -116,6 +116,18 @@ export function initializeSumlinoCharacter() {
       trigger.focus({ preventScroll: true });
     }
   });
+  // The preview lives at the end of <body> for positioning, so continue the
+  // tab order from the trigger rather than leaving the page.
+  close.addEventListener('keydown', event => {
+    if (event.key !== 'Tab' || event.shiftKey) return;
+    const focusable = [...document.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+      .filter(element => !preview.contains(element) && element.getClientRects().length);
+    const next = focusable[focusable.indexOf(trigger) + 1];
+    if (!next) return;
+    event.preventDefault();
+    hide();
+    next.focus();
+  });
   const handleFocusOut = event => {
     if (event.relatedTarget !== trigger && !preview.contains(event.relatedTarget)) hide();
   };
@@ -130,7 +142,7 @@ export function initializeSumlinoCharacter() {
     if (event.key === 'Escape') hide(preview.contains(document.activeElement));
   });
   // Do not leave a project preview covering unrelated content after scrolling away.
-  window.addEventListener('scroll', () => hide(), { passive: true });
+  window.addEventListener('scroll', () => hide(preview.contains(document.activeElement)), { passive: true });
   window.addEventListener('resize', () => { if (open) position(); });
   window.visualViewport?.addEventListener('resize', () => { if (open) position(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); });

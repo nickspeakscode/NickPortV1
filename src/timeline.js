@@ -24,7 +24,7 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       <nav class="timeline-chapters" aria-label="Timeline chapters">
-        ${chapters.map((chapter, index) => `<button type="button" data-chapter="${index}" aria-label="Chapter ${index + 1}: ${chapter.title}"${index === 0 ? ' aria-current="step"' : ''}><span class="chapter-name">${chapter.label}</span>${cardRank(chapter.rank)}</button>`).join('')}
+        ${chapters.map((chapter, index) => `<button type="button" data-chapter="${index}" aria-label="${chapter.label}: chapter ${index + 1}, ${chapter.title}"${index === 0 ? ' aria-current="step"' : ''}><span class="chapter-name">${chapter.label}</span>${cardRank(chapter.rank)}</button>`).join('')}
       </nav>
       <div class="timeline-story">
         ${chapters.map((chapter, index) => `<section class="story-chapter${index === 0 ? ' is-current' : ''}" aria-labelledby="title-${chapter.id}"${index ? ' inert aria-hidden="true"' : ''}>
@@ -61,6 +61,13 @@ let current = savedChapter;
 let target = savedChapter;
 let frame = 0;
 let lastFrame = 0;
+let lastPaint = 0;
+let lastInput = 0;
+const noteInput = () => { lastInput = performance.now(); };
+for (const type of ['pointermove', 'pointerdown', 'wheel', 'keydown', 'touchstart']) {
+  window.addEventListener(type, noteInput, { passive: true });
+}
+
 let announcement;
 let touch;
 let transition;
@@ -92,6 +99,13 @@ function select(index) {
 function paint(now = performance.now()) {
   frame = 0;
   if (document.hidden || !canvasVisible) return;
+  // Settled and untouched, the gentle idle float runs at ~30fps instead of the
+  // display's full rate (up to 3,500 particles per frame on desktop).
+  if (!transition && current === target && now - lastInput > 1600 && now - lastPaint < 33) {
+    frame = requestAnimationFrame(paint);
+    return;
+  }
+  lastPaint = now;
   // Time-based easing feels the same on 60Hz and high-refresh displays.
   const elapsed = lastFrame ? Math.min(50, now - lastFrame) : 16.7;
   lastFrame = now;

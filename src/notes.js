@@ -68,7 +68,7 @@ function renderNotesIndex(notes, { pending = false } = {}) {
 function renderLearningFrom(resource) {
   if (!resource) return "";
   const cover = resource.coverImage
-    ? `<img src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 180))}" alt="${escapeHtml(resource.coverAlt || `${resource.title} cover`)}" loading="lazy" />`
+    ? `<img src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 180))}" alt="" loading="lazy" />`
     : escapeHtml(resourceInitials(resource.title));
 
   return `

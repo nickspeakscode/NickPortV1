@@ -164,12 +164,12 @@ function renderProgress(resource) {
 
 function renderRating(rating) {
   if (rating == null || rating === "" || !Number.isFinite(Number(rating)) || Number(rating) < 1 || Number(rating) > 5) return "";
-  return `<div class="resource-rating" aria-label="Rated ${escapeHtml(rating)} out of 5">★ ${escapeHtml(rating)} / 5</div>`;
+  return `<div class="resource-rating" role="img" aria-label="Rated ${escapeHtml(rating)} out of 5">★ ${escapeHtml(rating)} / 5</div>`;
 }
 
 function renderResourceRow(resource, index) {
   const cover = resource.coverImage
-    ? `<img class="index-row-cover" src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 160))}" alt="${escapeHtml(resource.coverAlt || `${resource.title} cover`)}" width="40" height="56" loading="lazy" />`
+    ? `<img class="index-row-cover" src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 160))}" alt="" width="40" height="56" loading="lazy" />`
     : `<span class="index-row-cover-fallback" aria-hidden="true">${escapeHtml(resourceInitials(resource.title))}</span>`;
   const meta = resource.status || resource.resourceType || "";
 
@@ -205,7 +205,7 @@ function renderShelfBook(resource, index) {
        <span class="book-cover-title">${escapeHtml(resource.title)}</span>
        <span class="book-cover-author">${escapeHtml(resource.authorCreator || "")}</span>`;
   return `<li class="shelf-item" style="--book-delay: ${Math.min(index, 5) * 65}ms">
-    <a class="shelf-link" href="/library/${encodeURIComponent(resource.slug)}" data-resource="${escapeHtml(resource.slug)}" aria-label="Open ${escapeHtml(resource.title)}">
+    <a class="shelf-link" href="/library/${encodeURIComponent(resource.slug)}" data-resource="${escapeHtml(resource.slug)}">
       <span class="book-stage" aria-hidden="true">
         <span class="book-object"><span class="book-face${resource.coverImage ? "" : " book-face-fallback"}">${cover}</span></span>
       </span>

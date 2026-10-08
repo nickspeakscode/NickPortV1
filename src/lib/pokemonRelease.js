@@ -41,6 +41,7 @@ export function initializePokemonRelease({ onMove } = {}) {
   const sprite = document.getElementById("pokemonSprite");
 
   if (!button || !pokemon || !sprite) return () => {};
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   const state = {
     released: false,
@@ -57,17 +58,34 @@ export function initializePokemonRelease({ onMove } = {}) {
     pointerX: 0,
     pointerY: 0,
     pointerActive: false,
+    // Layout reads are cached: the sprite size only changes on swap/resize,
+    // and obstacles are re-measured a few times a second, not every frame.
+    width: 0,
+    height: 0,
+    topLimit: 70,
+    obstacles: [],
+    obstaclesAt: 0,
+    openTimer: 0,
   };
 
+  function measure() {
+    const rect = pokemon.getBoundingClientRect();
+    state.width = rect.width;
+    state.height = rect.height;
+    state.topLimit = Math.max(70, (document.querySelector(".site-header")?.getBoundingClientRect().bottom ?? 62) + 8);
+    state.obstaclesAt = 0;
+  }
+
   function setPosition() {
-    const bob = Math.sin(performance.now() / 140) * 5;
+    const bob = reducedMotion.matches ? 0 : Math.sin(performance.now() / 140) * 5;
     pokemon.style.setProperty("--x", `${state.x}px`);
     pokemon.style.setProperty("--y", `${state.y + bob}px`);
     pokemon.style.setProperty("--facing", state.facing);
   }
 
   function getBounds() {
-    const rect = pokemon.getBoundingClientRect();
+    if (!state.width) measure();
+    const rect = { width: state.width, height: state.height };
     return {
       left: state.x + rect.width * 0.18,
       top: state.y + rect.height * 0.2,
@@ -117,8 +135,8 @@ export function initializePokemonRelease({ onMove } = {}) {
       hit.x = -1;
     }
 
-    if (state.y < 70) {
-      state.y = 70;
+    if (state.y < state.topLimit) {
+      state.y = state.topLimit;
       hit.y = 1;
     } else if (state.y > maxY) {
       state.y = maxY;
@@ -129,7 +147,10 @@ export function initializePokemonRelease({ onMove } = {}) {
   }
 
   function getObstacles() {
-    return Array.from(document.querySelectorAll(OBSTACLE_SELECTOR))
+    const now = performance.now();
+    if (now - state.obstaclesAt < 150) return state.obstacles;
+    state.obstaclesAt = now;
+    state.obstacles = Array.from(document.querySelectorAll(OBSTACLE_SELECTOR))
       .map((target) => ({ target, rect: target.getBoundingClientRect() }))
       .filter(({ target, rect }) => {
         if (target === pokemon || target === button) return false;
@@ -142,6 +163,7 @@ export function initializePokemonRelease({ onMove } = {}) {
         right: rect.right + 6,
         bottom: rect.bottom + 6,
       }));
+    return state.obstacles;
   }
 
   function bounceOffObstacles() {
@@ -228,11 +250,16 @@ export function initializePokemonRelease({ onMove } = {}) {
     sprite.src = selected.src;
     sprite.alt = selected.name;
     pokemon.dataset.size = selected.size;
+    pokemon.title = `${selected.name}: double-click or press Escape to send back`;
+    state.width = 0;
+    // Restart the pop even on rapid repeat clicks.
     pokemon.classList.remove("is-popping");
-    requestAnimationFrame(() => pokemon.classList.add("is-popping"));
+    void pokemon.offsetWidth;
+    pokemon.classList.add("is-popping");
 
     button.classList.add("is-open");
-    window.setTimeout(() => button.classList.remove("is-open"), 700);
+    clearTimeout(state.openTimer);
+    state.openTimer = window.setTimeout(() => button.classList.remove("is-open"), 700);
     launch();
 
     if (!state.released) {
@@ -244,7 +271,33 @@ export function initializePokemonRelease({ onMove } = {}) {
       setPosition();
     }
 
-    ensureAnimation();
+    // Reduced motion: the Pokemon appears and stays put (it can still be dragged).
+    if (reducedMotion.matches) setPosition();
+    else ensureAnimation();
+  }
+
+  function recallPokemon() {
+    if (!state.released) return;
+    state.released = false;
+    state.dragging = false;
+    if (state.frameId) cancelAnimationFrame(state.frameId);
+    state.frameId = 0;
+    pokemon.classList.remove("is-released", "is-dragging", "is-popping");
+    pokemon.removeAttribute("title");
+  }
+
+  function handleKeydown(event) {
+    if (event.key === "Escape") recallPokemon();
+  }
+
+  function handleMotionChange() {
+    if (!state.released) return;
+    if (reducedMotion.matches && state.frameId) {
+      cancelAnimationFrame(state.frameId);
+      state.frameId = 0;
+    }
+    setPosition();
+    if (!reducedMotion.matches) ensureAnimation();
   }
 
   function startDrag(event) {
@@ -276,6 +329,8 @@ export function initializePokemonRelease({ onMove } = {}) {
   }
 
   function endDrag(event) {
+    // A lifted finger is not a cursor to steer around.
+    if (event.pointerType === "touch") state.pointerActive = false;
     if (!state.dragging) return;
     state.dragging = false;
     pokemon.classList.remove("is-dragging");
@@ -283,16 +338,21 @@ export function initializePokemonRelease({ onMove } = {}) {
     normalizeSpeed(3.1);
   }
 
+  function handlePointerOut(event) {
+    if (!event.relatedTarget) state.pointerActive = false;
+  }
+
   function handleVisibilityChange() {
     if (document.hidden && state.frameId) {
       cancelAnimationFrame(state.frameId);
       state.frameId = 0;
-    } else {
+    } else if (!reducedMotion.matches) {
       ensureAnimation();
     }
   }
 
   function handleResize() {
+    state.width = 0;
     if (!state.released) return;
     clampToViewport();
     setPosition();
@@ -303,6 +363,11 @@ export function initializePokemonRelease({ onMove } = {}) {
   }
 
   button.addEventListener("click", releasePokemon);
+  pokemon.addEventListener("dblclick", recallPokemon);
+  sprite.addEventListener("load", () => { state.width = 0; });
+  document.addEventListener("keydown", handleKeydown);
+  document.addEventListener("pointerout", handlePointerOut);
+  reducedMotion.addEventListener("change", handleMotionChange);
   pokemon.addEventListener("animationend", clearPopAnimation);
   pokemon.addEventListener("pointerenter", launch);
   pokemon.addEventListener("pointerdown", startDrag);
@@ -314,7 +379,12 @@ export function initializePokemonRelease({ onMove } = {}) {
 
   return () => {
     if (state.frameId) cancelAnimationFrame(state.frameId);
+    clearTimeout(state.openTimer);
     button.removeEventListener("click", releasePokemon);
+    pokemon.removeEventListener("dblclick", recallPokemon);
+    document.removeEventListener("keydown", handleKeydown);
+    document.removeEventListener("pointerout", handlePointerOut);
+    reducedMotion.removeEventListener("change", handleMotionChange);
     pokemon.removeEventListener("animationend", clearPopAnimation);
     pokemon.removeEventListener("pointerenter", launch);
     pokemon.removeEventListener("pointerdown", startDrag);

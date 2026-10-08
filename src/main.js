@@ -2,7 +2,7 @@ import "./style.css";
 import "./writing.css";
 import "./homeRefinements.css";
 import { initializeMarketTicker } from "./lib/marketTicker.js";
-import { initializeIndexPointer, initializeNavPrefetch, readCache, sameContent, writeCache } from "./lib/pageData.js";
+import { initializeNavPrefetch, readCache, sameContent, writeCache } from "./lib/pageData.js";
 import { initializePokemonRelease } from "./lib/pokemonRelease.js";
 import { createCardPortrait } from "./lib/cardPortrait.js";
 import { initializeSumlinoCharacter } from "./lib/sumlinoCharacter.js";
@@ -30,7 +30,7 @@ function renderHomeRows(items, hrefFor) {
             <li>
               <a class="highlights-row reveal-on-scroll" href="${hrefFor(item)}" style="--reveal-delay: ${90 + index * 90}ms">
                 <span class="highlights-row-title">${escapeHtml(item.title)}</span>
-                <time class="highlights-row-meta">${escapeHtml(item.displayDate)}</time>
+                <time class="highlights-row-meta"${item.publishedAt ? ` datetime="${escapeHtml(String(item.publishedAt).slice(0, 10))}"` : ""}>${escapeHtml(item.displayDate)}</time>
               </a>
             </li>
           `
@@ -52,9 +52,10 @@ const featuredNotes = renderHomeRows(
 );
 
 app.innerHTML = `
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header">
     <div class="header-left">
-      <button class="wordmark" type="button" id="reloadSite">Nicholas Thomas</button>
+      <a class="wordmark" href="/">Nicholas Thomas</a>
       <nav aria-label="Main navigation">
         <a href="#home" aria-current="page">Home</a>
         <a href="#about">About</a>
@@ -63,10 +64,10 @@ app.innerHTML = `
         <a href="/notes/">TIL</a>
       </nav>
     </div>
-    <div class="market-strip" aria-label="Market prices">
+    <div class="market-strip" role="region" aria-label="Market prices">
       <div class="ticker-track" id="tickerTrack"></div>
     </div>
-    <div class="social-icons" aria-label="Social links">
+    <div class="social-icons" role="group" aria-label="Social links">
       <a href="https://www.linkedin.com/in/nicktrades/" target="_blank" rel="noreferrer" aria-label="LinkedIn">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.94 8.86H3.2V20h3.74V8.86ZM5.07 7.34c1.2 0 1.95-.8 1.95-1.8-.02-1.02-.75-1.8-1.92-1.8s-1.95.78-1.95 1.8c0 1 .75 1.8 1.9 1.8h.02ZM20.85 13.62c0-3.42-1.82-5.02-4.25-5.02-1.96 0-2.84 1.08-3.33 1.84V8.86H9.53c.05 1.05 0 11.14 0 11.14h3.74v-6.22c0-.33.02-.66.12-.9.27-.66.88-1.35 1.9-1.35 1.34 0 1.88 1.02 1.88 2.52V20h3.74l-.06-6.38Z"/></svg>
       </a>
@@ -88,7 +89,7 @@ app.innerHTML = `
     </div>
   </header>
 
-  <main>
+  <main id="main-content" tabindex="-1">
     <section class="hero" id="home">
       <div class="pokemon-walker" id="pokemonWalker" aria-hidden="true">
         <img id="pokemonSprite" alt="" />
@@ -163,7 +164,7 @@ app.innerHTML = `
                 class="redacted-mark"
                 aria-expanded="false"
                 aria-controls="sumlino-teaser"
-                aria-label="Preview Sumlino, a project by Nick"
+                aria-label="redacted: preview Sumlino, a project by Nick"
               >
                 <span class="redacted-label" aria-hidden="true">redacted</span>
                 <span class="redacted-brand" aria-hidden="true">Sumlino</span>
@@ -173,13 +174,13 @@ app.innerHTML = `
             that takes the month-end recon grind off their plate so they can
             keep the judgment calls.
           </p>
-          <div class="about-focus-list" aria-label="Current focus areas">
-            <span style="--focus-delay: 120ms">Financial modeling</span>
-            <span style="--focus-delay: 240ms">CMA prep</span>
-            <span style="--focus-delay: 360ms">Student <small>(always learning)</small></span>
-            <span style="--focus-delay: 480ms">AI technology + workflows</span>
-            <span style="--focus-delay: 600ms">Trading</span>
-            <span style="--focus-delay: 720ms">Basketball</span>
+          <div class="about-focus-list" role="list" aria-label="Current focus areas">
+            <span role="listitem" style="--focus-delay: 120ms">Financial modeling</span>
+            <span role="listitem" style="--focus-delay: 240ms">CMA prep</span>
+            <span role="listitem" style="--focus-delay: 360ms">Student <small>(always learning)</small></span>
+            <span role="listitem" style="--focus-delay: 480ms">AI technology + workflows</span>
+            <span role="listitem" style="--focus-delay: 600ms">Trading</span>
+            <span role="listitem" style="--focus-delay: 720ms">Basketball</span>
           </div>
         </article>
         <figure class="about-portrait reveal-on-scroll">
@@ -221,24 +222,20 @@ app.innerHTML = `
   </footer>
 `;
 
+// Decorative modules must never block the page: content is revealed first,
+// and a failure here (e.g. an old browser without the Web Animations API)
+// leaves a static portrait instead of hidden sections.
+function safely(label, start, fallback) {
+  try {
+    return start();
+  } catch (error) {
+    console.warn(`${label} unavailable`, error);
+    return fallback;
+  }
+}
+
 const tickerTrack = document.getElementById("tickerTrack");
-initializeMarketTicker(tickerTrack, import.meta.env.VITE_MARKET_DATA_ENDPOINT || "/api/market-data");
-
-document.getElementById("reloadSite").addEventListener("click", () => {
-  window.location.reload();
-});
-
-const hero = document.querySelector(".hero");
-const portraitShell = document.querySelector(".portrait-shell");
-const cardPortrait = createCardPortrait({
-  hero,
-  image: document.getElementById("portraitSource"),
-  shell: portraitShell,
-});
-
-initializeMobileNav();
-syncHeaderOffset();
-initializeSumlinoCharacter();
+safely("Market ticker", () => initializeMarketTicker(tickerTrack, import.meta.env.VITE_MARKET_DATA_ENDPOINT || "/api/market-data"));
 
 const revealItems = document.querySelectorAll(".reveal-on-scroll");
 const revealObserver = new IntersectionObserver(
@@ -273,6 +270,28 @@ const focusObserver = new IntersectionObserver(
 
 focusObserver.observe(focusList);
 
+const hero = document.querySelector(".hero");
+const portraitShell = document.querySelector(".portrait-shell");
+const cardPortrait = safely("Card portrait", () => createCardPortrait({
+  hero,
+  image: document.getElementById("portraitSource"),
+  shell: portraitShell,
+}), { disturb() {}, pause() {}, resume() {} });
+
+initializeMobileNav();
+syncHeaderOffset();
+safely("Sumlino preview", initializeSumlinoCharacter);
+
+// The portrait only shuffles with motion allowed; say so to assistive tech.
+const portraitMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+function syncPortraitLabel() {
+  portraitShell.setAttribute("aria-label", portraitMotion.matches ? "Nicholas Thomas’s portrait card" : "Shuffle Nicholas Thomas’s portrait cards");
+  if (portraitMotion.matches) portraitShell.setAttribute("aria-disabled", "true");
+  else portraitShell.removeAttribute("aria-disabled");
+}
+syncPortraitLabel();
+portraitMotion.addEventListener("change", syncPortraitLabel);
+
 function fillHomeList(id, html) {
   const mount = document.getElementById(id);
   if (!mount) return;
@@ -281,7 +300,6 @@ function fillHomeList(id, html) {
 }
 
 initializeNavPrefetch();
-initializeIndexPointer();
 
 loadArticleSummaries()
   .then((articles) => {
@@ -319,7 +337,7 @@ function getOverlap(a, b) {
   return x > 0 && y > 0 ? { x, y } : null;
 }
 
-function disturbPortraitOnWalkerOverlap(walkerRect, velocity = { vx: 0, vy: 0 }) {
+function disturbPortraitOnWalkerOverlap(walkerRect) {
   const portraitRect = portraitShell.getBoundingClientRect();
   const overlap = getOverlap(walkerRect, {
     left: portraitRect.left,
@@ -330,20 +348,18 @@ function disturbPortraitOnWalkerOverlap(walkerRect, velocity = { vx: 0, vy: 0 })
   if (!overlap) return;
 
   const heroRect = hero.getBoundingClientRect();
-  const walkerSpeed = Math.hypot(velocity.vx, velocity.vy);
   cardPortrait.disturb(
     walkerRect.left + walkerRect.width / 2 - heroRect.left,
     walkerRect.top + walkerRect.height / 2 - heroRect.top,
-    136,
-    4.5 + Math.min(6, walkerSpeed * 1.6)
+    136
   );
 }
 
-initializePokemonRelease({
-  onMove(rect, velocity) {
-    disturbPortraitOnWalkerOverlap(rect, velocity);
+safely("Pokemon", () => initializePokemonRelease({
+  onMove(rect) {
+    disturbPortraitOnWalkerOverlap(rect);
   },
-});
+}));
 
 function handleAnimationVisibility() {
   if (document.hidden) {
