@@ -23,12 +23,8 @@ function yahooFinanceDevProxy() {
           response.end(JSON.stringify(payload));
         } catch (error) {
           response.statusCode = 502;
-          response.end(
-            JSON.stringify({
-              error: "Market data is temporarily unavailable",
-              detail: error instanceof Error ? error.message : "Unknown Yahoo Finance error",
-            })
-          );
+          console.warn("market-data:", error instanceof Error ? error.message : error);
+          response.end(JSON.stringify({ error: "Market data is temporarily unavailable" }));
         }
       });
     },

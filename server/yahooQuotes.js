@@ -45,8 +45,13 @@ export function createQuoteService(fetchImpl = (...args) => fetch(...args), now 
           ? { ...previous, status: 'stale' }
           : { symbol, price: null, status: 'unavailable' };
       });
-      cached = { quotes, fetchedAt: now(), provider: 'Yahoo Finance', status: 'delayed' };
-      expires = now() + 15000;
+      // Overall health reflects the symbols: "delayed" if any quote is fresh,
+      // "stale" if only last-known prices remain, otherwise "unavailable".
+      const status = quotes.some(item => item.status === 'delayed') ? 'delayed'
+        : quotes.some(item => item.status === 'stale') ? 'stale' : 'unavailable';
+      cached = { quotes, fetchedAt: now(), provider: 'Yahoo Finance', status };
+      // Retry an unhealthy feed sooner than a healthy one.
+      expires = now() + (status === 'delayed' ? 15000 : 5000);
       return cached;
     })();
     try { return await pending; } finally { pending = null; }

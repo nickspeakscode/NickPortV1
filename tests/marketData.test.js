@@ -35,3 +35,29 @@ test('null, invalid and rejected prices never become zero quotes or erase symbol
   assert.equal(result.quotes.length, 8);
   assert.ok(result.quotes.every(quote => quote.price === null && quote.status === 'unavailable'));
 });
+
+test('overall status reflects the symbols rather than always claiming "delayed"', async () => {
+  let time = 500000;
+  let mode = 'ok';
+  const service = createQuoteService(async () => {
+    if (mode === 'down') throw new Error('offline');
+    return { ok: true, json: async () => ({ chart: { result: [{ meta: { regularMarketPrice: 50, chartPreviousClose: 40 } }] } }) };
+  }, () => time);
+  assert.equal((await service()).status, 'delayed');
+  mode = 'down'; time += 16000;
+  assert.equal((await service()).status, 'stale', 'only last-known prices remain');
+  time += 86400000;
+  assert.equal((await service()).status, 'unavailable');
+});
+
+test('market-data API rejects cache-busting queries and other methods without calling Yahoo', async () => {
+  const { default: handler } = await import('../api/market-data.js');
+  const respond = () => ({ headers: {}, setHeader(k, v) { this.headers[k] = v; }, status(code) { this.code = code; return this; }, json(body) { this.body = body; } });
+  const busted = respond();
+  await handler({ method: 'GET', url: '/api/market-data?x=123' }, busted);
+  assert.equal(busted.code, 400);
+  const post = respond();
+  await handler({ method: 'POST', url: '/api/market-data' }, post);
+  assert.equal(post.code, 405);
+  assert.equal(post.headers.Allow, 'GET, HEAD');
+});
