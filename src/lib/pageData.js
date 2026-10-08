@@ -72,7 +72,7 @@ export function initializeNavPrefetch(root = document) {
 }
 
 export function initializeIndexPointer(root = document) {
-  const hosts = root.querySelectorAll(".index-page, .home-index, .learning-page");
+  const hosts = root.querySelectorAll(".index-page, .learning-page");
   if (!hosts.length) return () => {};
 
   const clear = () => {

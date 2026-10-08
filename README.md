@@ -11,6 +11,17 @@ npm run dev
 
 The public site runs at `http://127.0.0.1:5173/` when Vite is started with the host option used in this workspace.
 
+## Tests
+
+```powershell
+npm test              # unit tests (Node's built-in runner)
+npx playwright install chromium webkit   # once, for the browser suite
+npm run test:browser  # browser suites in tests/*.browser.cjs (Chromium + WebKit)
+npm run test:browser -- mobileNav   # run matching suites only
+```
+
+The browser runner reuses a server already listening on `http://127.0.0.1:5173` or starts the Vite dev server there (the origin allowed by Sanity CORS). GitHub Actions runs `npm test` and `npm run build` on every push and pull request.
+
 ## Production build
 
 ```powershell

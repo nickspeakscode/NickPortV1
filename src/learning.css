@@ -3,12 +3,6 @@
   padding: 0 clamp(22px, 9vw, 200px) 96px;
 }
 
-.learning-hero {
-  max-width: 920px;
-  padding: clamp(76px, 10vw, 145px) 0 78px;
-}
-
-.learning-hero h1,
 .learning-detail-title {
   margin: 0 0 22px;
   color: #eef4ff;
@@ -17,96 +11,8 @@
   letter-spacing: -0.055em;
 }
 
-.learning-hero h1 span,
 .learning-detail-title span {
   color: var(--aqua);
-}
-
-.learning-hero > p:last-child {
-  max-width: 740px;
-  margin: 0;
-  color: #9ba9c5;
-  font-size: clamp(17px, 1.55vw, 21px);
-  line-height: 1.7;
-}
-
-.learning-toolbar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 28px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--line);
-}
-
-.learning-toolbar h2 {
-  margin: 0;
-  color: #d8e2f7;
-  font-size: clamp(28px, 3.15vw, 43px);
-}
-
-.learning-count {
-  margin: 0;
-  color: #7f8da8;
-  font-size: 13px;
-}
-
-.learning-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-  padding: 24px 0 30px;
-}
-
-.learning-filters button {
-  min-height: 38px;
-  padding: 0 14px;
-  border: 1px solid rgba(148, 169, 209, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.025);
-  color: #9ba8c2;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-}
-
-.learning-filters button:hover,
-.learning-filters button.is-active {
-  border-color: rgba(89, 241, 215, 0.46);
-  background: rgba(89, 241, 215, 0.1);
-  color: #ddfff9;
-}
-
-.resource-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-}
-
-.resource-card {
-  position: relative;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  overflow: hidden;
-  border: 1px solid rgba(148, 169, 209, 0.16);
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(139, 115, 255, 0.12), transparent 40%),
-    var(--panel);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
-  transition:
-    opacity 0.7s ease var(--reveal-delay, 0ms),
-    transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) var(--reveal-delay, 0ms),
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
-}
-
-.resource-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(89, 241, 215, 0.42);
-  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.2);
 }
 
 .resource-cover {
@@ -124,22 +30,6 @@
   display: block;
   object-fit: cover;
   transition: transform 0.45s ease;
-}
-
-.resource-card:hover .resource-cover img {
-  transform: scale(1.035);
-}
-
-.resource-cover-placeholder {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  color: rgba(223, 253, 247, 0.84);
-  font-family: Oxanium, Sora, sans-serif;
-  font-size: 34px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
 }
 
 .resource-type-badge,
@@ -168,33 +58,12 @@
   backdrop-filter: blur(10px);
 }
 
-.resource-card-body {
-  display: flex;
-  flex-direction: column;
-  padding: 22px;
-}
-
 .resource-card-topline {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 13px;
-}
-
-.resource-category {
-  color: #8796b3;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.resource-card h2 {
-  margin: 0 0 9px;
-  color: #edf4ff;
-  font-size: clamp(20px, 1.7vw, 27px);
-  line-height: 1.22;
 }
 
 .resource-creator {
@@ -249,24 +118,6 @@
   color: #dacd80;
   font-size: 12px;
   font-weight: 700;
-}
-
-.learning-empty {
-  grid-column: 1 / -1;
-  padding: clamp(38px, 6vw, 70px);
-  border: 1px dashed rgba(148, 169, 209, 0.22);
-  border-radius: 20px;
-  background: rgba(9, 25, 46, 0.44);
-  color: #93a1bd;
-  text-align: center;
-  line-height: 1.7;
-}
-
-.learning-empty strong {
-  display: block;
-  margin-bottom: 8px;
-  color: #edf4ff;
-  font-size: 22px;
 }
 
 .resource-detail,
@@ -415,83 +266,6 @@
   color: var(--aqua);
 }
 
-.note-list {
-  display: grid;
-  gap: 14px;
-  padding: 28px 0 0;
-}
-
-.note-card {
-  position: relative;
-  display: block;
-  padding: 24px 26px;
-  overflow: hidden;
-  border: 1px solid rgba(148, 169, 209, 0.15);
-  border-radius: 16px;
-  background:
-    linear-gradient(135deg, rgba(89, 241, 215, 0.035), transparent 48%),
-    rgba(9, 25, 46, 0.62);
-  transition:
-    opacity 0.65s ease var(--reveal-delay, 0ms),
-    transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) var(--reveal-delay, 0ms),
-    border-color 0.2s ease,
-    background 0.2s ease;
-}
-
-.note-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(89, 241, 215, 0.36);
-  background: rgba(10, 30, 55, 0.82);
-}
-
-.note-card-topline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 14px;
-}
-
-.note-date {
-  color: #74839f;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.note-card h2,
-.note-card h3 {
-  max-width: 780px;
-  margin: 0 0 10px;
-  color: #edf4ff;
-  font-size: clamp(20px, 2vw, 29px);
-  line-height: 1.25;
-}
-
-.note-card p {
-  max-width: 780px;
-  margin: 0;
-  color: #99a7c4;
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-.note-card-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 18px;
-  margin-top: 18px;
-  color: #7887a3;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.note-resource-link {
-  color: #b8f9ee;
-}
-
 .note-detail-inner {
   max-width: 860px;
   margin: 0 auto;
@@ -580,32 +354,6 @@
   font-size: 20px;
 }
 
-.learning-empty a {
-  color: var(--aqua);
-  font-weight: 700;
-}
-
-.loading-state {
-  min-height: 44vh;
-  display: grid;
-  place-items: center;
-  color: #8391ad;
-  font-size: 13px;
-}
-
-.loading-state::before {
-  content: "✦";
-  display: block;
-  margin-right: 10px;
-  color: var(--aqua);
-}
-
-@media (max-width: 1000px) {
-  .resource-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 900px) {
   .learning-page {
     padding-inline: clamp(22px, 7vw, 64px);
@@ -620,24 +368,6 @@
 @media (max-width: 680px) {
   .learning-page {
     padding-bottom: 72px;
-  }
-
-  .learning-hero {
-    padding: 70px 0 72px;
-  }
-
-  .learning-hero h1 {
-    font-size: clamp(44px, 15vw, 66px);
-  }
-
-  .learning-toolbar {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .resource-grid {
-    grid-template-columns: 1fr;
   }
 
   .resource-detail-grid {
