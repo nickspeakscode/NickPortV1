@@ -3,10 +3,15 @@ dist/
 .DS_Store
 .env*
 !.env.example
-studio/node_modules/
-studio/dist/
+.vercel/
 studio/.sanity/
 .npm-cache/
 .browser-cache/
 test-results/
 output/playwright/
+
+# Local AI-assistant working notes (archived outside the repo; keep them private)
+.cursor/
+CURSOR_CONTEXT.md
+GROK_TEAM_BRIEFING.md
+*_VERIFICATION.md
