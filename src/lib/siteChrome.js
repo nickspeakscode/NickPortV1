@@ -51,7 +51,7 @@ export function renderInteriorHeader(activePath) {
 export function renderSiteFooter() {
   return `
     <footer class="site-footer">
-      <p>Built by Nick Thomas. All rights reserved.</p>
+      <p>Built by Nicholas Thomas. All rights reserved.</p>
     </footer>
   `;
 }

@@ -18,7 +18,8 @@ const articleQuery = `
     publishedAt,
     readTime,
     featured,
-    views,
+    // Counted by /api/record-view in separate viewcount-<id> documents.
+    "views": coalesce(*[_type == "viewCount" && _id == "viewcount-" + ^._id][0].count, 0),
     "coverImage": coverImage.asset->url,
     body[]{
       ...,
@@ -72,7 +73,7 @@ const learningNoteFields = `
   category,
   tags,
   featured,
-  views,
+  "views": coalesce(*[_type == "viewCount" && _id == "viewcount-" + ^._id][0].count, 0),
   readTime,
   "relatedResource": relatedResource->{
     _id,

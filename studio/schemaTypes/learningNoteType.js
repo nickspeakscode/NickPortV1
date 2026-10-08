@@ -95,14 +95,6 @@ export const learningNoteType = defineType({
       initialValue: false,
     }),
     defineField({
-      name: "views",
-      title: "Views",
-      type: "number",
-      description: "Counted automatically when someone opens this note. The homepage highlights the most viewed notes.",
-      initialValue: 0,
-      readOnly: true,
-    }),
-    defineField({
       name: "readTime",
       title: "Estimated read time in minutes",
       type: "number",

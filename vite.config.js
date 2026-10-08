@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import { recordDocumentView } from "./server/recordView.js";
+import { recordDocumentView, screenViewRequest } from "./server/recordView.js";
 import { fetchYahooQuotes } from "./server/yahooQuotes.js";
 import { buildSitemap } from "./server/sitemap.js";
 
@@ -104,6 +104,18 @@ function recordViewDevProxy() {
           response.statusCode = 400;
           response.setHeader("Content-Type", "application/json");
           response.end(JSON.stringify({ error: "Invalid JSON" }));
+          return;
+        }
+
+        const rejected = screenViewRequest({
+          headers: request.headers,
+          remoteAddress: request.socket?.remoteAddress,
+          type: body?.type,
+          slug: body?.slug,
+        });
+        if (rejected) {
+          response.statusCode = rejected.status;
+          response.end(rejected.skipped ? "" : JSON.stringify({ error: rejected.error }));
           return;
         }
 

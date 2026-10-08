@@ -7,6 +7,7 @@ import { initializePokemonRelease } from "./lib/pokemonRelease.js";
 import { createCardPortrait } from "./lib/cardPortrait.js";
 import { initializeSumlinoCharacter } from "./lib/sumlinoCharacter.js";
 import { syncHeaderOffset } from "./lib/pageUi.js";
+import { selectHighlights } from "./lib/highlights.js";
 import { initializeMobileNav } from "./lib/mobileNav.js";
 import {
   escapeHtml,
@@ -17,16 +18,6 @@ import {
 const app = document.querySelector("#app");
 // Keep the timeline available in code while its homepage entry is on hold.
 const showTimelineLink = false;
-function selectHighlights(source) {
-  return [...source]
-    .sort((left, right) => {
-      const views = (Number(right.views) || 0) - (Number(left.views) || 0);
-      if (views) return views;
-      if (Boolean(right.featured) !== Boolean(left.featured)) return right.featured ? 1 : -1;
-      return new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0);
-    })
-    .slice(0, 3);
-}
 
 function renderHomeRows(items, hrefFor) {
   if (!items.length) return `<p class="highlights-empty reveal-on-scroll">Nothing published yet.</p>`;
@@ -226,7 +217,7 @@ app.innerHTML = `
   </main>
 
   <footer class="site-footer">
-    <p>Built by Nick Thomas. All rights reserved.</p>
+    <p>Built by Nicholas Thomas. All rights reserved.</p>
   </footer>
 `;
 

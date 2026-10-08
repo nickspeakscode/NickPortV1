@@ -86,14 +86,6 @@ export const articleType = defineType({
       initialValue: false,
     }),
     defineField({
-      name: "views",
-      title: "Views",
-      type: "number",
-      description: "Counted automatically when someone opens this musing. The homepage highlights the most viewed posts.",
-      initialValue: 0,
-      readOnly: true,
-    }),
-    defineField({
       name: "body",
       title: "Article body",
       type: "array",
