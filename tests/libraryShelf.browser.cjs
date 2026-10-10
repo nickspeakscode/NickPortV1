@@ -153,6 +153,7 @@ const resources = [
         // A request completing after an interrupted opening must not replace the next selection.
         delay = 900;
         await first.click();
+        await page.locator('.library-reader[open]').waitFor();
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.querySelector('.library-reader').open);
         delay = 0;
@@ -187,9 +188,10 @@ const resources = [
 
         // Resizing finishes the motion without leaving an invisible cover or locked page.
         await second.click();
+        await page.locator('.library-reader[open]').waitFor();
         await page.setViewportSize({ width: mobile ? 390 : 1024, height: 800 });
         await page.waitForFunction(() => !document.querySelector('.library-reader').classList.contains('is-opening'));
-        assert.equal(await page.locator('.book-flight, .resource-detail-cover.is-in-flight').count(), 0);
+        assert.equal(await page.locator('.book-flight, .book-leaf').count(), 0);
         assert.equal(await reader.evaluate(el => el.scrollWidth <= el.clientWidth + 1), true);
         await page.getByRole('button', { name: 'Return to shelf' }).click();
         await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));

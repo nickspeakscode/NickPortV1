@@ -357,15 +357,14 @@ function renderResourceDetail(resource, notes) {
   });
   const status = resource.status || "Want to Learn";
   const externalUrl = safeHref(resource.externalUrl, ['http:', 'https:']);
-  const reveal = "reveal-on-scroll";
   const thoughts = resource.personalSummary?.length
-    ? `<section class="learning-detail-section ${reveal}">
+    ? `<section class="learning-detail-section reveal-on-scroll">
         <h2>My thoughts</h2>
         <div class="article-body">${renderPortableText(resource.personalSummary)}</div>
       </section>`
     : "";
   const takeaways = resource.keyTakeaways?.length
-    ? `<section class="learning-detail-section ${reveal}">
+    ? `<section class="learning-detail-section reveal-on-scroll">
         <h2>Key takeaways</h2>
         <ul class="takeaway-list">${resource.keyTakeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
       </section>`
@@ -375,8 +374,8 @@ function renderResourceDetail(resource, notes) {
     <main class="learning-page resource-detail">
       <a class="detail-back" href="/library/">← Learning Library</a>
       <div class="resource-detail-grid">
-        ${renderCover(resource, `resource-detail-cover ${reveal}`)}
-        <article class="resource-detail-copy ${reveal}">
+        ${renderCover(resource, `resource-detail-cover reveal-on-scroll`)}
+        <article class="resource-detail-copy reveal-on-scroll">
           <div class="resource-card-topline">
             <span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>
             <span class="learning-status" data-status="${statusKey(status)}">${escapeHtml(status)}</span>
@@ -401,7 +400,7 @@ function renderResourceDetail(resource, notes) {
       </div>
       ${thoughts}
       ${takeaways}
-      <section class="learning-detail-section ${reveal}" aria-labelledby="resourceNotesTitle">
+      <section class="learning-detail-section reveal-on-scroll" aria-labelledby="resourceNotesTitle">
         <h2 id="resourceNotesTitle">Notes From This Resource</h2>
         ${
           notes.length

@@ -6,7 +6,7 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   dialog.className = 'library-reader';
   dialog.setAttribute('aria-labelledby', 'library-reader-title');
   dialog.innerHTML = `<div class="reader-toolbar">
-    <button type="button" class="reader-close" autofocus>← Return to shelf</button>
+    <button type="button" class="reader-close" autofocus><span aria-hidden="true">←</span> Return to shelf</button>
     <a class="reader-permalink">Open full page <span aria-hidden="true">↗</span></a>
     </div>
     <div class="reader-content"><div class="reader-book"></div></div>
@@ -41,6 +41,7 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   let swipe;
   let disposed = false;
   let pendingOpen = null;
+  let chromeFades = [];
   let keyboardInput = false;
   const noteKeyboard = () => { keyboardInput = true; };
   const notePointer = event => {
@@ -111,6 +112,9 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     nextButton.disabled = firstPage + step >= all.length;
     if (previousButton.disabled && document.activeElement === previousButton) nextButton.focus();
     if (nextButton.disabled && document.activeElement === nextButton) previousButton.focus();
+    if (book.contains(document.activeElement) && document.activeElement.closest('.reader-page')?.hidden) {
+      (nextButton.disabled ? previousButton : nextButton).focus();
+    }
     const last = Math.min(firstPage + step, all.length);
     position.textContent = step === 2 ? `Pages ${firstPage + 1}–${last} of ${all.length}` : `Page ${firstPage + 1} of ${all.length}`;
   }
@@ -120,9 +124,9 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     const leaf = document.createElement('div');
     leaf.className = `book-leaf book-leaf--${hinge}`;
     leaf.setAttribute('aria-hidden', 'true');
-    leaf.innerHTML = '<div class="book-leaf-face book-leaf-front"></div><div class="book-leaf-face book-leaf-back"></div>';
-    if (front) leaf.firstElementChild.append(front);
-    if (back) leaf.lastElementChild.append(back);
+    leaf.innerHTML = '<div class="book-leaf-face book-leaf-front"><i class="book-leaf-shade"></i></div><div class="book-leaf-face book-leaf-back"><i class="book-leaf-shade"></i></div>';
+    if (front) leaf.firstElementChild.prepend(front);
+    if (back) leaf.lastElementChild.prepend(back);
     Object.assign(leaf.style, {
       left: `${rect.left}px`, top: `${rect.top}px`,
       width: `${rect.width}px`, height: `${rect.height}px`,
@@ -144,23 +148,22 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   }
 
   async function swing(leaf, from, to, duration = 720) {
-    const shade = leaf.animate([
-      { '--leaf-shade': 0 }, { '--leaf-shade': 1, offset: 0.5 }, { '--leaf-shade': 0 },
-    ], { duration, fill: 'both' });
-    pageEffects.add(shade);
+    const shades = [...leaf.querySelectorAll('.book-leaf-shade')].map(shade => shade.animate([
+      { opacity: 0 }, { opacity: 0.7, offset: 0.5 }, { opacity: 0 },
+    ], { duration, fill: 'both' }));
+    shades.forEach(shade => pageEffects.add(shade));
     await animatePage(leaf, [
       { transform: `perspective(2200px) rotateY(${from}deg)` },
       { transform: `perspective(2200px) rotateY(${to}deg)` },
     ], { duration, easing: 'cubic-bezier(.45,.05,.25,1)' });
-    shade.cancel();
-    pageEffects.delete(shade);
+    shades.forEach(shade => { shade.cancel(); pageEffects.delete(shade); });
   }
 
   async function turn(direction) {
     const all = pages();
     const step = perView();
     const target = firstPage + direction * step;
-    if (turning || closing || target < 0 || target >= all.length) return;
+    if (turning || closing || dialog.classList.contains('is-opening') || target < 0 || target >= all.length) return;
     const token = version;
     // Announce page turns, but not the initial position on opening.
     position.setAttribute('aria-live', 'polite');
@@ -213,7 +216,6 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     ghost.className = 'book-flight';
     ghost.setAttribute('aria-hidden', 'true');
     const clone = face.cloneNode(true);
-    clone.classList.remove('is-in-flight');
     clone.removeAttribute('id');
     ghost.append(clone);
     Object.assign(ghost.style, { left: `${from.x}px`, top: `${from.y}px`, width: `${from.width}px`, height: `${from.height}px` });
@@ -237,7 +239,11 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   // or the single page on narrow screens.
   function coverSlot() {
     const visible = pages().filter(page => !page.hidden);
-    return (visible[1] || visible[0])?.getBoundingClientRect();
+    const page = (visible[1] || visible[0])?.getBoundingClientRect();
+    if (!page) return page;
+    const width = Math.min(page.width, page.height * 2 / 3);
+    const height = width * 1.5;
+    return { x: page.x + (page.width - width) / 2, y: page.y + (page.height - height) / 2, width, height, left: page.x + (page.width - width) / 2, top: page.y + (page.height - height) / 2 };
   }
 
   function coverFace(source) {
@@ -274,8 +280,8 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
       // The panel, backdrop and controls fade at once (CSS); the book itself
       // stays fully visible while it folds shut and returns to the shelf.
       dialog.classList.add('is-closing');
-      const chrome = Promise.all([...dialog.querySelectorAll('.reader-toolbar, .reader-nav, .reader-notice')]
-        .map(element => animatePage(element, [{ opacity: 1 }, { opacity: 0 }], { duration: 160 })));
+      chromeFades = [...dialog.querySelectorAll('.reader-toolbar, .reader-nav, .reader-notice')]
+        .map(element => element.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: 'ease', fill: 'forwards' }));
       let from = flyingRect;
       let face = flyingFace;
       const visible = pages().filter(page => !page.hidden);
@@ -295,9 +301,10 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
       // The flying cover now carries the book; hide the pages it left behind.
       if (from && onScreen) content.style.opacity = '0';
       await Promise.all([
-        chrome,
         from && onScreen ? Promise.resolve() : animatePage(content, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 }),
         onScreen && from ? fly(from, rect, face, true) : Promise.resolve(),
+        // Let the panel's own fade finish so it never pops out at the end.
+        new Promise(resolve => setTimeout(resolve, 300)),
       ]);
     }
     if (token !== version || disposed) return;
@@ -305,11 +312,14 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     restorePage();
     dialog.close();
     dialog.classList.remove('is-closing');
+    chromeFades.forEach(fade => fade.cancel());
+    chromeFades = [];
     content.style.removeProperty('opacity');
     if (origin) {
       if (!viaKeyboard) {
-        origin.classList.add('no-peek');
-        origin.addEventListener('blur', () => origin.classList.remove('no-peek'), { once: true });
+        const link = origin;
+        link.classList.add('no-peek');
+        link.addEventListener('blur', () => link.classList.remove('no-peek'), { once: true });
       }
       origin.focus({ preventScroll: true });
     }
@@ -348,7 +358,7 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
       link.classList.add('is-lifting');
       pendingOpen = link;
       await new Promise(resolve => setTimeout(resolve, 170));
-      if (token !== version || disposed || dialog.open) { link.classList.remove('is-lifting'); return; }
+      if (token !== version || disposed || dialog.open || !link.isConnected) { link.classList.remove('is-lifting'); return; }
       pendingOpen = null;
       rect = source.getBoundingClientRect();
     }
@@ -382,7 +392,8 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
       // the left (title) page; on one page it turns away to reveal it.
       const titlePage = visible[0];
       const spread = visible.length === 2;
-      const leaf = makeLeaf(slot, coverFace(source), spread ? pageClone(titlePage) : null, 'left');
+      const landed = coverSlot() || slot;
+      const leaf = makeLeaf(spread ? visible[1].getBoundingClientRect() : landed, coverFace(source), spread ? pageClone(titlePage) : null, 'left');
       const glow = getComputedStyle(dialog).getPropertyValue('--rarity-rgb').trim() || '89 241 215';
       const flash = animatePage(leaf.firstElementChild, [
         { boxShadow: `0 0 0 1px rgb(${glow} / 0), 0 0 0 0 rgb(${glow} / 0)` },
@@ -528,6 +539,8 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   dialog.addEventListener('close', () => {
     if (dialog.open) return; // A queued close event must not cancel a new opening.
     cancelFlight(); cancelPages(); restorePage();
+    chromeFades.forEach(fade => fade.cancel());
+    chromeFades = [];
   });
   const outside = event => {
     const rect = dialog.getBoundingClientRect();
