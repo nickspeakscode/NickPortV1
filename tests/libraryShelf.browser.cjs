@@ -7,7 +7,7 @@ const resources = [
   { title: '<Systems & Learning>', slug: 'systems', resourceType: 'Course', authorCreator: 'Test Creator', status: 'Currently Learning', progress: 35, rating: null, description: 'A course without a cover image.', personalSummary: [], keyTakeaways: [] },
   { title: 'CMA preparation', slug: 'cma', resourceType: 'Certification', status: 'Currently Learning', progress: 10, description: 'The featured study resource.', coverImage: 'https://cdn.sanity.io/images/vzrug3c0/production/test-certificate.svg', externalUrl: 'https://example.com/credential' },
   { title: 'My original book', slug: 'original', resourceType: 'Book', createdByMe: true, status: 'Published', progress: 100, description: 'An original book written by the portfolio owner.' },
-  { title: 'A custom resource', slug: 'custom', resourceType: 'Other', customResourceType: 'Essay & Guide', description: 'A resource with a custom type managed in Sanity.', coverImage: 'https://cdn.sanity.io/images/vzrug3c0/production/broken-cover.jpg', externalUrl: 'javascript:alert(1)', personalSummary: [{ _type: 'block', style: 'normal', markDefs: [{ _key: 'unsafe', _type: 'link', href: 'javascript:alert(1)' }], children: [{ _type: 'span', text: 'Unsafe link stays readable.', marks: ['unsafe'] }] }] },
+  { title: 'A custom resource', slug: 'custom', _createdAt: new Date().toISOString(), resourceType: 'Other', customResourceType: 'Essay & Guide', description: 'A resource with a custom type managed in Sanity.', coverImage: 'https://cdn.sanity.io/images/vzrug3c0/production/broken-cover.jpg', externalUrl: 'javascript:alert(1)', personalSummary: [{ _type: 'block', style: 'normal', markDefs: [{ _key: 'unsafe', _type: 'link', href: 'javascript:alert(1)' }], children: [{ _type: 'span', text: 'Unsafe link stays readable.', marks: ['unsafe'] }] }] },
 ];
 
 (async () => {
@@ -46,6 +46,16 @@ const resources = [
         await page.waitForTimeout(650);
         assert.equal(await page.locator('.shelf-link').count(), 4);
         assert.equal(await page.locator('.index-featured [data-resource="cma"]').count(), 1);
+        // A resource created in the last 14 days is sealed until first seen, then tears open once.
+        const fresh = page.locator('.shelf-item.is-new');
+        assert.equal(await fresh.count(), 1);
+        assert.equal(await fresh.evaluate(el => el.classList.contains('is-sealed')), true, 'new item starts sealed');
+        assert.equal(await fresh.locator('.item-new').count(), 1);
+        await fresh.scrollIntoViewIfNeeded();
+        await page.locator('.shelf-item.is-unwrapped').waitFor({ timeout: 5000 });
+        assert.equal(await page.evaluate(() => localStorage.getItem('nt-unwrapped:custom')), '1');
+        assert.equal(await fresh.locator('.book-seal').evaluate(el => getComputedStyle(el).display), 'none', 'seal is gone after unwrapping');
+        await page.evaluate(() => scrollTo(0, 0));
         assert.equal(await second.locator('.shelf-title').textContent(), '<Systems & Learning>');
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
         const mine = page.locator('[data-filter="mine"]');

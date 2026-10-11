@@ -31,6 +31,19 @@
 @media (min-width: 1200px) and (max-width: 1280px) {
   .site-header > .market-strip { min-width: 200px; }
 }
+/* "Right now" rows under the hero bio; the live row carries a pulsing dot. */
+.now-strip { display: grid; gap: 7px; margin-top: 26px; color: var(--muted); font: 11px/1.6 'JetBrains Mono', monospace; letter-spacing: .02em; }
+.now-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; color: inherit; text-decoration: none; }
+.now-item::before { content: ''; flex: none; width: 5px; height: 5px; margin-right: 4px; border-radius: 50%; background: #2f5064; align-self: center; }
+.now-item:first-child::before { background: var(--aqua); box-shadow: 0 0 10px var(--aqua); animation: now-pulse 2.4s ease-in-out infinite; }
+.now-item:hover strong, .now-item:focus-visible strong { color: var(--aqua); }
+.now-item:focus-visible { outline: 2px solid var(--aqua); outline-offset: 4px; border-radius: 2px; }
+.now-label { flex: none; min-width: 96px; color: #6f889d; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; }
+.now-item strong { color: #dce7f5; font-weight: 500; }
+.now-item em { color: var(--aqua); font-style: normal; }
+@keyframes now-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .now-item:first-child::before { animation: none; } }
+@media (max-width: 900px) { .now-strip { margin-top: 20px; } .now-label { min-width: 0; } }
 .site-header .market-strip { border-radius: 0; border: 0; border-inline: 1px solid var(--line); background: none; box-shadow: none; }
 .site-header .ticker-track { padding: 0; gap: 0; animation: ticker-scroll 68s linear infinite; }
 .ticker-group { display: flex; flex: 0 0 auto; align-items: center; }

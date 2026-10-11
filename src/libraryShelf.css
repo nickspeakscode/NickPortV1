@@ -98,6 +98,31 @@
 @keyframes foil-pass { 0% { opacity: 0; background-position: 130% 0; } 15% { opacity: 1; } 100% { opacity: 0; background-position: -30% 0; } }
 @keyframes spark-rise { 0% { opacity: 0; transform: translate(0, 0) scale(.6); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--drift), -150px) scale(1); } }
 
+/* ── New items: sealed until first seen, then torn open ──────────────── */
+.item-new { display: inline-block; padding: 3px 6px; border-radius: 3px; background: var(--aqua); color: #06131f; font: 700 8.5px/1 'JetBrains Mono', monospace; letter-spacing: .14em; text-transform: uppercase; }
+.book-seal { position: absolute; inset: 0; z-index: 4; display: none; overflow: hidden; border-radius: 2px 4px 4px 2px; transform: translateZ(2px); pointer-events: none; }
+.shelf-item.is-sealed .book-seal, .shelf-item.is-unwrapping .book-seal { display: block; }
+/* Foil wrap in two diagonal halves, with a seam the glint runs along. */
+.book-seal-wrap { position: absolute; inset: -2px; background: linear-gradient(135deg, #ffffff38 0%, #ffffff0c 28%, rgb(var(--rarity-rgb) / .22) 50%, #ffffff0a 72%, #ffffff30 100%); box-shadow: inset 0 0 0 1px #ffffff45; }
+.book-seal-wrap--a { clip-path: polygon(0 0, 100% 0, 0 100%); }
+.book-seal-wrap--b { clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.book-seal-glint { position: absolute; left: -20%; top: 50%; width: 140%; height: 2px; translate: 0 -50%; rotate: -56deg; background: linear-gradient(90deg, transparent, #fff, transparent); opacity: 0; }
+.book-seal-tag { position: absolute; top: 16px; right: -36px; width: 130px; padding: 5px 0; rotate: 45deg; background: var(--aqua); color: #06131f; font: 700 9px/1 'JetBrains Mono', monospace; letter-spacing: .22em; text-align: center; text-transform: uppercase; box-shadow: 0 2px 8px #0007; }
+/* A sealed book cannot be peeked into. */
+.shelf-item.is-sealed .book-face { transform: translateZ(1px) !important; }
+.shelf-item.is-sealed .book-page { visibility: hidden; }
+.shelf-item.is-unwrapping .book-seal-wrap--a { animation: seal-tear-a 900ms cubic-bezier(.3,.6,.2,1) forwards; }
+.shelf-item.is-unwrapping .book-seal-wrap--b { animation: seal-tear-b 900ms cubic-bezier(.3,.6,.2,1) forwards; }
+.shelf-item.is-unwrapping .book-seal-glint { animation: seal-glint 420ms ease-out forwards; }
+.shelf-item.is-unwrapping .book-seal-tag { animation: seal-tag 360ms cubic-bezier(.4,0,.8,.4) forwards; }
+.shelf-item.is-unwrapping .book-sparks { display: block; }
+.shelf-item.is-unwrapping .book-sparks i { animation: spark-rise 1300ms ease-out 1 forwards; }
+.shelf-item.is-unwrapping .book-stage::before { opacity: 1; scale: 1.2; }
+@keyframes seal-tear-a { 0% { transform: none; opacity: 1; } 25% { transform: translate(-3%, -3%) rotate(-2deg); opacity: 1; } 100% { transform: translate(-70%, -60%) rotate(-14deg); opacity: 0; } }
+@keyframes seal-tear-b { 0% { transform: none; opacity: 1; } 25% { transform: translate(3%, 3%) rotate(2deg); opacity: 1; } 100% { transform: translate(70%, 60%) rotate(14deg); opacity: 0; } }
+@keyframes seal-glint { 0% { opacity: 0; transform: translateY(-30px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(30px); } }
+@keyframes seal-tag { 0% { transform: none; opacity: 1; } 100% { transform: translate(40px, -30px) rotate(20deg) scale(.4); opacity: 0; } }
+
 .shelf-caption { display: flex; flex-direction: column; padding: 24px 6px 0; transition: opacity 300ms; }
 .shelf-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .item-tier { color: var(--rarity); font: 600 9px/1.5 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .12em; text-shadow: 0 0 12px rgb(var(--rarity-rgb) / .45); }
@@ -254,5 +279,6 @@ img.book-leaf-cover { object-fit: contain; }
   .shelf-link:hover .book-object, .shelf-link:focus-visible .book-object { transform: rotateY(-14deg); }
   .shelf-link:hover .book-face, .shelf-link:focus-visible .book-face { transform: translateZ(1px); }
   .shelf-link:hover .book-face::before, .shelf-link:hover .book-sparks i { animation: none; }
+  .book-seal { display: none !important; }
   .library-shelf:has(.shelf-link:hover) .shelf-link:not(:hover) .book-object { transform: rotateY(-14deg) rotateZ(-1deg); filter: none; }
 }

@@ -47,6 +47,7 @@ const articleDetailFields = `
 
 const learningResourceFields = `
   _id,
+  _createdAt,
   title,
   "slug": slug.current,
   resourceType,

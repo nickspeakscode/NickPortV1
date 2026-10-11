@@ -42,6 +42,45 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   let disposed = false;
   let pendingOpen = null;
   let chromeFades = [];
+  // Sealed "new" items: unwrapped once per visitor, remembered in localStorage.
+  const UNWRAP_PREFIX = 'nt-unwrapped:';
+  const sealObservers = new Set();
+  const alreadyUnwrapped = slug => { try { return Boolean(localStorage.getItem(UNWRAP_PREFIX + slug)); } catch { return false; } };
+  const markUnwrapped = slug => { try { localStorage.setItem(UNWRAP_PREFIX + slug, '1'); } catch { /* Private mode: unwrap again next time. */ } };
+  function unwrap(item, slug) {
+    if (!item.classList.contains('is-sealed') || item.classList.contains('is-unwrapping')) return;
+    markUnwrapped(slug);
+    item.classList.add('is-unwrapping');
+    const done = () => { item.classList.remove('is-sealed', 'is-unwrapping'); item.classList.add('is-unwrapped'); };
+    const seal = item.querySelector('.book-seal');
+    if (!seal || motion.matches) { done(); return; }
+    const timer = setTimeout(done, 1500);
+    seal.addEventListener('animationend', event => {
+      if (event.animationName !== 'seal-tear-b') return;
+      clearTimeout(timer);
+      done();
+    });
+  }
+  function initSeals() {
+    root.querySelectorAll('.shelf-item.is-new:not([data-seal])').forEach(item => {
+      item.dataset.seal = 'ready';
+      const slug = item.querySelector('.shelf-link')?.dataset.resource;
+      if (!slug || alreadyUnwrapped(slug) || motion.matches) { item.classList.add('is-unwrapped'); return; }
+      item.classList.add('is-sealed');
+      const observer = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        sealObservers.delete(observer);
+        // Let the visitor register the sealed item before it tears open.
+        setTimeout(() => unwrap(item, slug), 700);
+      }, { threshold: 0.6 });
+      observer.observe(item);
+      sealObservers.add(observer);
+    });
+  }
+  initSeals();
+  const shelfChanges = new MutationObserver(initSeals);
+  shelfChanges.observe(root, { childList: true, subtree: true });
   let keyboardInput = false;
   const noteKeyboard = () => { keyboardInput = true; };
   const notePointer = event => {
@@ -463,6 +502,8 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
     const resource = findResource(link.dataset.resource);
     if (!resource || typeof dialog.showModal !== 'function') return;
     event.preventDefault();
+    const item = link.closest('.shelf-item');
+    if (item?.classList.contains('is-sealed')) unwrap(item, resource.slug);
     open(link, resource);
   };
 
@@ -582,6 +623,9 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
   motion.addEventListener('change', onMotionChange);
   return () => {
     disposed = true;
+    shelfChanges.disconnect();
+    sealObservers.forEach(observer => observer.disconnect());
+    sealObservers.clear();
     cancelPendingOpen();
     version++;
     cancelFlight();

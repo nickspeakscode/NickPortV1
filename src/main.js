@@ -10,11 +10,13 @@ import { createCardPortrait } from "./lib/cardPortrait.js";
 import { initializeSumlinoCharacter } from "./lib/sumlinoCharacter.js";
 import { syncHeaderOffset } from "./lib/pageUi.js";
 import { selectHighlights } from "./lib/highlights.js";
+import { buildNowItems } from "./lib/nowStrip.js";
 import { initializeMobileNav } from "./lib/mobileNav.js";
 import { renderSocialLinks } from "./lib/siteChrome.js";
 import {
   escapeHtml,
   loadArticleSummaries,
+  loadLearningResources,
   loadNoteSummaries,
 } from "./lib/sanity.js";
 
@@ -49,6 +51,28 @@ const featuredWritingCards = renderHomeRows(
   (article) => `/writing/${encodeURIComponent(article.slug)}`
 );
 const cachedNotes = readCache("notes");
+const cachedResources = readCache("resources");
+
+// What Nick is doing right now, from the same data the other pages use.
+const nowData = { resources: cachedResources ?? [], notes: cachedNotes ?? [], articles: cachedArticles };
+function renderNowStrip() {
+  const items = buildNowItems(nowData);
+  if (!items.length) return "";
+  return `
+    <div class="now-strip" aria-label="Right now">
+      ${items.map((item) => `
+        <a class="now-item" href="${escapeHtml(item.href)}">
+          <span class="now-label">${escapeHtml(item.label)}</span>
+          <strong>${escapeHtml(item.title)}</strong>
+          ${item.meta ? `<em>${escapeHtml(item.meta)}</em>` : ""}
+        </a>`).join("")}
+    </div>
+  `;
+}
+function refreshNowStrip() {
+  const mount = document.getElementById("nowStrip");
+  if (mount) mount.innerHTML = renderNowStrip();
+}
 const featuredNotes = renderHomeRows(
   selectHighlights(cachedNotes ?? []),
   (note) => `/notes/${encodeURIComponent(note.slug)}`
@@ -114,6 +138,7 @@ app.innerHTML = `
             <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
             ${showTimelineLink ? '<a class="contact-action timeline-action" href="/timeline/" aria-label="Explore my timeline">My timeline <span aria-hidden="true">→</span></a>' : ''}
           </div>
+          <div id="nowStrip">${renderNowStrip()}</div>
         </div>
       </div>
     </section>
@@ -287,9 +312,19 @@ function fillHomeList(id, html) {
 
 initializeNavPrefetch();
 
+loadLearningResources()
+  .then((resources) => {
+    writeCache("resources", resources);
+    nowData.resources = resources;
+    refreshNowStrip();
+  })
+  .catch(() => {});
+
 loadArticleSummaries()
   .then((articles) => {
     writeCache("articles", articles);
+    nowData.articles = articles;
+    refreshNowStrip();
     const picks = selectHighlights(articles);
     if (sameContent(selectHighlights(cachedArticles), picks)) return;
     fillHomeList(
@@ -306,6 +341,8 @@ loadArticleSummaries()
 loadNoteSummaries()
   .then((notes) => {
     writeCache("notes", notes);
+    nowData.notes = notes;
+    refreshNowStrip();
     const picks = selectHighlights(notes);
     if (sameContent(selectHighlights(cachedNotes ?? []), picks)) return;
     fillHomeList(

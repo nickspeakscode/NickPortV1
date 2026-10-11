@@ -4,6 +4,7 @@ import "./learning.css";
 import "./libraryShelf.css";
 import { initializeLibraryShelf } from "./lib/libraryShelf.js";
 import { safeHref } from "./lib/safeUrl.js";
+import { isRecent } from "./lib/freshness.js";
 import {
   buildSanityImageUrl,
   escapeHtml,
@@ -264,20 +265,27 @@ function renderBookPage(resource) {
   </span>`;
 }
 
+const NEW_TAG = `<span class="item-new">New</span>`;
+// A sealed item waits on the shelf for its first viewer; see initializeLibraryShelf.
+const SEAL = `<span class="book-seal" aria-hidden="true"><span class="book-seal-wrap book-seal-wrap--a"></span><span class="book-seal-wrap book-seal-wrap--b"></span><span class="book-seal-glint"></span><span class="book-seal-tag">New</span></span>`;
+
 function renderShelfBook(resource, index) {
+  const fresh = isRecent(resource._createdAt);
+  // Only an unstarted new item arrives sealed; one already in progress just carries the tag.
+  const sealed = fresh && (!resource.status || resource.status === "Want to Learn");
   const cover = resource.coverImage
     ? `<img src="${escapeHtml(buildSanityImageUrl(resource.coverImage, 720))}" alt="" loading="lazy" />`
     : `<span class="book-cover-type">${escapeHtml(resourceTypeLabel(resource))}</span>
        <span class="book-cover-title">${escapeHtml(resource.title)}</span>
        <span class="book-cover-author">${escapeHtml(resource.authorCreator || "")}</span>`;
-  return `<li class="shelf-item" style="--book-delay: ${Math.min(index, 5) * 65}ms">
+  return `<li class="shelf-item${sealed ? " is-new" : ""}" style="--book-delay: ${Math.min(index, 5) * 65}ms">
     <a class="shelf-link" href="/library/${encodeURIComponent(resource.slug)}" data-resource="${escapeHtml(resource.slug)}" data-rarity="${rarityFor(resource).key}">
       <span class="book-stage" aria-hidden="true">
         <span class="book-sparks"><i></i><i></i><i></i><i></i><i></i></span>
-        <span class="book-object">${renderBookPage(resource)}<span class="book-face${resource.coverImage ? "" : " book-face-fallback"}">${cover}</span>${resource.status === "Currently Learning" ? '<span class="book-ribbon"></span>' : ""}</span>
+        <span class="book-object">${renderBookPage(resource)}<span class="book-face${resource.coverImage ? "" : " book-face-fallback"}">${cover}</span>${resource.status === "Currently Learning" ? '<span class="book-ribbon"></span>' : ""}${sealed ? SEAL : ""}</span>
       </span>
       <span class="shelf-caption">
-        <span class="shelf-meta">${renderTier(resource)}<span class="shelf-type">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span></span>
+        <span class="shelf-meta">${fresh ? NEW_TAG : ""}${renderTier(resource)}<span class="shelf-type">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span></span>
         <span class="shelf-title">${escapeHtml(resource.title)}</span>
         ${resource.authorCreator ? `<span class="shelf-author">${escapeHtml(resource.authorCreator)}</span>` : ""}
         ${resource.status ? `<span class="shelf-status" data-status="${statusKey(resource.status)}">${escapeHtml(resource.status)}</span>` : ""}
@@ -427,7 +435,7 @@ function renderReaderPages(resource, notes, { loadingNotes = false } = {}) {
     readerPage("title", `
       ${renderCover(resource, "resource-detail-cover")}
       <div class="item-heading">
-        <div class="item-tags">${renderTier(resource)}<span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span></div>
+        <div class="item-tags">${isRecent(resource._createdAt) ? NEW_TAG : ""}${renderTier(resource)}<span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span></div>
         <h2 class="item-name" id="library-reader-title">${escapeHtml(resource.title)}</h2>
         ${resource.authorCreator ? `<p class="item-creator">${escapeHtml(resource.authorCreator)}</p>` : ""}
       </div>
