@@ -141,7 +141,7 @@ function renderCover(resource, className = "resource-cover") {
 }
 
 const RARITY_LABELS = {
-  legendary: "Legendary", epic: "Epic", rare: "Rare", active: "In progress", unique: "Unique", common: "Common",
+  legendary: "Legendary", epic: "Epic", rare: "Rare", active: "In progress", unique: "Unique", unread: "Unread", common: "Common",
 };
 
 // Your own work is unique; in-progress items glow aqua; finished items earn
@@ -154,6 +154,7 @@ function rarityFor(resource) {
   else if (rating >= 5) key = "legendary";
   else if (rating >= 4) key = "epic";
   else if (rating >= 3) key = "rare";
+  else if (!resource.status || resource.status === "Want to Learn") key = "unread";
   return { key, label: RARITY_LABELS[key] };
 }
 

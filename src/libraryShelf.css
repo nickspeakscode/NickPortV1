@@ -8,6 +8,7 @@
 [data-rarity="rare"] { --rarity: #6bb8ff; --rarity-rgb: 107 184 255; }
 [data-rarity="active"] { --rarity: #59f1d7; --rarity-rgb: 89 241 215; }
 [data-rarity="unique"] { --rarity: #ff9e6d; --rarity-rgb: 255 158 109; }
+[data-rarity="unread"] { --rarity: #7f97ab; --rarity-rgb: 127 151 171; }
 
 .library-shelf-page { width: min(1020px, calc(100% - 48px)); }
 .library-shelf-page .index-intro { margin-bottom: 56px; }
@@ -59,7 +60,7 @@
 .book-sparks i:nth-child(3) { --x: 58%; --drift: -4px; }
 .book-sparks i:nth-child(4) { --x: 70%; --drift: 9px; }
 .book-sparks i:nth-child(5) { --x: 36%; --drift: 4px; }
-.shelf-link[data-rarity="common"] .book-sparks { display: none; }
+.shelf-link[data-rarity="common"] .book-sparks, .shelf-link[data-rarity="unread"] .book-sparks { display: none; }
 
 @media (hover: hover) and (pointer: fine) {
   .shelf-link:hover .book-object { transform: translateY(-14px) translateZ(24px) rotateX(var(--tilt-x, 0deg)) rotateY(calc(-6deg + var(--tilt-y, 0deg))) rotateZ(0); transition-duration: 160ms, 180ms, 300ms; }

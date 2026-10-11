@@ -191,16 +191,34 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
       if (direction > 0) {
         const leaf = makeLeaf(rect, pageClone(current[0]), null, 'left');
         showPages(target);
-        await swing(leaf, 0, -180, 620);
+        await swingAway(leaf);
         leaf.remove(); leaves.delete(leaf);
       } else {
         const leaf = makeLeaf(rect, pageClone(all[target]), null, 'left');
-        await swing(leaf, -180, 0, 620);
+        await swingBack(leaf);
         showPages(target);
         leaf.remove(); leaves.delete(leaf);
       }
     }
     if (token === version) turning = false;
+  }
+
+  async function swingAway(leaf, duration = 560) {
+    await animatePage(leaf, [
+      { transform: 'perspective(1600px) rotateY(0deg)', opacity: 1 },
+      { transform: 'perspective(1600px) rotateY(-62deg)', opacity: 1, offset: 0.62 },
+      { transform: 'perspective(1600px) rotateY(-88deg)', opacity: 0, offset: 0.92 },
+      { transform: 'perspective(1600px) rotateY(-96deg)', opacity: 0 },
+    ], { duration, easing: 'cubic-bezier(.4,.05,.3,1)' });
+  }
+
+  async function swingBack(leaf, duration = 560) {
+    await animatePage(leaf, [
+      { transform: 'perspective(1600px) rotateY(-96deg)', opacity: 0 },
+      { transform: 'perspective(1600px) rotateY(-88deg)', opacity: 0, offset: 0.08 },
+      { transform: 'perspective(1600px) rotateY(-62deg)', opacity: 1, offset: 0.38 },
+      { transform: 'perspective(1600px) rotateY(0deg)', opacity: 1 },
+    ], { duration, easing: 'cubic-bezier(.4,.05,.3,1)' });
   }
 
   function cancelFlight() {
@@ -404,7 +422,7 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
       if (token !== version || !dialog.open) return;
       book.classList.remove('is-closed');
       (spread ? visible[1] : titlePage).style.removeProperty('visibility');
-      await Promise.all([swing(leaf, 0, -180, spread ? 760 : 640), flash]);
+      await Promise.all([spread ? swing(leaf, 0, -180, 760) : swingAway(leaf, 600), flash]);
       if (token !== version || !dialog.open) return;
       titlePage.style.removeProperty('visibility');
       leaf.remove(); leaves.delete(leaf);
