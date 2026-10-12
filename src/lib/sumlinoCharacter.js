@@ -33,6 +33,7 @@ export function initializeSumlinoCharacter() {
   let open = false;
   let closeTimer;
   let lastPointer = '';
+  let shownTop = 0;
 
   function position() {
     const rect = trigger.getBoundingClientRect();
@@ -73,6 +74,7 @@ export function initializeSumlinoCharacter() {
     if (!open) {
       open = true;
       preview.hidden = false;
+      shownTop = trigger.getBoundingClientRect().top;
       position();
       trigger.setAttribute('aria-expanded', 'true');
       trigger.classList.add('is-revealed');
@@ -141,8 +143,14 @@ export function initializeSumlinoCharacter() {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') hide(preview.contains(document.activeElement));
   });
-  // Do not leave a project preview covering unrelated content after scrolling away.
-  window.addEventListener('scroll', () => hide(preview.contains(document.activeElement)), { passive: true });
+  // Do not leave a project preview covering unrelated content after scrolling
+  // away. Small movements (a settling smooth scroll after keyboard focus, a
+  // phone's address bar collapsing) keep it open and simply re-anchor it.
+  window.addEventListener('scroll', () => {
+    if (!open) return;
+    if (Math.abs(trigger.getBoundingClientRect().top - shownTop) > 48) hide(preview.contains(document.activeElement));
+    else position();
+  }, { passive: true });
   window.addEventListener('resize', () => { if (open) position(); });
   window.visualViewport?.addEventListener('resize', () => { if (open) position(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); });

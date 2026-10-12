@@ -3,8 +3,6 @@ import assert from 'node:assert/strict';
 import { buildNowItems } from '../src/lib/nowStrip.js';
 import { isRecent } from '../src/lib/freshness.js';
 
-const day = 86400000;
-
 test('a library item is new for 14 days after it is created', () => {
   const now = Date.parse('2026-10-11T12:00:00Z');
   assert.equal(isRecent('2026-10-10T23:51:12Z', now), true);
@@ -47,5 +45,4 @@ test('featured and display order pick the headline read; zero progress shows no 
   assert.equal(items[0].title, 'First');
   assert.equal(items[0].meta, '');
   assert.equal(items.length, 1, 'only one reading item, and no duplicate');
-  assert.ok(Date.now() - day > 0);
 });

@@ -106,7 +106,7 @@ app.innerHTML = `
       </div>
       <div class="hero-inner">
         <div class="portrait-stage">
-          <button class="portrait-shell" type="button" aria-label="Shuffle Nicholas Thomas’s portrait cards">
+          <button class="portrait-shell" type="button"><span class="visually-hidden portrait-shell-name">Shuffle Nicholas Thomas’s portrait cards</span>
             <span class="portrait-deck" aria-hidden="true">
               ${[
                 { rank: 'A', suit: '♠', color: 'aqua' },
@@ -296,7 +296,7 @@ safely("Sumlino preview", initializeSumlinoCharacter);
 // The portrait only shuffles with motion allowed; say so to assistive tech.
 const portraitMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 function syncPortraitLabel() {
-  portraitShell.setAttribute("aria-label", portraitMotion.matches ? "Nicholas Thomas’s portrait card" : "Shuffle Nicholas Thomas’s portrait cards");
+  portraitShell.querySelector(".portrait-shell-name").textContent = portraitMotion.matches ? "Nicholas Thomas’s portrait card" : "Shuffle Nicholas Thomas’s portrait cards";
   if (portraitMotion.matches) portraitShell.setAttribute("aria-disabled", "true");
   else portraitShell.removeAttribute("aria-disabled");
 }

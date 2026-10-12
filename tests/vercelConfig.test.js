@@ -22,6 +22,8 @@ test('the policy allows exactly the services the site talks to', async () => {
   assert.ok(csp.includes('https://cdn.sanity.io'), 'Sanity images and video');
   assert.ok(ticker.includes('wss://ws.kraken.com') && csp.includes('wss://ws.kraken.com'), 'live crypto quotes');
   assert.ok(csp.includes('https://fonts.googleapis.com') && csp.includes('https://fonts.gstatic.com'), 'Google Fonts');
+  assert.match(csp, /img-src [^;]*data:/, 'the timeline samples SVG data URLs onto a canvas');
+  assert.ok(!csp.includes('https://vzrug3c0.api.sanity.io'), 'the browser only reads through the API CDN');
 });
 
 test('the hidden timeline stays out of search results', () => {

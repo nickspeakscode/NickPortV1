@@ -322,5 +322,6 @@ export function createTimelineParticles(canvas: HTMLCanvasElement, chapters: Cha
   }
   resize();
   refreshTheme();
-  return { resize, draw, setPointer, clearPointer, disperse, resetInteraction, refreshTheme };
+  const isBusy = () => Boolean(burst);
+  return { resize, draw, setPointer, clearPointer, disperse, resetInteraction, refreshTheme, isBusy };
 }

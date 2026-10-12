@@ -24,7 +24,7 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       <nav class="timeline-chapters" aria-label="Timeline chapters">
-        ${chapters.map((chapter, index) => `<button type="button" data-chapter="${index}" aria-label="${chapter.label}: chapter ${index + 1}, ${chapter.title}"${index === 0 ? ' aria-current="step"' : ''}><span class="chapter-name">${chapter.label}</span>${cardRank(chapter.rank)}</button>`).join('')}
+        ${chapters.map((chapter, index) => `<button type="button" data-chapter="${index}" ${index === 0 ? ' aria-current="step"' : ''}><span class="chapter-name">${chapter.label}</span><span class="visually-hidden">: chapter ${index + 1}, ${chapter.title}</span>${cardRank(chapter.rank)}</button>`).join('')}
       </nav>
       <div class="timeline-story">
         ${chapters.map((chapter, index) => `<section class="story-chapter${index === 0 ? ' is-current' : ''}" aria-labelledby="title-${chapter.id}"${index ? ' inert aria-hidden="true"' : ''}>
@@ -35,7 +35,7 @@ document.querySelector('#app').innerHTML = `
       </div>
       <footer class="timeline-controls">
         <div class="timeline-arrows"><button type="button" data-direction="-1" aria-label="Previous chapter" disabled>↑</button><button type="button" data-direction="1" aria-label="Next chapter">↓</button><span>Scroll or swipe to continue <kbd>↑</kbd><kbd>↓</kbd></span></div>
-        <span class="timeline-counter" aria-hidden="true">A ♠ / ${chapters.at(-1).rank} ♠</span>
+        <span class="timeline-counter" aria-hidden="true">A ♠ / ${chapters[chapters.length - 1].rank} ♠</span>
       </footer>
       <div class="timeline-progress" aria-hidden="true"><span></span></div>
       <p class="timeline-announcement" role="status" aria-live="polite"></p>
@@ -63,7 +63,7 @@ let frame = 0;
 let lastFrame = 0;
 let lastPaint = 0;
 let lastInput = 0;
-const noteInput = () => { lastInput = performance.now(); };
+const noteInput = () => { lastInput = performance.now(); schedule(); };
 for (const type of ['pointermove', 'pointerdown', 'wheel', 'keydown', 'touchstart']) {
   window.addEventListener(type, noteInput, { passive: true });
 }
@@ -88,7 +88,7 @@ function select(index) {
   });
   previous.disabled = index === 0 && target === 0;
   next.disabled = index === last && target === last;
-  document.querySelector('.timeline-counter').textContent = `${chapters[index].rank} ♠ / ${chapters.at(-1).rank} ♠`;
+  document.querySelector('.timeline-counter').textContent = `${chapters[index].rank} ♠ / ${chapters[chapters.length - 1].rank} ♠`;
   artwork.setAttribute('aria-label', `Scatter the illustration for ${chapters[index].label} and watch it return`);
   clearTimeout(announcement);
   announcement = setTimeout(() => {
@@ -101,6 +101,13 @@ function paint(now = performance.now()) {
   if (document.hidden || !canvasVisible) return;
   // Settled and untouched, the gentle idle float runs at ~30fps instead of the
   // display's full rate (up to 3,500 particles per frame on desktop).
+  // Settled, untouched and quiet for a while: stop drawing altogether.
+  // noteInput() wakes the loop on the next pointer, wheel, key or touch.
+  if (!transition && current === target && now - lastInput > 6000 && !particles.isBusy()) {
+    frame = 0;
+    lastFrame = 0;
+    return;
+  }
   if (!transition && current === target && now - lastInput > 1600 && now - lastPaint < 33) {
     frame = requestAnimationFrame(paint);
     return;

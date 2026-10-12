@@ -50,8 +50,9 @@ test('overall status reflects the symbols rather than always claiming "delayed"'
   assert.equal((await service()).status, 'unavailable');
 });
 
-test('market-data API rejects cache-busting queries and other methods without calling Yahoo', async () => {
+test('market-data API rejects cache-busting queries and other methods without calling Yahoo', async t => {
   const { default: handler } = await import('../api/market-data.js');
+  const mocked = t.mock.method(globalThis, 'fetch', async () => { throw new Error('Yahoo must not be called'); });
   const respond = () => ({ headers: {}, setHeader(k, v) { this.headers[k] = v; }, status(code) { this.code = code; return this; }, json(body) { this.body = body; } });
   const busted = respond();
   await handler({ method: 'GET', url: '/api/market-data?x=123' }, busted);
@@ -60,4 +61,5 @@ test('market-data API rejects cache-busting queries and other methods without ca
   await handler({ method: 'POST', url: '/api/market-data' }, post);
   assert.equal(post.code, 405);
   assert.equal(post.headers.Allow, 'GET, HEAD');
+  assert.equal(mocked.mock.callCount(), 0);
 });

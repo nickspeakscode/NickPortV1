@@ -28,7 +28,7 @@ The browser runner reuses a server already listening on `http://127.0.0.1:5173` 
 npm run build
 ```
 
-Vite writes the public site to `dist/`. Vercel also deploys the serverless Yahoo Finance proxy at `/api/market-data`.
+Vite writes the public site to `dist/`. Vercel also deploys the serverless functions in `api/`: the Yahoo Finance proxy at `/api/market-data`, the view counter at `/api/record-view`, and the sitemap at `/sitemap.xml` (rewritten to `/api/sitemap`). `vercel.json` also sets the security headers (CSP, frame denial) and the `/about` redirect.
 
 ## Environment variables
 
@@ -99,7 +99,7 @@ The Vercel project should use:
 - Root directory: repository root
 - Build command: `npm run build`
 - Output directory: `dist`
-- Node.js: 20 or newer
+- Node.js: 22 or newer
 - Production branch: `main`
 
 Pushing a commit to `main` triggers the production deployment. Pull requests and non-production branches create Vercel preview deployments.
@@ -111,5 +111,7 @@ After deployment, verify:
 - `/library`
 - `/notes`
 - `/api/market-data`
+- `/sitemap.xml` and `/robots.txt`
+- A made-up URL (branded 404)
 - A published article selected from `/writing`
 - A published Library resource and Learning Note detail page
