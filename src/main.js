@@ -11,7 +11,7 @@ import { initializeSumlinoCharacter } from "./lib/sumlinoCharacter.js";
 import { syncHeaderOffset } from "./lib/pageUi.js";
 import { selectHighlights } from "./lib/highlights.js";
 import { buildNowItems } from "./lib/nowStrip.js";
-import { activityDays, bookLoop, streak } from "./lib/learningLoop.js";
+import { activityDays, bookLoop, streak, streakHand } from "./lib/learningLoop.js";
 import { relativeDay, renderGlowBar } from "./lib/loopUi.js";
 import { initializeMobileNav } from "./lib/mobileNav.js";
 import { renderSocialLinks } from "./lib/siteChrome.js";
@@ -86,6 +86,25 @@ function renderNowFeature(item) {
     </a>`;
 }
 
+// The study streak as a hand of cards. A card added since the last visit is
+// dealt in; the count itself is only for screen readers and the tooltip.
+const STREAK_SEEN_KEY = "nt-streak-seen-v1";
+const streakSeen = (() => { try { return Number(localStorage.getItem(STREAK_SEEN_KEY)) || 0; } catch { return 0; } })();
+function renderStreakHand(days) {
+  const hand = streakHand(days);
+  if (!hand.length) return "";
+  try { localStorage.setItem(STREAK_SEEN_KEY, String(days)); } catch {}
+  const label = `${days}-day study streak`;
+  return `
+    <span class="now-streak" title="${label}">
+      <span class="visually-hidden">${label}</span>
+      <span class="now-streak-label" aria-hidden="true">Streak</span>
+      <span class="streak-hand" aria-hidden="true" style="--cards: ${hand.length}">
+        ${hand.map((card, index) => `<span class="streak-card${card.red ? " is-red" : ""}${card.joker ? " is-joker" : ""}${index === hand.length - 1 && days > streakSeen && streakSeen ? " is-dealt" : ""}" style="--i: ${index - hand.length + 1}">${card.joker ? "<i>JOKER</i>" : `<b>${card.rank}</b><i>${card.suit}</i>`}</span>`).join("")}
+      </span>
+    </span>`;
+}
+
 function renderNowStrip() {
   const items = buildNowItems(nowData);
   if (!items.length) return "";
@@ -97,7 +116,7 @@ function renderNowStrip() {
       <div class="now-card-head">
         <span class="now-live" aria-hidden="true"></span>
         <h2 class="now-card-title" id="nowTitle">Right now</h2>
-        ${days ? `<span class="now-streak"><strong>${days}</strong>-day streak</span>` : ""}
+        ${renderStreakHand(days)}
       </div>
       ${feature ? renderNowFeature(feature) : ""}
       ${rest.length ? `<ul class="now-list">${rest.map((item) => `

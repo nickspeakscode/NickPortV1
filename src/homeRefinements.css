@@ -31,19 +31,30 @@
 @media (min-width: 1200px) and (max-width: 1280px) {
   .site-header > .market-strip { min-width: 200px; }
 }
-/* "Right now" card under the hero bio. */
-.now-card { max-width: 470px; margin-top: 30px; border: 1px solid var(--line); border-radius: 12px; background: linear-gradient(180deg, rgba(14, 33, 53, .72), rgba(8, 22, 38, .72)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 16px 40px rgba(2, 8, 18, .35); overflow: hidden; }
-.now-card-head { display: flex; align-items: center; gap: 9px; padding: 11px 16px; border-bottom: 1px solid var(--line); }
-.now-live { width: 7px; height: 7px; border-radius: 50%; background: var(--aqua); box-shadow: 0 0 0 3px rgba(89, 241, 215, .14), 0 0 10px var(--aqua); animation: now-pulse 2.4s ease-in-out 5; }
-.now-card-title { margin: 0; color: #c9d6e8; font: 600 10px/1 'JetBrains Mono', monospace; letter-spacing: .16em; text-transform: uppercase; }
-.now-streak { margin-left: auto; color: #8fa3bb; font: 10px/1 'JetBrains Mono', monospace; letter-spacing: .04em; }
-.now-streak strong { color: var(--aqua); font-weight: 600; }
-.now-feature { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 14px 16px; color: inherit; text-decoration: none; transition: background 180ms; }
-.now-feature:hover, .now-row:hover { background: rgba(89, 241, 215, .04); }
-.now-cover { display: block; width: 44px; height: 66px; object-fit: cover; border-radius: 2px 4px 4px 2px; box-shadow: 0 6px 14px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255, 255, 255, .08); background: #13293b; }
+/* "Right now" under the hero bio: an open list on hairlines, like the rest of
+   the hero, with the study streak dealt as a small hand of cards. */
+.now-card { max-width: 470px; margin-top: 34px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.now-card-head { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 8px 0; }
+.now-live { width: 6px; height: 6px; border-radius: 50%; background: var(--aqua); box-shadow: 0 0 8px rgba(89, 241, 215, .7); animation: now-pulse 2.4s ease-in-out 5; }
+.now-card-title { margin: 0; color: #8fa3bb; font: 600 10px/1 'JetBrains Mono', monospace; letter-spacing: .16em; text-transform: uppercase; }
+.now-streak { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.now-streak-label { color: #6f889d; font: 600 9px/1 'JetBrains Mono', monospace; letter-spacing: .14em; text-transform: uppercase; }
+.streak-hand { display: flex; align-items: flex-end; padding: 0 2px 0 calc((var(--cards) - 1) * 4px); }
+.streak-card { position: relative; display: block; width: 22px; height: 31px; border: 1px solid #587b83; border-radius: 3px; background: radial-gradient(ellipse at 50% 38%, #284653, #102a38 80%); box-shadow: -2px 2px 5px rgba(2, 8, 18, .45); color: #cae9df; transform-origin: 50% 130%; rotate: calc(var(--i) * 5deg); transition: rotate 220ms ease, translate 220ms ease; }
+.streak-card + .streak-card { margin-left: -13px; }
+.streak-card:last-child { border-color: #8bb7b5; }
+.streak-card b { position: absolute; left: 3px; top: 3px; font: 600 9px/1 Oxanium, sans-serif; letter-spacing: -.04em; }
+.streak-card i { position: absolute; right: 3px; bottom: 3px; font: normal 10px/1 Georgia, serif; }
+.streak-card.is-red { color: #dda396; }
+.streak-card.is-joker i { inset: 0; display: grid; place-items: center; color: var(--aqua); font: 600 6px/1 Oxanium, sans-serif; letter-spacing: .08em; writing-mode: vertical-rl; }
+.streak-card.is-dealt { animation: streak-deal 620ms cubic-bezier(.2, .8, .25, 1) 400ms backwards; }
+@media (hover: hover) { .now-streak:hover .streak-card { rotate: calc(var(--i) * 9deg); } .now-streak:hover .streak-card:last-child { translate: 0 -2px; } }
+.now-feature { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
+.now-cover { display: block; width: 44px; height: 66px; object-fit: cover; border-radius: 2px 4px 4px 2px; box-shadow: 0 6px 14px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255, 255, 255, .08); background: #13293b; transition: transform 220ms; }
+.now-feature:hover .now-cover { transform: rotate(-3deg); }
 .now-cover--empty { background: linear-gradient(130deg, #17394a, #0d2338); }
 .now-feature-copy { display: grid; gap: 4px; min-width: 0; }
-.now-feature-title { overflow: hidden; color: #eef4ff; font: 600 16px/1.3 Sora, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.now-feature-title { overflow: hidden; color: #eef4ff; font: 600 16px/1.3 Sora, sans-serif; text-overflow: ellipsis; white-space: nowrap; transition: color 180ms; }
 .now-bar.glow-bar { height: 5px; margin: 7px 0 5px; }
 .now-bar .glow-bar-fill::after { width: 8px; height: 8px; right: -2px; }
 .now-feature-meta { color: #8fa3bb; font: 10.5px/1.5 'JetBrains Mono', monospace; }
@@ -52,18 +63,19 @@
 .now-label { color: #6f889d; font: 600 9px/1.3 'JetBrains Mono', monospace; letter-spacing: .14em; text-transform: uppercase; }
 .now-list { margin: 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
 .now-list li + li { border-top: 1px solid rgba(148, 169, 209, .1); }
-.now-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; align-items: baseline; gap: 12px; padding: 10px 16px; color: inherit; text-decoration: none; transition: background 180ms; }
-.now-row-title { overflow: hidden; color: #dce7f5; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.now-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; align-items: baseline; gap: 12px; padding: 11px 0; color: inherit; text-decoration: none; }
+.now-row-title { overflow: hidden; color: #dce7f5; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; transition: color 180ms; }
 .now-row:hover .now-row-title, .now-feature:hover .now-feature-title { color: var(--aqua); }
 .now-row-meta { color: #6f889d; font: 10px/1 'JetBrains Mono', monospace; white-space: nowrap; }
-.now-feature:focus-visible, .now-row:focus-visible { outline: 2px solid var(--aqua); outline-offset: -2px; }
+.now-feature:focus-visible, .now-row:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; border-radius: 4px; }
 @keyframes now-pulse { 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .now-live { animation: none; } }
-@media (max-width: 900px) { .now-card { max-width: none; margin-top: 24px; } }
+@keyframes streak-deal { from { opacity: 0; translate: 26px -16px; rotate: 32deg; } }
+@media (prefers-reduced-motion: reduce) { .now-live, .streak-card.is-dealt { animation: none; } .streak-card, .now-cover { transition: none; } }
+@media (max-width: 900px) { .now-card { max-width: none; margin-top: 26px; } }
 @media (max-width: 420px) {
   .now-row { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; }
   .now-row .now-label { grid-column: 1 / -1; }
-  .now-feature { gap: 12px; padding: 12px 14px; }
+  .now-feature { gap: 12px; }
 }
 .site-header .market-strip { border-radius: 0; border: 0; border-inline: 1px solid var(--line); background: none; box-shadow: none; }
 .site-header .ticker-track { padding: 0; gap: 0; animation: ticker-scroll 68s linear infinite; }

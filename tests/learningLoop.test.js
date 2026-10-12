@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { activityDays, bookLoop, heatmap, levelFor, localDay, progressSince, quizXp, sessionsThisWeek, streak } from '../src/lib/learningLoop.js';
+import { activityDays, bookLoop, heatmap, levelFor, localDay, progressSince, quizXp, sessionsThisWeek, streak, streakCard, streakHand } from '../src/lib/learningLoop.js';
 
 const book = (studyLog, slug = 'naked-statistics') => ({ slug, title: 'Naked Statistics', studyLog });
 const entry = (date, step, extra = {}) => ({ _key: `${date}-${step}`, date, step, ...extra });
@@ -112,4 +112,19 @@ test('quizzes earn XP by score and keep the streak, but never close a loop', () 
   const days = activityDays([book([entry('2026-10-04', 'Quiz', { score: 1, total: 2 })])]);
   assert.equal(days.get('2026-10-04'), 1);
   assert.equal(bookLoop(book([entry('2026-10-01', 'Read')])).quiz, null);
+});
+
+test('a streak is dealt as cards: ranks climb, suits change every thirteen days, the joker caps it', () => {
+  const label = (card) => card.rank + card.suit;
+  assert.equal(label(streakCard(1)), 'A♠');
+  assert.equal(label(streakCard(13)), 'K♠');
+  assert.equal(label(streakCard(14)), 'A♥');
+  assert.equal(streakCard(14).red, true);
+  assert.equal(label(streakCard(52)), 'K♦');
+  assert.equal(streakCard(53).joker, true);
+  assert.deepEqual(streakHand(0), []);
+  assert.deepEqual(streakHand(1).map(label), ['A♠']);
+  assert.deepEqual(streakHand(3).map(label), ['A♠', '2♠', '3♠']);
+  assert.deepEqual(streakHand(15).map(label), ['J♠', 'Q♠', 'K♠', 'A♥', '2♥']);
+  assert.deepEqual(streakHand(400).map(label), ['10♦', 'J♦', 'Q♦', 'K♦', 'JOKER'], 'one joker, however long the streak');
 });
