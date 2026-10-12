@@ -72,7 +72,7 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
         observer.disconnect();
         sealObservers.delete(observer);
         // Let the visitor register the sealed item before it tears open.
-        setTimeout(() => unwrap(item, slug), 700);
+        setTimeout(() => { if (item.isConnected) unwrap(item, slug); }, 700);
       }, { threshold: 0.6 });
       observer.observe(item);
       sealObservers.add(observer);
@@ -415,7 +415,11 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
       link.classList.add('is-lifting');
       pendingOpen = link;
       await new Promise(resolve => setTimeout(resolve, 170));
-      if (token !== version || disposed || dialog.open || !link.isConnected) { link.classList.remove('is-lifting'); return; }
+      if (token !== version || disposed || dialog.open || !link.isConnected) {
+        link.classList.remove('is-lifting');
+        if (pendingOpen === link) pendingOpen = null;
+        return;
+      }
       pendingOpen = null;
       rect = source.getBoundingClientRect();
     }
@@ -488,6 +492,7 @@ export function initializeLibraryShelf(root, { findResource, loadResource, rende
       const holder = document.createElement('div');
       holder.innerHTML = renderPages(result.data.resource, result.data.notes).join('');
       book.querySelector('[aria-labelledby="resourceNotesTitle"]')?.replaceWith(holder.querySelector('[aria-labelledby="resourceNotesTitle"]'));
+      showPages(firstPage);
     } else {
       const focusedHref = book.contains(document.activeElement) ? document.activeElement.getAttribute('href') : null;
       renderBook(result.data.resource, result.data.notes);

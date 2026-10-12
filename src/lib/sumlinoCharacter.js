@@ -34,6 +34,7 @@ export function initializeSumlinoCharacter() {
   let closeTimer;
   let lastPointer = '';
   let shownTop = 0;
+  let shownAt = 0;
 
   function position() {
     const rect = trigger.getBoundingClientRect();
@@ -75,6 +76,7 @@ export function initializeSumlinoCharacter() {
       open = true;
       preview.hidden = false;
       shownTop = trigger.getBoundingClientRect().top;
+      shownAt = performance.now();
       position();
       trigger.setAttribute('aria-expanded', 'true');
       trigger.classList.add('is-revealed');
@@ -148,6 +150,11 @@ export function initializeSumlinoCharacter() {
   // phone's address bar collapsing) keep it open and simply re-anchor it.
   window.addEventListener('scroll', () => {
     if (!open) return;
+    if (performance.now() - shownAt < 700) {
+      shownTop = trigger.getBoundingClientRect().top;
+      position();
+      return;
+    }
     if (Math.abs(trigger.getBoundingClientRect().top - shownTop) > 48) hide(preview.contains(document.activeElement));
     else position();
   }, { passive: true });

@@ -24,7 +24,11 @@ const app = document.querySelector("#app");
 // Keep the timeline available in code while its homepage entry is on hold.
 const showTimelineLink = false;
 
-function renderHomeRows(items, hrefFor) {
+function renderHomeRows(items, hrefFor, state = "ready") {
+  if (state === "pending") {
+    return `<ul class="highlights-list highlights-pending" aria-busy="true"><li><span></span></li><li><span></span></li><li><span></span></li></ul><p class="visually-hidden" role="status">Loading…</p>`;
+  }
+  if (state === "error" && !items.length) return `<p class="highlights-empty is-visible" role="status">Couldn’t load right now. Please try again shortly.</p>`;
   if (!items.length) return `<p class="highlights-empty reveal-on-scroll">Nothing published yet.</p>`;
 
   return `
@@ -35,7 +39,7 @@ function renderHomeRows(items, hrefFor) {
             <li>
               <a class="highlights-row reveal-on-scroll" href="${hrefFor(item)}" style="--reveal-delay: ${90 + index * 90}ms">
                 <span class="highlights-row-title">${escapeHtml(item.title)}</span>
-                <time class="highlights-row-meta"${item.publishedAt ? ` datetime="${escapeHtml(String(item.publishedAt).slice(0, 10))}"` : ""}>${escapeHtml(item.displayDate)}</time>
+                <time class="highlights-row-meta"${item.publishedAt ? ` datetime="${escapeHtml(String(item.publishedAt))}"` : ""}>${escapeHtml(item.displayDate)}</time>
               </a>
             </li>
           `
@@ -45,16 +49,17 @@ function renderHomeRows(items, hrefFor) {
   `;
 }
 
-const cachedArticles = readCache("articles") ?? [];
+const cachedArticles = readCache("articles");
 const featuredWritingCards = renderHomeRows(
-  selectHighlights(cachedArticles),
-  (article) => `/writing/${encodeURIComponent(article.slug)}`
+  selectHighlights(cachedArticles ?? []),
+  (article) => `/writing/${encodeURIComponent(article.slug)}`,
+  cachedArticles ? "ready" : "pending"
 );
 const cachedNotes = readCache("notes");
 const cachedResources = readCache("resources");
 
 // What Nick is doing right now, from the same data the other pages use.
-const nowData = { resources: cachedResources ?? [], notes: cachedNotes ?? [], articles: cachedArticles };
+const nowData = { resources: cachedResources ?? [], notes: cachedNotes ?? [], articles: cachedArticles ?? [] };
 function renderNowStrip() {
   const items = buildNowItems(nowData);
   if (!items.length) return "";
@@ -71,11 +76,13 @@ function renderNowStrip() {
 }
 function refreshNowStrip() {
   const mount = document.getElementById("nowStrip");
-  if (mount) mount.innerHTML = renderNowStrip();
+  const html = renderNowStrip();
+  if (mount && mount.innerHTML !== html) mount.innerHTML = html;
 }
 const featuredNotes = renderHomeRows(
   selectHighlights(cachedNotes ?? []),
-  (note) => `/notes/${encodeURIComponent(note.slug)}`
+  (note) => `/notes/${encodeURIComponent(note.slug)}`,
+  cachedNotes ? "ready" : "pending"
 );
 
 app.innerHTML = `
@@ -249,7 +256,8 @@ const tickerTrack = document.getElementById("tickerTrack");
 safely("Market ticker", () => initializeMarketTicker(tickerTrack, import.meta.env.VITE_MARKET_DATA_ENDPOINT || "/api/market-data"));
 
 const revealItems = document.querySelectorAll(".reveal-on-scroll");
-const revealObserver = new IntersectionObserver(
+const showAll = { observe: (item) => item.classList.add("is-visible"), unobserve() {} };
+const revealObserver = !("IntersectionObserver" in window) ? showAll : new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -264,7 +272,7 @@ const revealObserver = new IntersectionObserver(
 revealItems.forEach((item) => revealObserver.observe(item));
 
 const focusList = document.querySelector(".about-focus-list");
-const focusObserver = new IntersectionObserver(
+const focusObserver = !("IntersectionObserver" in window) ? showAll : new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -326,16 +334,14 @@ loadArticleSummaries()
     nowData.articles = articles;
     refreshNowStrip();
     const picks = selectHighlights(articles);
-    if (sameContent(selectHighlights(cachedArticles), picks)) return;
+    if (cachedArticles && sameContent(selectHighlights(cachedArticles), picks)) return;
     fillHomeList(
       "featuredWritingGrid",
       renderHomeRows(picks, (article) => `/writing/${encodeURIComponent(article.slug)}`)
     );
   })
   .catch(() => {
-    if (!cachedArticles.length) {
-      fillHomeList("featuredWritingGrid", renderHomeRows([], () => "/writing/"));
-    }
+    if (!cachedArticles) fillHomeList("featuredWritingGrid", renderHomeRows([], () => "/writing/", "error"));
   });
 
 loadNoteSummaries()
@@ -344,14 +350,14 @@ loadNoteSummaries()
     nowData.notes = notes;
     refreshNowStrip();
     const picks = selectHighlights(notes);
-    if (sameContent(selectHighlights(cachedNotes ?? []), picks)) return;
+    if (cachedNotes && sameContent(selectHighlights(cachedNotes), picks)) return;
     fillHomeList(
       "latestLearningNote",
       renderHomeRows(picks, (note) => `/notes/${encodeURIComponent(note.slug)}`)
     );
   })
   .catch(() => {
-    if (!cachedNotes?.length) fillHomeList("latestLearningNote", renderHomeRows([], () => "/notes/"));
+    if (!cachedNotes) fillHomeList("latestLearningNote", renderHomeRows([], () => "/notes/", "error"));
   });
 
 function getOverlap(a, b) {

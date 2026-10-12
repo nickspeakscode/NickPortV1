@@ -1,5 +1,5 @@
 // CMS text is escaped separately; URL protocols also need validating.
-export function safeHref(value, protocols = ['http:', 'https:', 'mailto:']) {
+export function safeHref(value, protocols = ['http:', 'https:', 'mailto:', 'tel:']) {
   if (typeof value !== 'string' || !value.trim()) return '';
   try {
     const url = new URL(value.trim(), 'https://www.bynickthomas.com/');

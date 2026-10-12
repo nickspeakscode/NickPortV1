@@ -35,7 +35,7 @@
 .now-strip { display: grid; gap: 7px; margin-top: 26px; color: var(--muted); font: 11px/1.6 'JetBrains Mono', monospace; letter-spacing: .02em; }
 .now-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; color: inherit; text-decoration: none; }
 .now-item::before { content: ''; flex: none; width: 5px; height: 5px; margin-right: 4px; border-radius: 50%; background: #2f5064; align-self: center; }
-.now-item:first-child::before { background: var(--aqua); box-shadow: 0 0 10px var(--aqua); animation: now-pulse 2.4s ease-in-out infinite; }
+.now-item:first-child::before { background: var(--aqua); box-shadow: 0 0 10px var(--aqua); animation: now-pulse 2.4s ease-in-out 5; }
 .now-item:hover strong, .now-item:focus-visible strong { color: var(--aqua); }
 .now-item:focus-visible { outline: 2px solid var(--aqua); outline-offset: 4px; border-radius: 2px; }
 .now-label { flex: none; min-width: 96px; color: #6f889d; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; }
@@ -60,8 +60,8 @@
 @media (hover: hover) { .market-strip:hover .ticker-track { animation-play-state: paused; } }
 @media (hover: none) { .market-strip:hover .ticker-track { animation-play-state: running; } }
 .site-header .market-strip[data-paused] .ticker-track,
-.site-header .market-strip[data-user-paused] .ticker-track,
-.site-header .market-strip:focus-within .ticker-track { animation-play-state: paused; }
+.site-header .market-strip[data-user-paused] .ticker-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .ticker-toggle { display: none; } .site-header .market-strip { cursor: default; } }
 .site-header .market-strip { position: relative; cursor: pointer; }
 /* Visually hidden until keyboard focus, then shown over the strip's left edge. */
 .ticker-toggle { position: absolute; z-index: 3; inset: 50% auto auto 6px; translate: 0 -50%; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 1px solid var(--aqua); border-radius: 999px; background: var(--bg-deep); color: var(--aqua); font: 600 11px/1 Sora, sans-serif; letter-spacing: .02em; }

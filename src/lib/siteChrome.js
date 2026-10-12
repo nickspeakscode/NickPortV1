@@ -26,7 +26,7 @@ export function renderSocialLinks() {
   <a href="mailto:nickthomasfx@gmail.com" aria-label="Email Nicholas Thomas">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 5.25h16.5A2.75 2.75 0 0 1 23 8v8a2.75 2.75 0 0 1-2.75 2.75H3.75A2.75 2.75 0 0 1 1 16V8a2.75 2.75 0 0 1 2.75-2.75Zm0 1.75a1 1 0 0 0-.72.3L12 13.66l8.97-6.36a1 1 0 0 0-.72-.3H3.75Zm17.5 2.12-8.74 6.2a.88.88 0 0 1-1.02 0l-8.74-6.2V16c0 .55.45 1 1 1h16.5c.55 0 1-.45 1-1V9.12Z"/></svg>
   </a>
-  <button class="pokeball-release" id="pokeballRelease" type="button" aria-label="Release a random Pokemon">
+  <button class="pokeball-release" id="pokeballRelease" type="button" aria-label="Release a random Pokémon">
     <img src="/pokemon/pokeball.png" alt="" />
   </button>
   `;

@@ -54,6 +54,7 @@ export function initializeNavPrefetch(root = document) {
 
     const warm = () => {
       if (warmed.has(key)) return;
+      if (readCache({ "/writing/": "articles", "/library/": "resources", "/notes/": "notes" }[key])) return;
       warmed.add(key);
 
       if (!document.head.querySelector(`link[rel="prefetch"][href="${key}"]`)) {

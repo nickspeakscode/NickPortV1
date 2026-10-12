@@ -10,7 +10,7 @@ const SECTIONS = { article: "writing", learningNote: "notes", learningResource: 
 const QUERY = `*[
   _type in ["article", "learningNote", "learningResource"] &&
   defined(slug.current) &&
-  (_type == "learningResource" || defined(publishedAt))
+  (_type == "learningResource" || (defined(publishedAt) && dateTime(publishedAt) <= dateTime(now())))
 ]{ _type, "slug": slug.current, _updatedAt }`;
 
 function escapeXml(value) {
@@ -46,7 +46,7 @@ export async function buildSitemap(fetchImpl = fetch) {
     const url = new URL(`https://${PROJECT_ID}.apicdn.sanity.io/v${API_VERSION}/data/query/${DATASET}`);
     url.searchParams.set("query", QUERY);
     url.searchParams.set("perspective", "published");
-    const response = await fetchImpl(url, { headers: { Accept: "application/json" } });
+    const response = await fetchImpl(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(5000) });
     if (!response.ok) throw new Error(`Sanity returned ${response.status}`);
     const payload = await response.json();
     return { xml: renderSitemap(payload.result ?? []), complete: true };

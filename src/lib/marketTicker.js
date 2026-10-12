@@ -32,13 +32,17 @@ export function initializeMarketTicker(track, endpoint = '/api/market-data') {
   strip.prepend(toggle);
   function setUserPaused(paused) {
     strip.toggleAttribute('data-user-paused', paused);
-    toggle.textContent = paused ? 'Resume ticker' : 'Pause ticker';
+    toggle.textContent = 'Pause ticker';
     toggle.setAttribute('aria-pressed', String(paused));
     strip.title = paused ? 'Click to resume' : 'Click to pause';
   }
   setUserPaused(false);
   const onStripClick = () => setUserPaused(!strip.hasAttribute('data-user-paused'));
   strip.addEventListener('click', onStripClick);
+  const stillMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const syncFocusable = () => { if (stillMotion.matches) strip.tabIndex = 0; else strip.removeAttribute('tabindex'); };
+  syncFocusable();
+  stillMotion.addEventListener?.('change', syncFocusable);
   let disposed = false;
   let busy = false;
   let controller;
@@ -170,6 +174,7 @@ export function initializeMarketTicker(track, endpoint = '/api/market-data') {
     window.removeEventListener('pageshow', resume);
     window.removeEventListener('pagehide', pageHide);
     strip.removeEventListener('click', onStripClick);
+    stillMotion.removeEventListener?.('change', syncFocusable);
     toggle.remove();
   };
 }

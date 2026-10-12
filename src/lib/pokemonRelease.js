@@ -251,6 +251,7 @@ export function initializePokemonRelease({ onMove } = {}) {
     sprite.alt = selected.name;
     pokemon.dataset.size = selected.size;
     pokemon.title = `${selected.name}: double-click or press Escape to send back`;
+    button.setAttribute("aria-label", `Release another Pokémon (Escape sends ${selected.name} back)`);
     state.width = 0;
     // Restart the pop even on rapid repeat clicks.
     pokemon.classList.remove("is-popping");
@@ -284,6 +285,7 @@ export function initializePokemonRelease({ onMove } = {}) {
     state.frameId = 0;
     pokemon.classList.remove("is-released", "is-dragging", "is-popping");
     pokemon.removeAttribute("title");
+    button.setAttribute("aria-label", "Release a random Pokémon");
   }
 
   function handleKeydown(event) {

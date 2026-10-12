@@ -322,7 +322,7 @@ main:focus {
   filter:
     drop-shadow(0 12px 22px rgba(0, 0, 0, 0.34))
     drop-shadow(0 0 12px rgba(89, 241, 215, 0.12));
-  animation: pokeball-shake 1.25s ease-in-out infinite;
+  animation: pokeball-shake 1.25s ease-in-out 4;
 }
 
 .pokeball-release::before {
@@ -338,7 +338,7 @@ main:focus {
   filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9));
   opacity: 0;
   pointer-events: none;
-  animation: pokeball-shine 2.8s ease-in-out infinite;
+  animation: pokeball-shine 2.8s ease-in-out 3;
 }
 
 .pokeball-release img {
@@ -1162,6 +1162,13 @@ p {
 .highlights-more:focus-visible {
   color: var(--aqua);
 }
+
+.highlights-pending { pointer-events: none; }
+.highlights-pending li { padding: 17px 0; border-bottom: 1px solid var(--line); }
+.highlights-pending li span { display: block; width: 62%; height: 12px; border-radius: 4px; background: #12263a; }
+.highlights-pending li:nth-child(2) span { width: 48%; }
+.highlights-pending li:nth-child(3) span { width: 55%; }
+@media print { .reveal-on-scroll { opacity: 1 !important; transform: none !important; } }
 
 .highlights-empty {
   color: #8593af;

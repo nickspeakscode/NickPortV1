@@ -69,6 +69,16 @@ export function setPageTitle(title) {
   document.title = title ? `${title} | Nicholas Thomas` : "Nicholas Thomas";
 }
 
+function ensureHead(selector, create, prepare = () => {}) {
+  let element = document.head.querySelector(selector);
+  if (!element) {
+    element = create();
+    prepare(element);
+    document.head.append(element);
+  }
+  return element;
+}
+
 function setHeadContent(selector, value) {
   if (value) document.head.querySelector(selector)?.setAttribute("content", value);
 }
@@ -97,7 +107,7 @@ export function setPageMeta({ title, description, path } = {}) {
   }
   if (path) {
     const url = new URL(path, SITE_ORIGIN).href;
-    setHeadContent('meta[property="og:url"]', url);
-    document.head.querySelector('link[rel="canonical"]')?.setAttribute("href", url);
+    ensureHead('meta[property="og:url"]', () => Object.assign(document.createElement("meta"), { content: "" }), (meta) => meta.setAttribute("property", "og:url")).setAttribute("content", url);
+    ensureHead('link[rel="canonical"]', () => Object.assign(document.createElement("link"), { rel: "canonical" })).setAttribute("href", url);
   }
 }

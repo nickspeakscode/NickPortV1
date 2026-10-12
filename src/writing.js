@@ -60,7 +60,8 @@ function renderPending() {
 
 // A summary from the list (no body yet) renders its header straight away.
 function renderArticle(article) {
-  const meta = [article.displayDate, article.readTime].filter(Boolean).join(" · ");
+  const readTime = typeof article.readTime === "number" ? `${article.readTime} min read` : article.readTime;
+  const meta = [article.displayDate, readTime].filter(Boolean).join(" · ");
   const body = article.bodyHtml ?? `<p class="index-empty" role="status">Loading article…</p>`;
 
   return `
@@ -150,7 +151,7 @@ async function initializeArticle(slug) {
   try {
     const article = await loadArticle(slug);
     if (!article) {
-      setPageMeta({ title: "Article Not Found" });
+      setPageMeta({ title: "Article Not Found", description: "This article could not be found.", path: "/writing/" });
       setNoIndex();
       renderPage(renderNotFound());
       return;

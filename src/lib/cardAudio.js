@@ -18,13 +18,16 @@ export function createCardAudio() {
   let epoch = 0;
   let active = null;
   let resuming = Promise.resolve();
-  const buffers = CUES.map(cue => fetch(cue.src)
+  let buffers = null;
+  const loadBuffers = () => (buffers ??= CUES.map(cue => fetch(cue.src)
     .then(response => {
       if (!response.ok) throw new Error('Card sound unavailable');
       return response.arrayBuffer();
     })
     .then(bytes => context.decodeAudioData(bytes))
-    .catch(() => null));
+    .catch(() => null)));
+  const quiet = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || window.navigator?.connection?.saveData;
+  if (!quiet && typeof window.requestIdleCallback === 'function') window.requestIdleCallback(loadBuffers, { timeout: 6000 });
 
   function unlock() {
     // Must be invoked synchronously by a real input handler on iOS Safari.
@@ -35,6 +38,7 @@ export function createCardAudio() {
       if (window.navigator?.audioSession) window.navigator.audioSession.type = 'playback';
     } catch { /* Unsupported session policy must not prevent gesture unlock. */ }
     unlocked = true;
+    loadBuffers();
     if (context.state !== 'running') {
       try { resuming = context.resume().catch(() => {}); }
       catch { resuming = Promise.resolve(); }
@@ -57,7 +61,7 @@ export function createCardAudio() {
     const cue = CUES[variation];
     if (!cue) return;
     const request = epoch;
-    Promise.all([buffers[variation], resuming]).then(([buffer]) => {
+    Promise.all([loadBuffers()[variation], resuming]).then(([buffer]) => {
       if (request !== epoch || !buffer || context.state !== 'running') return;
       const elapsed = (document.timeline.currentTime - animationStartTime) / 1000;
       // Slow fetch/decode/resume must not introduce a delayed sound effect.

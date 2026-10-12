@@ -7,7 +7,13 @@ export default async function handler(request, response) {
     return;
   }
 
-  let body = request.body ?? {};
+  let body;
+  try {
+    body = request.body ?? {};
+  } catch {
+    response.status(400).json({ error: "Invalid JSON" });
+    return;
+  }
   if (typeof body === "string") {
     try {
       body = JSON.parse(body || "{}");

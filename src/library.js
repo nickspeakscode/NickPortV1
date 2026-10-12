@@ -62,7 +62,7 @@ function initializeLibraryFilters() {
   const update = () => {
     const filters = app.querySelector(".library-filters");
     if (!filters) return;
-    filters.querySelectorAll("[data-filter]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.filter === activeFilter)));
+    filters.outerHTML = renderLibraryFilters(currentResources);
     app.querySelector("#library-results").innerHTML = renderLibraryResults(currentResources);
     const count = filteredResources(currentResources).length;
     app.querySelector(".library-filter-status").textContent = `${count} ${count === 1 ? "entry" : "entries"} shown.`;
@@ -79,6 +79,7 @@ function initializeLibraryFilters() {
   };
   const onPopState = () => {
     activeFilter = new URLSearchParams(location.search).get("shelf") || "all";
+    if (!libraryFilters(currentResources).some(filter => filter.key === activeFilter)) activeFilter = "all";
     const reader = document.querySelector(".library-reader[open]");
     if (reader) {
       reader.addEventListener("close", () => {
