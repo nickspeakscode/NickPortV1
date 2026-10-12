@@ -13,7 +13,7 @@ const origin = process.env.TEST_ORIGIN || 'http://127.0.0.1:5173';
       page.on('pageerror', error => {
         // A superseded native cross-document transition is browser cancellation,
         // not an application exception. Keep it visible in the test output.
-        if (error.message === 'Transition was skipped') console.log('NOTE native page transition cancelled');
+        if (/^Transition was (skipped|aborted)/.test(error.message)) console.log('NOTE native page transition cancelled');
         else errors.push(error.stack || error.message);
       });
       for (const route of ['/', '/writing/', '/library/', '/notes/']) {

@@ -5,7 +5,7 @@ const block=text=>[{_type:'block',style:'normal',markDefs:[],children:[{_type:'s
 (async()=>{for(const engine of [chromium,webkit]){const browser=await engine.launch();try{
  for(const section of ['writing','notes']){
   const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
-  const errors=[];page.on('pageerror',e=>{if(e.message!=='Transition was skipped')errors.push(e.message)});
+  const errors=[];page.on('pageerror',e=>{if(!/^Transition was (skipped|aborted)/.test(e.message))errors.push(e.message)});
   await page.route('**/api/record-view',r=>r.fulfill({status:204}));
   let fail=false,title='Original CMS title',body='Original body';
   await page.route('**/data/query/production?**',async r=>{

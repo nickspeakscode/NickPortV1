@@ -103,3 +103,6 @@ kbd { display: inline-block; margin-left: 4px; color: var(--timeline-muted); fon
   .timeline-controls { bottom: max(15px, env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+
+/* Screen-reader text (the timeline page does not load the shared stylesheet). */
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

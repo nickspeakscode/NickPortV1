@@ -8,7 +8,7 @@ const fs = require('node:fs/promises');
     try {
       const page = await browser.newPage({ viewport: { width: 1440, height: 800 } });
       const errors = [];
-      page.on('pageerror', error => { if (error.message !== 'Transition was skipped') errors.push(error.message); });
+      page.on('pageerror', error => { if (!/^Transition was (skipped|aborted)/.test(error.message)) errors.push(error.message); });
       await page.goto('http://127.0.0.1:5173/');
       await page.waitForTimeout(3800);
       const header = page.locator('.site-header');

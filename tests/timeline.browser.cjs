@@ -11,7 +11,7 @@ const origin = process.env.TEST_ORIGIN || 'http://127.0.0.1:5173';
     const page=await browser.newPage({viewport,isMobile:viewport.width<900,hasTouch:viewport.width<900,deviceScaleFactor:viewport.width<900?2:1,colorScheme:process.env.TEST_COLOR_SCHEME||'dark'});
     const errors=[];
     page.on('pageerror',e=>{
-     if(e.message==='Transition was skipped') console.log('NOTE browser cancelled a superseded navigation transition');
+     if(/^Transition was (skipped|aborted)/.test(e.message)) console.log('NOTE browser cancelled a superseded navigation transition');
      else errors.push(e.message);
     });
     await page.goto(origin+'/timeline/');
