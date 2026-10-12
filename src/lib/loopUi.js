@@ -57,6 +57,36 @@ export function renderLoopSteps(loop) {
   }).join("")}</ol>`;
 }
 
+function percent(ratio) {
+  return `${Math.round(ratio * 100)}%`;
+}
+
+// Recall from quizzes: the latest score, its change, and a short history.
+export function renderRecall(loop) {
+  const quiz = loop.quiz;
+  if (!quiz) return "";
+  const { last, trend } = quiz;
+  const delta = Math.round(trend * 100);
+  const change = quiz.taken > 1 && delta
+    ? `<span class="recall-trend" data-dir="${delta > 0 ? "up" : "down"}">${delta > 0 ? "▲" : "▼"} ${Math.abs(delta)} pts</span>`
+    : "";
+  return `
+    <div class="recall" data-step="Quiz" role="img" aria-label="${escapeHtml(`Recall: last quiz ${last.score} of ${last.total}, best ${percent(quiz.best)}, ${quiz.taken} ${quiz.taken === 1 ? "quiz" : "quizzes"} taken`)}">
+      <div class="recall-head">
+        <span class="recall-label">Recall</span>
+        <span class="recall-meta">${quiz.taken} ${quiz.taken === 1 ? "quiz" : "quizzes"} · best ${percent(quiz.best)}</span>
+      </div>
+      <div class="recall-body">
+        <p class="recall-score"><strong>${escapeHtml(String(last.score))}</strong><small>/${escapeHtml(String(last.total))}</small></p>
+        <div class="recall-detail">
+          <span class="recall-pct">${percent(last.ratio)} last quiz</span>
+          ${change}
+        </div>
+        <div class="recall-bars" aria-hidden="true">${quiz.history.map((item) => `<i style="--h: ${Math.max(6, Math.round(item.ratio * 100))}%" title="${escapeHtml(`${formatDay(item.day)}: ${item.score}/${item.total}`)}"></i>`).join("")}</div>
+      </div>
+    </div>`;
+}
+
 export function renderMastery(loop) {
   const { level } = loop;
   const width = Math.round(level.progress * 100);
@@ -80,6 +110,7 @@ export function renderStudyLog(entries, { limit = 0 } = {}) {
     <li data-step="${entry.step}">
       <div class="study-log-head">
         <span class="study-log-step">${escapeHtml(entry.step)}</span>
+        ${entry.step === "Quiz" && entry.ratio !== null && entry.ratio !== undefined ? `<span class="study-log-score">${escapeHtml(String(entry.score))}/${escapeHtml(String(entry.total))}</span>` : ""}
         ${entry.where ? `<span class="study-log-where">${escapeHtml(entry.where)}</span>` : ""}
         <time datetime="${escapeHtml(entry.day)}">${escapeHtml(formatDay(entry.day))}</time>
       </div>
@@ -101,6 +132,7 @@ export function renderLoopPanel(loop, { heading = "Learning loop", headingTag = 
       </div>
       <p class="loop-next" data-step="${escapeHtml(next)}"><span>Next step</span> <strong>${escapeHtml(next)}</strong> ${escapeHtml(STEP_HINT[next].toLowerCase())}</p>
       ${renderMastery(loop)}
+      ${renderRecall(loop)}
     </div>`;
 }
 
@@ -142,7 +174,11 @@ export function renderStudyHud(resources = [], notes = [], today = localDay(new 
 export function renderGainToast(gains) {
   const total = gains.reduce((sum, gain) => sum + gain.xp, 0);
   const lines = gains.slice(0, 3).map((gain) => {
-    const extras = [gain.loops ? `${gain.loops === 1 ? "Loop" : `${gain.loops} loops`} closed` : "", gain.levelUp ? `Level ${gain.levelUp}` : ""].filter(Boolean);
+    const extras = [
+      gain.quizzes ? (gain.lastQuiz ? `Quiz ${gain.lastQuiz}` : `${gain.quizzes} ${gain.quizzes === 1 ? "quiz" : "quizzes"}`) : "",
+      gain.loops ? `${gain.loops === 1 ? "Loop" : `${gain.loops} loops`} closed` : "",
+      gain.levelUp ? `Level ${gain.levelUp}` : "",
+    ].filter(Boolean);
     return `<li><strong>${escapeHtml(gain.title)}</strong><span>+${gain.xp} XP${extras.length ? ` · ${escapeHtml(extras.join(" · "))}` : ""}</span></li>`;
   }).join("");
   return `

@@ -69,7 +69,7 @@ const learningResourceFields = `
   externalUrl,
   featured,
   displayOrder,
-  studyLog[]{ _key, date, step, where, minutes, entry }
+  studyLog[]{ _key, date, step, where, minutes, entry, score, total }
 `;
 
 const noteSummaryFields = `

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { activityDays, bookLoop, heatmap, levelFor, localDay, progressSince, sessionsThisWeek, streak } from '../src/lib/learningLoop.js';
+import { activityDays, bookLoop, heatmap, levelFor, localDay, progressSince, quizXp, sessionsThisWeek, streak } from '../src/lib/learningLoop.js';
 
 const book = (studyLog, slug = 'naked-statistics') => ({ slug, title: 'Naked Statistics', studyLog });
 const entry = (date, step, extra = {}) => ({ _key: `${date}-${step}`, date, step, ...extra });
@@ -18,7 +18,7 @@ test('a loop closes once every step has been done, in any order, and earns a bon
   assert.deepEqual(loop.done, [true, false, false, false], 'the second loop has started with a Read');
   assert.equal(loop.nextStep, 'Paraphrase');
   assert.equal(loop.lastEntry.day, '2026-10-05');
-  assert.deepEqual(loop.counts, { Read: 2, Paraphrase: 1, Note: 1, Apply: 1 });
+  assert.deepEqual(loop.counts, { Read: 2, Paraphrase: 1, Note: 1, Apply: 1, Quiz: 0 });
 });
 
 test('linked Today I Learned notes count as Note steps for their book only', () => {
@@ -86,5 +86,30 @@ test('progress since the last visit reports XP, loops and level-ups', () => {
     { a: { title: 'A', xp: 40, loops: 0, level: 1 }, b: { title: 'B', xp: 10, loops: 0, level: 1 } },
     { a: { title: 'A', xp: 90, loops: 1, level: 2 }, b: { title: 'B', xp: 10, loops: 0, level: 1 }, c: { title: 'C', xp: 20, loops: 0, level: 1 } },
   );
-  assert.deepEqual(gains, [{ slug: 'a', title: 'A', xp: 50, loops: 1, levelUp: 2 }], 'unchanged and first-seen books are not rewards');
+  assert.deepEqual(gains, [{ slug: 'a', title: 'A', xp: 50, loops: 1, levelUp: 2, quizzes: 0, lastQuiz: null }], 'unchanged and first-seen books are not rewards');
+});
+
+test('quizzes earn XP by score and keep the streak, but never close a loop', () => {
+  assert.equal(quizXp(8, 10), 21);
+  assert.equal(quizXp(10, 10), 25);
+  assert.equal(quizXp(0, 10), 5);
+  assert.equal(quizXp(12, 10), 25, 'scores above the total are capped');
+  assert.equal(quizXp(undefined, undefined), 5, 'a quiz without a score still counts as taken');
+  const loop = bookLoop(book([
+    entry('2026-10-01', 'Read'),
+    entry('2026-10-02', 'Quiz', { score: 6, total: 10, entry: 'Missed the regression questions.' }),
+    entry('2026-10-04', 'Quiz', { score: 9, total: 10 }),
+  ]));
+  assert.equal(loop.loops, 0);
+  assert.deepEqual(loop.done, [true, false, false, false], 'quizzes are not loop steps');
+  assert.equal(loop.nextStep, 'Paraphrase');
+  assert.equal(loop.xp, 10 + quizXp(6, 10) + quizXp(9, 10));
+  assert.equal(loop.counts.Quiz, 2);
+  assert.equal(loop.quiz.taken, 2);
+  assert.equal(loop.quiz.last.score, 9);
+  assert.equal(loop.quiz.best, 0.9);
+  assert.ok(Math.abs(loop.quiz.trend - 0.3) < 1e-9, 'up 30 points on the previous quiz');
+  const days = activityDays([book([entry('2026-10-04', 'Quiz', { score: 1, total: 2 })])]);
+  assert.equal(days.get('2026-10-04'), 1);
+  assert.equal(bookLoop(book([entry('2026-10-01', 'Read')])).quiz, null);
 });

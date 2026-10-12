@@ -69,7 +69,8 @@ function renderNowFeature(item) {
   const detail = [
     item.progress ? `${item.progress}% complete` : "Just started",
     loop?.entries.length ? `Next: ${loop.nextStep}` : "",
-    loop?.lastEntry ? `${loop.lastEntry.step} ${relativeDay(loop.lastEntry.day)}` : "",
+    loop?.quiz ? `Quiz ${Math.round(loop.quiz.last.ratio * 100)}%${loop.lastEntry?.step === "Quiz" ? ` ${relativeDay(loop.lastEntry.day)}` : ""}` : "",
+    loop?.lastEntry && loop.lastEntry.step !== "Quiz" ? `${loop.lastEntry.step} ${relativeDay(loop.lastEntry.day)}` : "",
   ].filter(Boolean);
   return `
     <a class="now-feature" href="${escapeHtml(item.href)}">

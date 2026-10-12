@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const block = text => [{ _type: 'block', style: 'normal', markDefs: [], children: [{ _type: 'span', text, marks: [] }] }];
 const resources = [
   { title: 'Decision Notes', slug: 'decision-notes', resourceType: 'Book', authorCreator: 'Test Author', status: 'Completed', progress: 100, rating: 4.5, category: 'Finance', description: 'A resource description supplied by the CMS.', personalSummary: block('My saved thoughts from Sanity.'), keyTakeaways: ['A saved takeaway.'], startDate: '2026-01-01', finishDate: '2026-02-01', coverImage: 'https://cdn.sanity.io/images/vzrug3c0/production/test-cover.svg' },
-  { title: '<Systems & Learning>', slug: 'systems', resourceType: 'Course', authorCreator: 'Test Creator', status: 'Currently Learning', progress: 35, rating: null, studyLog: [{ _key: 'l1', date: '2026-10-01', step: 'Read', where: 'Module 1' }, { _key: 'l2', date: '2026-10-02', step: 'Paraphrase', entry: '<b>In my words</b> & more' }], description: 'A course without a cover image.', personalSummary: [], keyTakeaways: [] },
+  { title: '<Systems & Learning>', slug: 'systems', resourceType: 'Course', authorCreator: 'Test Creator', status: 'Currently Learning', progress: 35, rating: null, studyLog: [{ _key: 'l1', date: '2026-10-01', step: 'Read', where: 'Module 1' }, { _key: 'l2', date: '2026-10-02', step: 'Paraphrase', entry: '<b>In my words</b> & more' }, { _key: 'l3', date: '2026-10-03', step: 'Quiz', score: 3, total: 4, entry: 'Missed one.' }], description: 'A course without a cover image.', personalSummary: [], keyTakeaways: [] },
   { title: 'CMA preparation', slug: 'cma', resourceType: 'Certification', status: 'Currently Learning', progress: 10, description: 'The featured study resource.', coverImage: 'https://cdn.sanity.io/images/vzrug3c0/production/test-certificate.svg', externalUrl: 'https://example.com/credential' },
   { title: 'My original book', slug: 'original', resourceType: 'Book', createdByMe: true, status: 'Published', progress: 100, description: 'An original book written by the portfolio owner.' },
   { title: 'A custom resource', slug: 'custom', _createdAt: new Date().toISOString(), resourceType: 'Other', customResourceType: 'Essay & Guide', description: 'A resource with a custom type managed in Sanity.', coverImage: 'https://cdn.sanity.io/images/vzrug3c0/production/broken-cover.jpg', externalUrl: 'javascript:alert(1)', personalSummary: [{ _type: 'block', style: 'normal', markDefs: [{ _key: 'unsafe', _type: 'link', href: 'javascript:alert(1)' }], children: [{ _type: 'span', text: 'Unsafe link stays readable.', marks: ['unsafe'] }] }] },
@@ -56,7 +56,8 @@ const resources = [
         await page.locator('.study-hud').waitFor();
         const toast = page.locator('.gain-toast');
         await toast.waitFor();
-        assert.match(await toast.innerText(), /\+15 XP/);
+        assert.match(await toast.innerText(), /\+35 XP/, 'Paraphrase 15 + quiz 3/4 worth 20');
+        assert.match(await toast.innerText(), /Quiz 3\/4/);
         assert.ok((await toast.innerText()).includes('<Systems & Learning>'), 'titles are text, not markup');
         await page.mouse.click(5, 5);
         await toast.waitFor({ state: 'detached' });
@@ -188,7 +189,9 @@ const resources = [
         assert.equal(await reader.locator('.reader-page--loop').count(), 1, 'the reader has a learning loop page');
         assert.equal(await reader.locator('.loop-arc[data-state="done"]').count(), 2);
         assert.equal(await reader.locator('.loop-arc[data-state="next"]').getAttribute('data-step'), 'Note');
-        assert.equal(await reader.locator('.study-log-text').first().textContent(), '<b>In my words</b> & more', 'log entries are escaped');
+        assert.equal(await reader.locator('.study-log-score').first().textContent(), '3/4', 'quiz scores show in the log');
+        assert.ok((await reader.locator('.recall').getAttribute('aria-label')).startsWith('Recall: last quiz 3 of 4'));
+        assert.equal(await reader.locator('.study-log-text').nth(1).textContent(), '<b>In my words</b> & more', 'log entries are escaped');
         assert.equal(await reader.locator('.resource-rating').count(), 0, 'unset ratings stay absent');
         await page.getByRole('button', { name: 'Return to shelf' }).click().catch(async error => {
           console.error('Reader close failure', engine.name(), mobile, await reader.evaluate(el => ({ open: el.open, className: el.className, button: el.querySelector('button')?.outerHTML, inert: el.inert, html: el.outerHTML.slice(0, 600) })));

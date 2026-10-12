@@ -538,7 +538,16 @@ function rewardProgress(resources, notes) {
   const snapshot = {};
   for (const resource of resources) {
     const loop = bookLoop(resource, notes);
-    if (loop.entries.length) snapshot[resource.slug] = { title: resource.title, xp: loop.xp, loops: loop.loops, level: loop.level.level };
+    if (loop.entries.length) {
+      snapshot[resource.slug] = {
+        title: resource.title,
+        xp: loop.xp,
+        loops: loop.loops,
+        level: loop.level.level,
+        quizzes: loop.quiz?.taken ?? 0,
+        lastQuiz: loop.quiz ? `${loop.quiz.last.score}/${loop.quiz.last.total}` : null,
+      };
+    }
   }
   let previous = null;
   try { previous = JSON.parse(localStorage.getItem(SEEN_KEY) || "null"); } catch { /* Unreadable: treat as first visit. */ }

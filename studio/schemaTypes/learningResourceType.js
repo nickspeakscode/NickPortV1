@@ -156,7 +156,7 @@ export const learningResourceType = defineType({
       name: "studyLog",
       title: "Study log",
       description:
-        "Log each step of the loop as you go: Read → Paraphrase → Note → Apply. Doing all four closes a loop on the website. Today I Learned notes that point at this entry count as Note steps automatically.",
+        "Log each step of the loop as you go: Read → Paraphrase → Note → Apply. Doing all four closes a loop on the website. Quizzes are retrieval practice: they earn XP by score and keep the streak. Today I Learned notes that point at this entry count as Note steps automatically.",
       type: "array",
       of: [
         defineArrayMember({
@@ -181,11 +181,35 @@ export const learningResourceType = defineType({
                   { title: "Paraphrase: put it in my own words", value: "Paraphrase" },
                   { title: "Note: captured what matters", value: "Note" },
                   { title: "Apply: used it for something real", value: "Apply" },
+                  { title: "Quiz: tested myself on it", value: "Quiz" },
                 ],
                 layout: "radio",
               },
               initialValue: "Read",
               validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "score",
+              title: "Score",
+              type: "number",
+              description: "Questions answered correctly.",
+              hidden: ({ parent }) => parent?.step !== "Quiz",
+              validation: (rule) =>
+                rule.integer().min(0).custom((score, context) => {
+                  if (context.parent?.step !== "Quiz") return true;
+                  if (score === undefined) return "Enter the score.";
+                  const total = context.parent?.total;
+                  return total === undefined || score <= total ? true : "Score can't be more than the total.";
+                }),
+            }),
+            defineField({
+              name: "total",
+              title: "Out of",
+              type: "number",
+              hidden: ({ parent }) => parent?.step !== "Quiz",
+              validation: (rule) =>
+                rule.integer().min(1).max(100).custom((total, context) =>
+                  context.parent?.step !== "Quiz" || total !== undefined ? true : "Enter the number of questions."),
             }),
             defineField({
               name: "where",
@@ -205,17 +229,17 @@ export const learningResourceType = defineType({
               title: "In my own words",
               type: "text",
               rows: 4,
-              description: "What you read, your paraphrase, the note, or how you applied it. Shown on the website.",
+              description: "What you read, your paraphrase, the note, how you applied it, or (for a quiz) what you missed. Shown on the website.",
               validation: (rule) =>
                 rule.max(600).custom((entry, context) =>
                   context.parent?.step === "Read" || entry?.trim() ? true : "Write a line or two for this step."),
             }),
           ],
           preview: {
-            select: { step: "step", date: "date", where: "where", entry: "entry" },
-            prepare({ step, date, where, entry }) {
+            select: { step: "step", date: "date", where: "where", entry: "entry", score: "score", total: "total" },
+            prepare({ step, date, where, entry, score, total }) {
               return {
-                title: [step, where].filter(Boolean).join(" · "),
+                title: [step === "Quiz" && total ? `Quiz ${score ?? "?"}/${total}` : step, where].filter(Boolean).join(" · "),
                 subtitle: [date, entry].filter(Boolean).join(" — "),
               };
             },
