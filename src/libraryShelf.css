@@ -179,6 +179,7 @@
 /* Folio: a zero-padded page number at the foot of every page. */
 .reader-page::after { content: '0' attr(data-number) / ''; position: absolute; bottom: 18px; left: 0; right: 0; text-align: center; color: #4f6c82; font: 10px 'JetBrains Mono', monospace; letter-spacing: .14em; }
 .reader-page.is-clone { height: 100%; overflow: hidden; }
+.reader-page[tabindex="0"]::after { display: none; }
 .reader-end { display: grid; place-items: center; height: 100%; margin: 0; color: rgb(var(--rarity-rgb) / .35); font-size: 22px; text-shadow: 0 0 18px rgb(var(--rarity-rgb) / .4); }
 .reader-page--end { display: grid; }
 

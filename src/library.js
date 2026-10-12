@@ -2,14 +2,18 @@ import "./style.css";
 import "./writing.css";
 import "./learning.css";
 import "./libraryShelf.css";
+import "./loop.css";
 import { initializeLibraryShelf } from "./lib/libraryShelf.js";
 import { safeHref } from "./lib/safeUrl.js";
 import { isRecent } from "./lib/freshness.js";
+import { bookLoop, progressSince } from "./lib/learningLoop.js";
+import { renderGainToast, renderLoopPanel, renderShelfLoop, renderStudyHud, renderStudyLog } from "./lib/loopUi.js";
 import {
   buildSanityImageUrl,
   escapeHtml,
   loadLearningResource,
   loadLearningResources,
+  loadNoteSummaries,
   renderPortableText,
 } from "./lib/sanity.js";
 import {
@@ -27,6 +31,15 @@ let cleanupReveals = () => {};
 let cleanupShelf = () => {};
 let cleanupFilters = () => {};
 let currentResources = [];
+// All published notes: linked ones count toward a book's loop, and every one
+// shows on the study heatmap.
+let currentNotes = readCache("notes") ?? [];
+
+function notesFor(resource, linked = []) {
+  const bySlug = new Map();
+  for (const note of [...currentNotes, ...linked]) if (note?.slug) bySlug.set(note.slug, { resourceSlug: resource.slug, ...note });
+  return [...bySlug.values()].filter((note) => note.resourceSlug === resource.slug);
+}
 let activeFilter = new URLSearchParams(location.search).get("shelf") || "all";
 
 function resourceTypeLabel(resource) {
@@ -290,6 +303,7 @@ function renderShelfBook(resource, index) {
         <span class="shelf-title">${escapeHtml(resource.title)}</span>
         ${resource.authorCreator ? `<span class="shelf-author">${escapeHtml(resource.authorCreator)}</span>` : ""}
         ${resource.status ? `<span class="shelf-status" data-status="${statusKey(resource.status)}">${escapeHtml(resource.status)}</span>` : ""}
+        ${renderShelfLoop(bookLoop(resource, currentNotes))}
       </span>
     </a>
   </li>`;
@@ -326,6 +340,7 @@ function renderLibrary(resources, options = {}) {
         <h1>library</h1>
         <p>what I’m reading, learning, and creating. A closer look at the work behind the profile.</p>
       </header>
+      <div id="study-hud">${renderStudyHud(resources, currentNotes)}</div>
       ${renderLibraryFilters(resources)}
       <p class="library-filter-status" role="status" aria-atomic="true"></p>
       <div id="library-results">${renderLibraryResults(resources, options)}</div>
@@ -367,6 +382,13 @@ function renderResourceDetail(resource, notes) {
   });
   const status = resource.status || "Want to Learn";
   const externalUrl = safeHref(resource.externalUrl, ['http:', 'https:']);
+  const loop = bookLoop(resource, notesFor(resource, notes));
+  const loopSection = loop.entries.length || status === "Currently Learning"
+    ? `<section class="learning-detail-section loop-detail reveal-on-scroll">
+        ${renderLoopPanel(loop, { heading: "Learning loop" })}
+        ${loop.entries.length ? `<h3 class="loop-log-heading">Study log</h3>${renderStudyLog(loop.entries)}` : ""}
+      </section>`
+    : "";
   const thoughts = resource.personalSummary?.length
     ? `<section class="learning-detail-section reveal-on-scroll">
         <h2>My thoughts</h2>
@@ -408,6 +430,7 @@ function renderResourceDetail(resource, notes) {
           }
         </article>
       </div>
+      ${loopSection}
       ${thoughts}
       ${takeaways}
       <section class="learning-detail-section reveal-on-scroll" aria-labelledby="resourceNotesTitle">
@@ -455,6 +478,13 @@ function renderReaderPages(resource, notes, { loadingNotes = false } = {}) {
       </dl>
       ${externalUrl ? `<a class="resource-external" href="${escapeHtml(externalUrl)}" target="_blank" rel="noreferrer">${resource.resourceType === "Certification" ? "View credential" : "Open resource"} <span aria-hidden="true">↗</span></a>` : ""}`, "About"),
   ];
+  const loop = bookLoop(resource, notesFor(resource, notes));
+  if (loop.entries.length || status === "Currently Learning") {
+    pages.push(readerPage("loop", renderLoopPanel(loop), "Learning loop"));
+    if (loop.entries.length) {
+      pages.push(readerPage("section", `<section class="learning-detail-section"><h2 class="reader-heading">Study log</h2>${renderStudyLog(loop.entries, { limit: 6 })}</section>`, "Study log"));
+    }
+  }
   if (resource.personalSummary?.length) {
     pages.push(readerPage("section", `<section class="learning-detail-section"><h2 class="reader-heading">My thoughts</h2><div class="article-body">${renderPortableText(resource.personalSummary)}</div></section>`, "My thoughts"));
   }
@@ -500,6 +530,64 @@ function renderPage(content) {
   });
 }
 
+// Loop progress the visitor has already seen, per book. Only real gains
+// since then are celebrated; a first visit just records the baseline.
+const SEEN_KEY = "nt-loop-seen-v1";
+
+function rewardProgress(resources, notes) {
+  const snapshot = {};
+  for (const resource of resources) {
+    const loop = bookLoop(resource, notes);
+    if (loop.entries.length) snapshot[resource.slug] = { title: resource.title, xp: loop.xp, loops: loop.loops, level: loop.level.level };
+  }
+  let previous = null;
+  try { previous = JSON.parse(localStorage.getItem(SEEN_KEY) || "null"); } catch { /* Unreadable: treat as first visit. */ }
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify(snapshot)); } catch { /* Private mode: no memory. */ }
+  return previous ? progressSince(previous, snapshot) : [];
+}
+
+function celebrate(gains) {
+  const motion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  for (const gain of gains) {
+    const item = [...app.querySelectorAll(".shelf-link")].find((link) => link.dataset.resource === gain.slug)?.closest(".shelf-item");
+    item?.classList.add("has-gain");
+  }
+  document.querySelector(".gain-toast")?.remove();
+  const holder = document.createElement("div");
+  holder.innerHTML = renderGainToast(gains);
+  const toast = holder.firstElementChild;
+  document.body.append(toast);
+  const close = () => {
+    toast.classList.add("is-leaving");
+    setTimeout(() => toast.remove(), motion ? 320 : 0);
+  };
+  toast.querySelector(".gain-toast-close").addEventListener("click", close);
+  const timer = setTimeout(close, 9000);
+  const outside = (event) => {
+    if (toast.contains(event.target)) return;
+    close();
+    document.removeEventListener("pointerdown", outside, true);
+    document.removeEventListener("keydown", escape, true);
+  };
+  const escape = (event) => { if (event.key === "Escape") outside(event); };
+  document.addEventListener("pointerdown", outside, true);
+  document.addEventListener("keydown", escape, true);
+  toast.addEventListener("pointerenter", () => clearTimeout(timer), { once: true });
+  // Count the XP up, game-style.
+  const counter = toast.querySelector("[data-count]");
+  const target = Number(counter.dataset.count);
+  if (motion && target > 0) {
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / 900);
+      counter.textContent = String(Math.round(target * (1 - (1 - t) ** 3)));
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    counter.textContent = "0";
+    requestAnimationFrame(tick);
+  }
+}
+
 async function initializeLibrary() {
   try {
     if (resourceSlug) {
@@ -510,14 +598,21 @@ async function initializeLibrary() {
     }
 
     const cached = readCache("resources");
+    const cachedNotes = currentNotes;
     currentResources = cached ?? [];
     setPageMeta({ title: "Learning Library", path: "/library/" });
     renderPage(renderLibrary(cached ?? [], { pending: !cached }));
 
-    const resources = await loadLearningResources();
+    const [resources, notes] = await Promise.all([
+      loadLearningResources(),
+      loadNoteSummaries().catch(() => cachedNotes),
+    ]);
     writeCache("resources", resources);
+    writeCache("notes", notes);
     currentResources = resources;
-    if (!cached || !sameContent(cached, resources)) {
+    currentNotes = notes;
+    const gains = rewardProgress(resources, notes);
+    if (!cached || !sameContent(cached, resources) || !sameContent(cachedNotes, notes)) {
       const reader = document.querySelector(".library-reader[open]");
       if (reader) reader.addEventListener("close", () => {
         const selectedSlug = reader.dataset.resource;
@@ -526,6 +621,7 @@ async function initializeLibrary() {
       }, { once: true });
       else renderPage(renderLibrary(resources));
     }
+    if (gains.length) celebrate(gains);
   } catch {
     if (!resourceSlug && currentResources.length) return;
     renderPage(renderNotFound("The Library could not be loaded right now. Please try again shortly.", "/library/", "Try the Library again"));

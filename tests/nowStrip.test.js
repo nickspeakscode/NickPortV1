@@ -25,7 +25,7 @@ test('the now strip reads, studies, then the latest note, capped at three', () =
   });
   assert.deepEqual(items.map(item => [item.label, item.title, item.meta, item.href]), [
     ['Reading', 'Naked Statistics', '5%', '/library/naked-statistics'],
-    ['Studying', 'CMA Part 1', '', '/library/cma'],
+    ['Studying', 'CMA Part 1', '10%', '/library/cma'],
     ['Latest note', 'Still Learning', 'Oct 6, 2026', '/notes/still'],
   ]);
 });
@@ -45,4 +45,14 @@ test('featured and display order pick the headline read; zero progress shows no 
   assert.equal(items[0].title, 'First');
   assert.equal(items[0].meta, '');
   assert.equal(items.length, 1, 'only one reading item, and no duplicate');
+});
+
+test('labels follow the medium, and own work in progress is left out', () => {
+  const items = buildNowItems({ resources: [
+    { title: 'My essay', slug: 'essay', status: 'In Progress', resourceType: 'Other', createdByMe: true, progress: 40 },
+    { title: 'A podcast', slug: 'pod', status: 'Currently Learning', resourceType: 'Podcast', progress: 0, coverImage: 'https://cdn.sanity.io/x.png' },
+  ] });
+  assert.deepEqual(items.map(item => [item.kind, item.label, item.title]), [['learning', 'Listening to', 'A podcast']]);
+  assert.equal(items[0].cover, 'https://cdn.sanity.io/x.png');
+  assert.equal(buildNowItems({ resources: [{ title: 'V', slug: 'v', status: 'Currently Learning', resourceType: 'Video' }] })[0].label, 'Watching');
 });

@@ -153,6 +153,77 @@ export const learningResourceType = defineType({
       validation: (rule) => rule.unique().max(20),
     }),
     defineField({
+      name: "studyLog",
+      title: "Study log",
+      description:
+        "Log each step of the loop as you go: Read → Paraphrase → Note → Apply. Doing all four closes a loop on the website. Today I Learned notes that point at this entry count as Note steps automatically.",
+      type: "array",
+      of: [
+        defineArrayMember({
+          name: "studySession",
+          title: "Study session",
+          type: "object",
+          fields: [
+            defineField({
+              name: "date",
+              title: "Date",
+              type: "date",
+              initialValue: () => new Date().toLocaleDateString("en-CA"),
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "step",
+              title: "Step",
+              type: "string",
+              options: {
+                list: [
+                  { title: "Read: took in new material", value: "Read" },
+                  { title: "Paraphrase: put it in my own words", value: "Paraphrase" },
+                  { title: "Note: captured what matters", value: "Note" },
+                  { title: "Apply: used it for something real", value: "Apply" },
+                ],
+                layout: "radio",
+              },
+              initialValue: "Read",
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "where",
+              title: "Where",
+              type: "string",
+              description: "Optional. For example: Ch. 4, pp. 80–112, Module 2.",
+              validation: (rule) => rule.max(60),
+            }),
+            defineField({
+              name: "minutes",
+              title: "Minutes",
+              type: "number",
+              validation: (rule) => rule.integer().min(1).max(600),
+            }),
+            defineField({
+              name: "entry",
+              title: "In my own words",
+              type: "text",
+              rows: 4,
+              description: "What you read, your paraphrase, the note, or how you applied it. Shown on the website.",
+              validation: (rule) =>
+                rule.max(600).custom((entry, context) =>
+                  context.parent?.step === "Read" || entry?.trim() ? true : "Write a line or two for this step."),
+            }),
+          ],
+          preview: {
+            select: { step: "step", date: "date", where: "where", entry: "entry" },
+            prepare({ step, date, where, entry }) {
+              return {
+                title: [step, where].filter(Boolean).join(" · "),
+                subtitle: [date, entry].filter(Boolean).join(" — "),
+              };
+            },
+          },
+        }),
+      ],
+    }),
+    defineField({
       name: "externalUrl",
       title: "External resource URL",
       type: "url",

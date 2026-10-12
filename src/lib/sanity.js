@@ -68,7 +68,8 @@ const learningResourceFields = `
   keyTakeaways,
   externalUrl,
   featured,
-  displayOrder
+  displayOrder,
+  studyLog[]{ _key, date, step, where, minutes, entry }
 `;
 
 const noteSummaryFields = `
@@ -78,7 +79,8 @@ const noteSummaryFields = `
   publishedAt,
   category,
   featured,
-  ${viewsField}
+  ${viewsField},
+  "resourceSlug": relatedResource->slug.current
 `;
 
 const learningNoteFields = `

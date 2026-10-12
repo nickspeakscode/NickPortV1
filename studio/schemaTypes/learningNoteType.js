@@ -84,7 +84,7 @@ export const learningNoteType = defineType({
       name: "relatedResource",
       title: "Learning from",
       type: "reference",
-      description: "Optional. Connect this note to a Library resource.",
+      description: "Connect this note to the book or course it came from. It then counts as a Note step in that entry's learning loop on the website.",
       to: [{ type: "learningResource" }],
     }),
     defineField({

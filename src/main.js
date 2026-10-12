@@ -11,9 +11,12 @@ import { initializeSumlinoCharacter } from "./lib/sumlinoCharacter.js";
 import { syncHeaderOffset } from "./lib/pageUi.js";
 import { selectHighlights } from "./lib/highlights.js";
 import { buildNowItems } from "./lib/nowStrip.js";
+import { activityDays, bookLoop, streak } from "./lib/learningLoop.js";
+import { relativeDay } from "./lib/loopUi.js";
 import { initializeMobileNav } from "./lib/mobileNav.js";
 import { renderSocialLinks } from "./lib/siteChrome.js";
 import {
+  buildSanityImageUrl,
   escapeHtml,
   loadArticleSummaries,
   loadLearningResources,
@@ -60,18 +63,50 @@ const cachedResources = readCache("resources");
 
 // What Nick is doing right now, from the same data the other pages use.
 const nowData = { resources: cachedResources ?? [], notes: cachedNotes ?? [], articles: cachedArticles ?? [] };
+function renderNowFeature(item) {
+  const resource = nowData.resources.find((entry) => entry.slug === item.slug);
+  const loop = resource ? bookLoop(resource, nowData.notes) : null;
+  const detail = [
+    item.progress ? `${item.progress}% complete` : "Just started",
+    loop?.entries.length ? `Next: ${loop.nextStep}` : "",
+    loop?.lastEntry ? `${loop.lastEntry.step} ${relativeDay(loop.lastEntry.day)}` : "",
+  ].filter(Boolean);
+  return `
+    <a class="now-feature" href="${escapeHtml(item.href)}">
+      ${item.cover
+        ? `<img class="now-cover" src="${escapeHtml(buildSanityImageUrl(item.cover, 120))}" alt="" width="44" height="66" loading="lazy" />`
+        : `<span class="now-cover now-cover--empty" aria-hidden="true"></span>`}
+      <span class="now-feature-copy">
+        <span class="now-label">${escapeHtml(item.label)}</span>
+        <strong class="now-feature-title">${escapeHtml(item.title)}</strong>
+        <span class="now-bar" aria-hidden="true"><i style="--p: ${Math.max(2, item.progress)}%"></i></span>
+        <span class="now-feature-meta">${detail.map(escapeHtml).join('<span aria-hidden="true"> · </span>')}</span>
+      </span>
+      <span class="now-arrow" aria-hidden="true">→</span>
+    </a>`;
+}
+
 function renderNowStrip() {
   const items = buildNowItems(nowData);
   if (!items.length) return "";
+  const feature = items[0].kind === "learning" ? items[0] : null;
+  const rest = feature ? items.slice(1) : items;
+  const days = streak(activityDays(nowData.resources, nowData.notes));
   return `
-    <div class="now-strip" aria-label="Right now">
-      ${items.map((item) => `
-        <a class="now-item" href="${escapeHtml(item.href)}">
+    <section class="now-card" aria-labelledby="nowTitle">
+      <div class="now-card-head">
+        <span class="now-live" aria-hidden="true"></span>
+        <h2 class="now-card-title" id="nowTitle">Right now</h2>
+        ${days ? `<span class="now-streak"><strong>${days}</strong>-day streak</span>` : ""}
+      </div>
+      ${feature ? renderNowFeature(feature) : ""}
+      ${rest.length ? `<ul class="now-list">${rest.map((item) => `
+        <li><a class="now-row" href="${escapeHtml(item.href)}">
           <span class="now-label">${escapeHtml(item.label)}</span>
-          <strong>${escapeHtml(item.title)}</strong>
-          ${item.meta ? `<em>${escapeHtml(item.meta)}</em>` : ""}
-        </a>`).join("")}
-    </div>
+          <span class="now-row-title">${escapeHtml(item.title)}</span>
+          ${item.meta ? `<span class="now-row-meta">${escapeHtml(item.meta)}</span>` : ""}
+        </a></li>`).join("")}</ul>` : ""}
+    </section>
   `;
 }
 function refreshNowStrip() {
