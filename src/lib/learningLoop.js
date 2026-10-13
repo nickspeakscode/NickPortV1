@@ -167,21 +167,23 @@ export function streak(days, today = localDay(new Date().toISOString())) {
 }
 
 // A streak dealt as playing cards: day 1 is A♠, day 13 is K♠, and each new
-// run of thirteen moves to the next suit until the deck is spent at day 52.
-// Past that the top card is the joker. The hand shows the last five days.
+// run of thirteen moves to the next suit until K♦ on day 52. Day 53 is the
+// joker, then a fresh deck starts at A♠. The hand shows the last five days.
 const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 const SUITS = ["♠", "♥", "♣", "♦"];
+export const DECK_DAYS = 53;
 export function streakCard(day) {
-  if (day > 52) return { rank: "JOKER", suit: "", red: false, joker: true };
   const index = Math.max(1, day) - 1;
-  const suit = SUITS[Math.floor(index / 13)];
-  return { rank: RANKS[index % 13], suit, red: suit === "♥" || suit === "♦", joker: false };
+  const deck = Math.floor(index / DECK_DAYS) + 1;
+  const card = index % DECK_DAYS;
+  if (card === 52) return { rank: "JOKER", suit: "", red: false, joker: true, deck };
+  const suit = SUITS[Math.floor(card / 13)];
+  return { rank: RANKS[card % 13], suit, red: suit === "♥" || suit === "♦", joker: false, deck };
 }
 export function streakHand(days, size = 5) {
   if (!(days > 0)) return [];
-  const top = Math.min(days, 53);
   const hand = [];
-  for (let day = Math.max(1, top - size + 1); day <= top; day += 1) hand.push(streakCard(day));
+  for (let day = Math.max(1, days - size + 1); day <= days; day += 1) hand.push(streakCard(day));
   return hand;
 }
 

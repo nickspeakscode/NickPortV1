@@ -114,7 +114,7 @@ test('quizzes earn XP by score and keep the streak, but never close a loop', () 
   assert.equal(bookLoop(book([entry('2026-10-01', 'Read')])).quiz, null);
 });
 
-test('a streak is dealt as cards: ranks climb, suits change every thirteen days, the joker caps it', () => {
+test('a streak is dealt as cards: ranks climb, suits change every thirteen days, the joker ends each deck', () => {
   const label = (card) => card.rank + card.suit;
   assert.equal(label(streakCard(1)), 'A♠');
   assert.equal(label(streakCard(13)), 'K♠');
@@ -126,5 +126,9 @@ test('a streak is dealt as cards: ranks climb, suits change every thirteen days,
   assert.deepEqual(streakHand(1).map(label), ['A♠']);
   assert.deepEqual(streakHand(3).map(label), ['A♠', '2♠', '3♠']);
   assert.deepEqual(streakHand(15).map(label), ['J♠', 'Q♠', 'K♠', 'A♥', '2♥']);
-  assert.deepEqual(streakHand(400).map(label), ['10♦', 'J♦', 'Q♦', 'K♦', 'JOKER'], 'one joker, however long the streak');
+  assert.deepEqual(streakHand(53).map(label), ['10♦', 'J♦', 'Q♦', 'K♦', 'JOKER'], 'the joker closes the first deck');
+  assert.deepEqual(streakHand(55).map((card) => label(card) + card.deck), ['Q♦1', 'K♦1', 'JOKER1', 'A♠2', '2♠2'], 'then a second deck starts');
+  assert.equal(label(streakCard(100)) + streakCard(100).deck, '8♦2');
+  assert.equal(streakCard(106).joker && streakCard(106).deck, 2);
+  assert.equal(label(streakCard(107)) + streakCard(107).deck, 'A♠3');
 });

@@ -47,6 +47,11 @@
 .streak-card i { position: absolute; right: 3px; bottom: 3px; font: normal 10px/1 Georgia, serif; }
 .streak-card.is-red { color: #dda396; }
 .streak-card.is-joker i { inset: 0; display: grid; place-items: center; color: var(--aqua); font: 600 6px/1 Oxanium, sans-serif; letter-spacing: .08em; writing-mode: vertical-rl; }
+/* Every deck after the first is gold, in the Library's legendary colour. */
+.streak-card.is-gold { border-color: #a88a52; background: radial-gradient(ellipse at 50% 38%, #4a4130, #1f1c17 80%); color: #f2c56d; }
+.streak-card.is-gold.is-red { color: #f0a58a; }
+.streak-card.is-gold:last-child { border-color: #f2c56d; box-shadow: -2px 2px 5px rgba(2, 8, 18, .45), 0 0 8px rgba(242, 197, 109, .25); }
+.streak-card.is-gold.is-joker i { color: #f2c56d; }
 .streak-card.is-dealt { animation: streak-deal 620ms cubic-bezier(.2, .8, .25, 1) 400ms backwards; }
 @media (hover: hover) { .now-streak:hover .streak-card { rotate: calc(var(--i) * 9deg); } .now-streak:hover .streak-card:last-child { translate: 0 -2px; } }
 .now-feature { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }

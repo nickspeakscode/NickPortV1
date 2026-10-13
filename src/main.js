@@ -87,20 +87,22 @@ function renderNowFeature(item) {
 }
 
 // The study streak as a hand of cards. A card added since the last visit is
-// dealt in; the count itself is only for screen readers and the tooltip.
+// dealt in; every deck after the first is gold. The count itself is only for
+// screen readers and the tooltip.
 const STREAK_SEEN_KEY = "nt-streak-seen-v1";
 const streakSeen = (() => { try { return Number(localStorage.getItem(STREAK_SEEN_KEY)) || 0; } catch { return 0; } })();
 function renderStreakHand(days) {
   const hand = streakHand(days);
   if (!hand.length) return "";
   try { localStorage.setItem(STREAK_SEEN_KEY, String(days)); } catch {}
-  const label = `${days}-day study streak`;
+  const deck = hand[hand.length - 1].deck;
+  const label = `${days}-day study streak${deck > 1 ? `, deck ${deck}` : ""}`;
   return `
     <span class="now-streak" title="${label}">
       <span class="visually-hidden">${label}</span>
-      <span class="now-streak-label" aria-hidden="true">Streak</span>
+      <span class="now-streak-label" aria-hidden="true">Streak${deck > 1 ? ` · Deck ${deck}` : ""}</span>
       <span class="streak-hand" aria-hidden="true" style="--cards: ${hand.length}">
-        ${hand.map((card, index) => `<span class="streak-card${card.red ? " is-red" : ""}${card.joker ? " is-joker" : ""}${index === hand.length - 1 && days > streakSeen && streakSeen ? " is-dealt" : ""}" style="--i: ${index - hand.length + 1}">${card.joker ? "<i>JOKER</i>" : `<b>${card.rank}</b><i>${card.suit}</i>`}</span>`).join("")}
+        ${hand.map((card, index) => `<span class="streak-card${card.red ? " is-red" : ""}${card.joker ? " is-joker" : ""}${card.deck > 1 ? " is-gold" : ""}${index === hand.length - 1 && days > streakSeen && streakSeen ? " is-dealt" : ""}" style="--i: ${index - hand.length + 1}">${card.joker ? "<i>JOKER</i>" : `<b>${card.rank}</b><i>${card.suit}</i>`}</span>`).join("")}
       </span>
     </span>`;
 }
