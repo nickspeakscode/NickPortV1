@@ -6,8 +6,8 @@ import "./loop.css";
 import { initializeLibraryShelf } from "./lib/libraryShelf.js";
 import { safeHref } from "./lib/safeUrl.js";
 import { isRecent } from "./lib/freshness.js";
-import { bookLoop, progressSince } from "./lib/learningLoop.js";
-import { renderGainToast, renderLoopPanel, renderShelfLoop, renderStudyHud, renderStudyLog } from "./lib/loopUi.js";
+import { LEVELS, bookLoop, progressSince } from "./lib/learningLoop.js";
+import { relativeDay, renderGainToast, renderGlowBar, renderLoopPanel, renderShelfLoop, renderStudyHud, renderStudyLog } from "./lib/loopUi.js";
 import {
   buildSanityImageUrl,
   escapeHtml,
@@ -185,7 +185,7 @@ function renderXp(resource) {
   return `
     <div class="item-xp" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}">
       <div class="item-xp-label"><span>Progress</span><span>${progress}%</span></div>
-      <div class="item-xp-track" aria-hidden="true">${Array.from({ length: 10 }, (_, index) => `<i${index < filled ? ' class="is-filled"' : ""}></i>`).join("")}</div>
+      <div class="item-xp-track" aria-hidden="true">${Array.from({ length: 10 }, (_, index) => `<i${index < filled ? ` class="is-filled" style="--i: ${index}"` : ""}></i>`).join("")}</div>
     </div>
   `;
 }
@@ -199,33 +199,6 @@ function renderPips(rating) {
     return `<i${state ? ` class="${state}"` : ""}></i>`;
   }).join("");
   return `<div class="resource-rating item-pips" role="img" aria-label="Rated ${escapeHtml(rating)} out of 5"><span class="item-pips-row" aria-hidden="true">${pips}</span><span class="item-pips-value" aria-hidden="true">${escapeHtml(rating)} / 5</span></div>`;
-}
-
-function renderProgress(resource) {
-  const progress = clampProgress(resource.progress);
-  return `
-    <div
-      class="resource-progress"
-      role="progressbar"
-      aria-label="Progress"
-      aria-valuemin="0"
-      aria-valuemax="100"
-      aria-valuenow="${progress}"
-    >
-      <div class="resource-progress-label">
-        <span>Progress</span>
-        <span>${progress}%</span>
-      </div>
-      <div class="resource-progress-track" aria-hidden="true">
-        <span style="--progress: ${progress}%"></span>
-      </div>
-    </div>
-  `;
-}
-
-function renderRating(rating) {
-  if (rating == null || rating === "" || !Number.isFinite(Number(rating)) || Number(rating) < 1 || Number(rating) > 5) return "";
-  return `<div class="resource-rating" role="img" aria-label="Rated ${escapeHtml(rating)} out of 5">★ ${escapeHtml(rating)} / 5</div>`;
 }
 
 function renderResourceRow(resource, index) {
@@ -383,66 +356,95 @@ function renderResourceDetail(resource, notes) {
   const status = resource.status || "Want to Learn";
   const externalUrl = safeHref(resource.externalUrl, ['http:', 'https:']);
   const loop = bookLoop(resource, notesFor(resource, notes));
-  const loopSection = loop.entries.length || status === "Currently Learning"
-    ? `<section class="learning-detail-section loop-detail reveal-on-scroll">
-        ${renderLoopPanel(loop, { heading: "Learning loop" })}
-        ${loop.entries.length ? `<h3 class="loop-log-heading">Study log</h3>${renderStudyLog(loop.entries)}` : ""}
-      </section>`
+  const studying = loop.entries.length > 0 || status === "Currently Learning";
+  const backdrop = resource.coverImage
+    ? `<div class="book-backdrop" aria-hidden="true" style="--cover: url(&quot;${escapeHtml(buildSanityImageUrl(resource.coverImage, 240))}&quot;)"></div>`
     : "";
-  const thoughts = resource.personalSummary?.length
-    ? `<section class="learning-detail-section reveal-on-scroll">
-        <h2>My thoughts</h2>
-        <div class="article-body">${renderPortableText(resource.personalSummary)}</div>
-      </section>`
-    : "";
-  const takeaways = resource.keyTakeaways?.length
-    ? `<section class="learning-detail-section reveal-on-scroll">
-        <h2>Key takeaways</h2>
-        <ul class="takeaway-list">${resource.keyTakeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
-      </section>`
-    : "";
+  const facts = [
+    resource.category ? ["Category", escapeHtml(resource.category)] : null,
+    ["Type", escapeHtml(resourceTypeLabel(resource))],
+    resource.startDate ? ["Started", escapeHtml(formatDate(resource.startDate))] : null,
+    resource.finishDate ? [resource.status === "Published" ? "Published" : "Finished", escapeHtml(formatDate(resource.finishDate))] : null,
+  ].filter(Boolean);
+  const sections = [
+    resource.personalSummary?.length
+      ? ["my thoughts", `<div class="book-thoughts article-body">${renderPortableText(resource.personalSummary)}</div>`]
+      : null,
+    resource.keyTakeaways?.length
+      ? ["key takeaways", `<ol class="takeaway-list">${resource.keyTakeaways.map((item, index) => `<li><span class="takeaway-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span><span>${escapeHtml(item)}</span></li>`).join("")}</ol>`]
+      : null,
+    ["notes from this book", notes.length
+      ? `<ul class="index-list">${notes.map(renderRelatedNote).join("")}</ul>`
+      : `<p class="index-empty" role="status">No notes yet.</p>`, "resourceNotesTitle"],
+  ].filter(Boolean);
 
   return `
-    <main class="learning-page resource-detail">
-      <a class="detail-back" href="/library/">← Learning Library</a>
-      <div class="resource-detail-grid">
-        ${renderCover(resource, `resource-detail-cover reveal-on-scroll`)}
-        <article class="resource-detail-copy reveal-on-scroll">
-          <div class="resource-card-topline">
-            <span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>
-            <span class="learning-status" data-status="${statusKey(status)}">${escapeHtml(status)}</span>
-          </div>
+    <main class="learning-page resource-detail book-detail" data-rarity="${rarityFor(resource).key}">
+      ${backdrop}
+      <a class="detail-back" href="/library/"><span aria-hidden="true">←</span> Learning Library</a>
+      <header class="book-hero">
+        <div class="book-hero-cover">${renderCover(resource, "resource-detail-cover")}</div>
+        <div class="book-hero-copy">
+          <div class="book-hero-tags">${isRecent(resource._createdAt) ? NEW_TAG : ""}${renderTier(resource)}<span class="resource-type-badge">${escapeHtml(resourceTypeLabel(resource))}${resource.createdByMe ? " · My work" : ""}</span>${rarityFor(resource).key === "active" ? "" : `<span class="learning-status" data-status="${statusKey(status)}">${escapeHtml(status)}</span>`}</div>
           <h1 class="learning-detail-title">${escapeHtml(resource.title)}</h1>
-          ${resource.authorCreator ? `<p class="resource-creator">By ${escapeHtml(resource.authorCreator)}</p>` : ""}
+          ${resource.authorCreator ? `<p class="resource-creator">${escapeHtml(resource.authorCreator)}</p>` : ""}
           <p class="resource-detail-description">${escapeHtml(resource.description)}</p>
-          ${renderProgress(resource)}
-          ${renderRating(resource.rating)}
-          <div class="resource-facts">
-            ${resource.category ? `<div class="resource-fact"><span>Category</span><strong>${escapeHtml(resource.category)}</strong></div>` : ""}
-            <div class="resource-fact"><span>Type</span><strong>${escapeHtml(resourceTypeLabel(resource))}</strong></div>
-            ${resource.startDate ? `<div class="resource-fact"><span>Started</span><strong>${escapeHtml(formatDate(resource.startDate))}</strong></div>` : ""}
-            ${resource.finishDate ? `<div class="resource-fact"><span>${resource.status === "Published" ? "Published" : "Finished"}</span><strong>${escapeHtml(formatDate(resource.finishDate))}</strong></div>` : ""}
-          </div>
-          ${
-            externalUrl
-              ? `<a class="resource-external" href="${escapeHtml(externalUrl)}" target="_blank" rel="noreferrer">${resource.resourceType === "Certification" ? "View credential" : "Open resource"} <span aria-hidden="true">↗</span></a>`
-              : ""
-          }
-        </article>
+          ${renderBookXp(resource, loop, studying)}
+          <dl class="book-facts">
+            ${facts.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("")}
+            ${renderPips(resource.rating) ? `<div><dt>Rating</dt><dd>${renderPips(resource.rating)}</dd></div>` : ""}
+          </dl>
+          ${externalUrl ? `<a class="resource-external" href="${escapeHtml(externalUrl)}" target="_blank" rel="noreferrer">${resource.resourceType === "Certification" ? "View credential" : "Open resource"} <span aria-hidden="true">↗</span></a>` : ""}
+        </div>
+      </header>
+      <div class="book-body${studying ? "" : " book-body--single"}">
+        ${studying ? `<aside class="book-side loop-detail reveal-on-scroll" aria-label="Learning loop">
+          ${renderLoopPanel(loop, { heading: "learning loop", includeMastery: false })}
+          ${loop.entries.length ? `<h3 class="loop-log-heading">study log</h3>${renderStudyLog(loop.entries, { collapseAfter: 4 })}` : ""}
+        </aside>` : ""}
+        <div class="book-main">
+          ${sections.map(([title, body, id], index) => `
+            <section class="book-section reveal-on-scroll" aria-labelledby="${id || `bookSection${index}`}">
+              <h2 class="book-section-title" id="${id || `bookSection${index}`}">${title}</h2>
+              ${body}
+            </section>`).join("")}
+        </div>
       </div>
-      ${loopSection}
-      ${thoughts}
-      ${takeaways}
-      <section class="learning-detail-section reveal-on-scroll" aria-labelledby="resourceNotesTitle">
-        <h2 id="resourceNotesTitle">Notes From This Resource</h2>
-        ${
-          notes.length
-            ? `<ul class="index-list">${notes.map(renderRelatedNote).join("")}</ul>`
-            : `<p class="index-empty" role="status">No notes yet.</p>`
-        }
-      </section>
     </main>
   `;
+}
+
+// The book's XP card: reading progress, then the mastery level earned from
+// the study loop, with the distance to the next level spelled out.
+function renderBookXp(resource, loop, studying) {
+  const progress = clampProgress(resource.progress);
+  const { level } = loop;
+  const sessions = loop.entries.filter((entry) => entry.step !== "Quiz").length;
+  const last = loop.lastStep ? relativeDay(loop.lastStep.day) : "";
+  return `
+    <section class="book-xp" aria-label="Progress and XP">
+      <div class="book-xp-row" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}">
+        <div class="book-xp-label"><span>Progress</span><strong>${progress}%</strong></div>
+        ${renderGlowBar(progress / 100)}
+      </div>
+      ${studying ? `
+      <div class="book-xp-row book-xp-level" role="img" aria-label="Book XP: level ${level.level}, ${escapeHtml(level.title)}, ${loop.xp} XP${level.next ? `, ${level.toNext} XP to ${escapeHtml(level.next.title)}` : ""}">
+        <div class="book-xp-label" aria-hidden="true">
+          <span><b class="book-xp-badge">Lv ${level.level}</b> ${escapeHtml(level.title)}</span>
+          <strong><span data-count-up="${loop.xp}">${loop.xp}</span> XP</strong>
+        </div>
+        ${renderGlowBar(level.progress, "glow-bar--xp")}
+        <div class="book-xp-foot" aria-hidden="true">
+          <span class="book-xp-levels">${LEVELS.map((item) => `<i${item.level <= level.level ? ' class="is-reached"' : ""} title="${escapeHtml(`Lv ${item.level} ${item.title}`)}"></i>`).join("")}</span>
+          <span>${level.next ? `<b>${level.toNext} XP</b> to ${escapeHtml(level.next.title)}` : "Max level"}</span>
+        </div>
+      </div>
+      <ul class="book-xp-stats">
+        <li><strong>${loop.loops}</strong> ${loop.loops === 1 ? "loop" : "loops"} closed</li>
+        <li><strong>${sessions}</strong> ${sessions === 1 ? "session" : "sessions"}</li>
+        ${last ? `<li>Last studied <strong>${escapeHtml(last)}</strong></li>` : ""}
+      </ul>` : ""}
+    </section>`;
 }
 
 function readerPage(kind, inner, label = "") {
@@ -521,7 +523,8 @@ function renderPage(content) {
   cleanupReveals();
   app.innerHTML = `${renderInteriorHeader("/library/")}${content}${renderSiteFooter()}`;
   cleanupChrome = initializeInteriorChrome();
-  cleanupReveals = initializeRevealAnimations(app);
+  // Sections reveal as soon as their top edge is in view, so tall ones never sit blank.
+  cleanupReveals = initializeRevealAnimations(app, { threshold: 0, rootMargin: "0px 0px -40px 0px" });
   if (!resourceSlug) cleanupFilters = initializeLibraryFilters();
   if (!resourceSlug) cleanupShelf = initializeLibraryShelf(app, {
     findResource: slug => currentResources.find(resource => resource.slug === slug),
@@ -544,8 +547,6 @@ function rewardProgress(resources, notes) {
         xp: loop.xp,
         loops: loop.loops,
         level: loop.level.level,
-        quizzes: loop.quiz?.taken ?? 0,
-        lastQuiz: loop.quiz ? `${loop.quiz.last.score}/${loop.quiz.last.total}` : null,
       };
     }
   }
@@ -584,17 +585,19 @@ function celebrate(gains) {
   toast.addEventListener("pointerenter", () => clearTimeout(timer), { once: true });
   // Count the XP up, game-style.
   const counter = toast.querySelector("[data-count]");
-  const target = Number(counter.dataset.count);
-  if (motion && target > 0) {
-    const start = performance.now();
-    const tick = (now) => {
-      const t = Math.min(1, (now - start) / 900);
-      counter.textContent = String(Math.round(target * (1 - (1 - t) ** 3)));
-      if (t < 1) requestAnimationFrame(tick);
-    };
-    counter.textContent = "0";
-    requestAnimationFrame(tick);
-  }
+  if (motion) countUp(counter, Number(counter.dataset.count));
+}
+
+function countUp(counter, target, duration = 900) {
+  if (!(target > 0)) return;
+  const start = performance.now();
+  const tick = (now) => {
+    const t = Math.min(1, (now - start) / duration);
+    counter.textContent = String(Math.round(target * (1 - (1 - t) ** 3)));
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  counter.textContent = "0";
+  requestAnimationFrame(tick);
 }
 
 async function initializeLibrary() {
@@ -603,6 +606,7 @@ async function initializeLibrary() {
       renderPage(`<main class="index-page"><header class="index-intro"><p class="index-empty" role="status">Loading…</p></header></main>`);
       const { resource, notes } = await loadLearningResource(resourceSlug);
       renderPage(renderResourceDetail(resource, notes));
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) app.querySelectorAll("[data-count-up]").forEach((counter) => countUp(counter, Number(counter.dataset.countUp), 1100));
       return;
     }
 

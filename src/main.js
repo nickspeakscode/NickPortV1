@@ -12,7 +12,7 @@ import { syncHeaderOffset } from "./lib/pageUi.js";
 import { selectHighlights } from "./lib/highlights.js";
 import { buildNowItems } from "./lib/nowStrip.js";
 import { activityDays, bookLoop, streak } from "./lib/learningLoop.js";
-import { relativeDay } from "./lib/loopUi.js";
+import { relativeDay, renderGlowBar } from "./lib/loopUi.js";
 import { initializeMobileNav } from "./lib/mobileNav.js";
 import { renderSocialLinks } from "./lib/siteChrome.js";
 import {
@@ -69,8 +69,7 @@ function renderNowFeature(item) {
   const detail = [
     item.progress ? `${item.progress}% complete` : "Just started",
     loop?.entries.length ? `Next: ${loop.nextStep}` : "",
-    loop?.quiz ? `Quiz ${Math.round(loop.quiz.last.ratio * 100)}%${loop.lastEntry?.step === "Quiz" ? ` ${relativeDay(loop.lastEntry.day)}` : ""}` : "",
-    loop?.lastEntry && loop.lastEntry.step !== "Quiz" ? `${loop.lastEntry.step} ${relativeDay(loop.lastEntry.day)}` : "",
+    loop?.lastStep ? `${loop.lastStep.step} ${relativeDay(loop.lastStep.day)}` : "",
   ].filter(Boolean);
   return `
     <a class="now-feature" href="${escapeHtml(item.href)}">
@@ -80,7 +79,7 @@ function renderNowFeature(item) {
       <span class="now-feature-copy">
         <span class="now-label">${escapeHtml(item.label)}</span>
         <strong class="now-feature-title">${escapeHtml(item.title)}</strong>
-        <span class="now-bar" aria-hidden="true"><i style="--p: ${Math.max(2, item.progress)}%"></i></span>
+        ${renderGlowBar(Math.max(2, item.progress) / 100, "now-bar")}
         <span class="now-feature-meta">${detail.map(escapeHtml).join('<span aria-hidden="true"> · </span>')}</span>
       </span>
       <span class="now-arrow" aria-hidden="true">→</span>

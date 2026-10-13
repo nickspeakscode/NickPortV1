@@ -84,35 +84,6 @@
   color: #d0c4ff;
 }
 
-.resource-progress {
-  margin-top: auto;
-}
-
-.resource-progress-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 8px;
-  color: #8492ad;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.resource-progress-track {
-  height: 5px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(148, 169, 209, 0.12);
-}
-
-.resource-progress-track span {
-  width: var(--progress);
-  height: 100%;
-  display: block;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--aqua), #9d8cff);
-}
-
 .resource-rating {
   margin-top: 14px;
   color: #dacd80;
@@ -139,75 +110,11 @@
   transform: translateX(-4px);
 }
 
-.resource-detail-grid {
-  display: grid;
-  grid-template-columns: minmax(220px, 330px) minmax(0, 1fr);
-  align-items: start;
-  gap: clamp(40px, 7vw, 100px);
-}
-
-.resource-detail-cover {
-  position: sticky;
-  top: 92px;
-  overflow: hidden;
-  aspect-ratio: 3 / 4;
-  border: 1px solid rgba(148, 169, 209, 0.18);
-  border-radius: 20px;
-  background: linear-gradient(145deg, rgba(89, 241, 215, 0.1), rgba(139, 115, 255, 0.12));
-  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.24);
-}
-
-.resource-detail-cover img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.resource-detail-copy {
-  min-width: 0;
-}
-
-.learning-detail-title {
-  max-width: 800px;
-  margin-top: 18px;
-  font-size: clamp(40px, 5.5vw, 74px);
-}
-
 .resource-detail-description {
   max-width: 740px;
   color: #a8b4ca;
   font-size: clamp(17px, 1.45vw, 20px);
   line-height: 1.8;
-}
-
-.resource-facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin: 32px 0;
-}
-
-.resource-fact {
-  padding: 16px;
-  border: 1px solid rgba(148, 169, 209, 0.13);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.resource-fact span {
-  display: block;
-  margin-bottom: 6px;
-  color: #71809d;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.resource-fact strong {
-  color: #dce6f8;
-  font-size: 14px;
 }
 
 .resource-external {
@@ -359,10 +266,6 @@
     padding-inline: clamp(22px, 7vw, 64px);
   }
 
-  .resource-detail-grid {
-    grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
-    gap: 36px;
-  }
 }
 
 @media (max-width: 680px) {
@@ -370,19 +273,6 @@
     padding-bottom: 72px;
   }
 
-  .resource-detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .resource-detail-cover {
-    position: relative;
-    top: auto;
-    width: min(300px, 82vw);
-  }
-
-  .resource-facts {
-    grid-template-columns: 1fr;
-  }
 
   .learning-from {
     grid-template-columns: 56px 1fr auto;
@@ -392,4 +282,114 @@
   .learning-from-cover {
     width: 56px;
   }
+}
+
+/* ── Full book page ────────────────────────────────────────────────────────
+   Nothing moves with the scroll. The hero settles in once on load, sections
+   fade up the first time they enter view, and only opacity and transform
+   ever animate. */
+.book-detail { position: relative; isolation: isolate; overflow-x: clip; padding-top: clamp(40px, 6vw, 76px); }
+.book-backdrop { position: absolute; z-index: -1; top: 0; left: 0; right: 0; height: min(760px, 110vh); background: var(--cover) center 30% / cover no-repeat; opacity: .2; filter: blur(64px) saturate(1.3); transform: scale(1.15); -webkit-mask-image: linear-gradient(180deg, #000 15%, transparent 92%); mask-image: linear-gradient(180deg, #000 15%, transparent 92%); pointer-events: none; animation: book-fade 1.2s ease both; }
+.book-detail .detail-back { display: inline-flex; align-items: center; gap: 8px; margin-bottom: clamp(30px, 4vw, 44px); color: #8ea3b8; font: 500 11px/1 'JetBrains Mono', monospace; letter-spacing: .12em; text-transform: uppercase; }
+
+/* Hero: the cover as a lit object, the copy beside it. */
+.book-hero { display: grid; grid-template-columns: clamp(200px, 23vw, 290px) minmax(0, 1fr); align-items: start; gap: clamp(36px, 5.5vw, 80px); }
+.book-hero-cover { position: relative; }
+.book-hero-cover::after { content: ''; position: absolute; z-index: -1; left: 6%; right: 6%; bottom: -30px; height: 48px; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--rarity-rgb) / .38), transparent); animation: book-fade 1s ease .3s both; }
+.book-detail .resource-detail-cover { position: relative; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 3px 8px 8px 3px; background: #0d2135; box-shadow: 0 0 0 1px rgb(var(--rarity-rgb) / .38), 0 0 36px rgb(var(--rarity-rgb) / .16), 0 30px 60px rgb(2 10 21 / .55); animation: book-cover-in .8s cubic-bezier(.2, .7, .2, 1) both; transition: transform .5s cubic-bezier(.2, .7, .2, 1), box-shadow .5s ease; }
+.book-detail .resource-detail-cover img { width: 100%; height: 100%; display: block; object-fit: cover; }
+/* Spine and sheen, then one pass of light across the cover. */
+.book-detail .resource-detail-cover::before { content: ''; position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgb(0 0 0 / .38), rgb(255 255 255 / .09) 2.5%, transparent 7%), linear-gradient(180deg, rgb(255 255 255 / .07), transparent 38%); pointer-events: none; }
+.book-detail .resource-detail-cover::after { content: ''; position: absolute; z-index: 2; inset: 0; background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / .26) 47%, rgb(var(--rarity-rgb) / .24) 52%, transparent 64%); transform: translateX(-110%); pointer-events: none; animation: book-shine 1.5s cubic-bezier(.3, .6, .2, 1) .75s both; }
+@media (hover: hover) and (pointer: fine) {
+  .book-hero-cover:hover .resource-detail-cover { transform: translateY(-5px); box-shadow: 0 0 0 1px rgb(var(--rarity-rgb) / .6), 0 0 46px rgb(var(--rarity-rgb) / .26), 0 38px 70px rgb(2 10 21 / .6); }
+}
+
+.book-hero-copy { min-width: 0; padding-top: 4px; }
+.book-hero-copy > * { animation: book-rise .6s cubic-bezier(.2, .7, .2, 1) both; }
+.book-hero-copy > :nth-child(2) { animation-delay: .06s; }
+.book-hero-copy > :nth-child(3) { animation-delay: .12s; }
+.book-hero-copy > :nth-child(4) { animation-delay: .18s; }
+.book-hero-copy > :nth-child(5) { animation-delay: .25s; }
+.book-hero-copy > :nth-child(6) { animation-delay: .32s; }
+.book-hero-copy > :nth-child(7) { animation-delay: .38s; }
+.book-hero-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 18px; }
+.book-hero-tags .resource-type-badge { padding: 0; border: 0; background: none; color: #8ea3b8; font: 500 10px/1.5 'JetBrains Mono', monospace; letter-spacing: .12em; }
+.book-hero-tags .learning-status { padding: 5px 9px; font: 600 9.5px/1 'JetBrains Mono', monospace; letter-spacing: .12em; }
+.book-detail .learning-detail-title { max-width: 20ch; margin: 0 0 12px; color: #eef4ff; font: 700 clamp(34px, 4.4vw, 58px)/1.06 Oxanium, Sora, sans-serif; letter-spacing: -.005em; text-wrap: balance; }
+.book-detail .resource-creator { margin: 0 0 22px; color: #9fb0c6; font: 500 12px/1.5 'JetBrains Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
+.book-detail .resource-detail-description { max-width: 62ch; margin: 0 0 28px; color: #b6c3d6; font-size: 16.5px; line-height: 1.75; text-wrap: pretty; }
+
+/* The XP card. */
+.book-xp { display: grid; gap: 20px; max-width: 640px; padding: 20px 22px; border: 1px solid rgb(77 148 255 / .22); border-radius: 12px; background: linear-gradient(180deg, rgb(15 36 62 / .8), rgb(8 22 39 / .8)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .04), 0 18px 40px rgb(2 10 21 / .35); }
+.book-xp-label { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; color: #8ea3b8; font: 600 10px/1.2 'JetBrains Mono', monospace; letter-spacing: .14em; text-transform: uppercase; }
+.book-xp-label strong { color: #eef4ff; font: 600 15px/1 Oxanium, Sora, sans-serif; letter-spacing: .02em; }
+.book-xp-level .book-xp-label > span { color: #dce7f5; font: 600 15px/1.2 Oxanium, Sora, sans-serif; letter-spacing: .02em; text-transform: none; }
+.book-xp-badge { margin-right: 6px; padding: 3px 7px; border-radius: 4px; background: linear-gradient(180deg, #5aa2ff, #2f6fe8); color: #04101f; font: 700 10px/1 'JetBrains Mono', monospace; letter-spacing: .08em; vertical-align: 2px; box-shadow: 0 0 12px rgb(77 148 255 / .5); }
+.book-xp-level .book-xp-label strong { color: #8cc4ff; font-size: 22px; font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgb(77 148 255 / .55); }
+.glow-bar--xp { height: 10px; }
+.book-xp-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 11px; color: #8ea3b8; font: 10.5px/1.3 'JetBrains Mono', monospace; letter-spacing: .04em; }
+.book-xp-foot b { color: #cfe3ff; font-weight: 600; }
+.book-xp-levels { display: inline-flex; gap: 7px; padding-left: 2px; }
+.book-xp-levels i { width: 8px; height: 8px; border-radius: 1px; background: #16304a; box-shadow: inset 0 0 0 1px #24456a; rotate: 45deg; }
+.book-xp-levels i.is-reached { background: #5aa2ff; box-shadow: 0 0 8px rgb(77 148 255 / .75); }
+.book-xp-stats { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0; padding: 14px 0 0; border-top: 1px solid rgb(148 169 209 / .12); list-style: none; color: #8ea3b8; font: 11px/1.4 'JetBrains Mono', monospace; }
+.book-xp-stats strong { color: #eef4ff; font-weight: 600; }
+
+.book-facts { display: flex; flex-wrap: wrap; gap: 16px 36px; margin: 26px 0 0; }
+.book-facts > div { display: grid; align-content: start; gap: 7px; }
+.book-facts dt { color: #6f889d; font: 600 9.5px/1.2 'JetBrains Mono', monospace; letter-spacing: .14em; text-transform: uppercase; }
+.book-facts dd { margin: 0; color: #dce7f5; font-size: 14px; font-weight: 500; }
+.book-facts .resource-rating { margin: 0; }
+.book-detail .resource-external { display: inline-flex; align-items: center; gap: 8px; margin-top: 28px; padding: 11px 16px; border: 1px solid rgb(77 148 255 / .45); border-radius: 6px; background: rgb(77 148 255 / .08); color: #cfe3ff; font: 600 11px/1 'JetBrains Mono', monospace; letter-spacing: .12em; text-transform: uppercase; transition: background .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.book-detail .resource-external:hover { border-color: rgb(77 148 255 / .85); background: rgb(77 148 255 / .16); box-shadow: 0 0 18px rgb(77 148 255 / .3); }
+.book-detail .resource-external span { color: #8cc4ff; }
+
+/* Body: what I took from it, beside the study loop. */
+.book-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 370px); grid-template-areas: "main side"; align-items: start; gap: clamp(36px, 5vw, 72px); margin-top: clamp(64px, 8vw, 104px); }
+.book-body--single { grid-template-columns: minmax(0, 760px); grid-template-areas: "main"; }
+.book-main { grid-area: main; display: grid; gap: clamp(48px, 6vw, 68px); min-width: 0; }
+.book-side { grid-area: side; min-width: 0; }
+.book-detail .reveal-on-scroll { transform: translateY(18px); transition: opacity .6s ease, transform .6s cubic-bezier(.2, .7, .2, 1); }
+.book-detail .reveal-on-scroll.is-visible { transform: none; }
+.book-section-title, .book-detail .loop-detail .reader-heading, .book-detail .loop-log-heading { display: flex; align-items: center; gap: 12px; margin: 0 0 22px; color: #eef4ff; font: 600 clamp(20px, 2vw, 23px)/1.2 Oxanium, Sora, sans-serif; letter-spacing: .01em; text-transform: none; }
+.book-section-title::before, .book-detail .loop-detail .reader-heading::before, .book-detail .loop-log-heading::before { content: ''; flex: none; width: 18px; height: 2px; border-radius: 2px; background: #5aa2ff; box-shadow: 0 0 10px rgb(77 148 255 / .8); }
+.book-detail .loop-log-heading { margin-top: 34px; font-size: 18px; }
+.book-side .loop-panel { padding: 22px; }
+.book-side .loop-ring { --ring-size: 112px !important; }
+.book-side .loop-panel-grid { gap: 18px; }
+.book-side .loop-ring-centre strong { font-size: 26px; }
+.book-detail .loop-next { margin-bottom: 0; }
+
+.book-thoughts { padding: 26px 28px 2px 28px; border-left: 2px solid #5aa2ff; border-radius: 0 12px 12px 0; background: linear-gradient(90deg, rgb(77 148 255 / .08), rgb(77 148 255 / .015) 80%); }
+.book-detail .article-body p, .book-detail .article-body li { color: #c7d3e3; font-size: 16.5px; line-height: 1.8; }
+.book-detail .article-body p { margin-bottom: 24px; }
+.book-detail .takeaway-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.book-detail .takeaway-list li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; padding: 16px 18px; border: 1px solid rgb(148 169 209 / .12); border-radius: 10px; background: rgb(255 255 255 / .02); color: #c3d1e2; font-size: 15.5px; line-height: 1.7; transition: border-color .25s ease, background .25s ease; }
+.book-detail .takeaway-list li::before { content: none; }
+.book-detail .takeaway-list li:hover { border-color: rgb(77 148 255 / .35); background: rgb(77 148 255 / .05); }
+.takeaway-index { padding-top: 3px; color: #6aaeff; font: 600 12px/1.5 'JetBrains Mono', monospace; text-shadow: 0 0 10px rgb(77 148 255 / .6); }
+
+@keyframes book-fade { from { opacity: 0; } }
+@keyframes book-rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes book-cover-in { from { opacity: 0; transform: scale(.965); } }
+@keyframes book-shine { to { transform: translateX(110%); } }
+
+@media (max-width: 1080px) {
+  .book-body { grid-template-columns: minmax(0, 760px); grid-template-areas: "side" "main"; }
+}
+@media (max-width: 760px) {
+  .book-hero { grid-template-columns: 1fr; gap: 40px; }
+  .book-hero-cover { justify-self: center; width: min(210px, 56vw); }
+  .book-detail .learning-detail-title { font-size: clamp(30px, 8.4vw, 40px); }
+  .book-detail .resource-detail-description { font-size: 15.5px; }
+  .book-xp { padding: 16px; }
+  .book-facts { gap: 14px 28px; }
+  .book-thoughts { padding: 20px 18px 2px; }
+  .book-detail .article-body p, .book-detail .article-body li { font-size: 15.5px; }
+  .book-detail .takeaway-list li { grid-template-columns: 24px minmax(0, 1fr); padding: 14px; font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .book-backdrop, .book-hero-cover::after, .book-detail .resource-detail-cover, .book-hero-copy > * { animation: none; }
+  .book-detail .resource-detail-cover::after { display: none; }
 }

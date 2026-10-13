@@ -773,6 +773,22 @@ p {
   background: var(--line);
 }
 
+/* Glowing XP bar: a blue fill with a soft halo that breathes, a light sweep
+   and a bright leading edge. Only opacity and transform loop. */
+.glow-bar { --glow: 77 148 255; position: relative; isolation: isolate; display: block; height: 8px; border-radius: 99px; background: linear-gradient(180deg, #0a1828, #10243c); box-shadow: inset 0 1px 2px rgb(0 0 0 / .45), 0 0 0 1px rgb(var(--glow) / .16); }
+.glow-bar-fill { position: absolute; top: 0; bottom: 0; left: 0; width: var(--fill); border-radius: inherit; background: linear-gradient(90deg, #1f55e0, #3b82f6 45%, #62a8ff 80%, #a8d6ff); box-shadow: 0 0 8px rgb(var(--glow) / .6); animation: glow-fill 1.3s cubic-bezier(.22, .8, .24, 1) .25s both; }
+.glow-bar-fill::before { content: ''; position: absolute; z-index: -1; inset: -3px; border-radius: inherit; background: rgb(var(--glow) / .6); filter: blur(7px); opacity: .45; animation: glow-breathe 3s ease-in-out 1.6s infinite; }
+.glow-bar-fill::after { content: ''; position: absolute; top: 50%; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle, #fff 0 28%, #b9dcff 42%, transparent 70%); transform: translateY(-50%); filter: drop-shadow(0 0 5px #7cc4ff); }
+.glow-bar-fill i { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+.glow-bar-fill i::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%; background: linear-gradient(100deg, transparent, rgb(255 255 255 / .6) 50%, transparent); transform: translateX(-120%); animation: glow-sweep 3s cubic-bezier(.45, 0, .2, 1) 1.6s infinite; }
+@keyframes glow-fill { from { width: 0; } }
+@keyframes glow-breathe { 50% { opacity: 1; } }
+@keyframes glow-sweep { 0% { transform: translateX(-120%); } 50%, 100% { transform: translateX(330%); } }
+@media (prefers-reduced-motion: reduce) {
+  .glow-bar-fill, .glow-bar-fill::before { animation: none; }
+  .glow-bar-fill i { display: none; }
+}
+
 .reveal-on-scroll {
   opacity: 0;
   transform: translateY(34px);

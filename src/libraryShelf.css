@@ -195,10 +195,15 @@
 .item-status strong { color: #dce7f5; font-weight: 500; }
 .item-xp { margin-bottom: 16px; }
 .item-xp-label { display: flex; justify-content: space-between; margin-bottom: 8px; color: #6f889d; font: 10px/1.5 'JetBrains Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
-.item-xp-label span:last-child { color: var(--rarity); }
+.item-xp-label span:last-child { color: #8cc4ff; text-shadow: 0 0 10px rgb(77 148 255 / .5); }
 .item-xp-track { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
-.item-xp-track i { height: 6px; border-radius: 1px; background: #1a3146; }
-.item-xp-track i.is-filled { background: var(--rarity); box-shadow: 0 0 8px rgb(var(--rarity-rgb) / .5); }
+.item-xp-track i { position: relative; height: 6px; border-radius: 1px; background: #132a40; }
+.item-xp-track i.is-filled { background: linear-gradient(180deg, #8cc4ff, #3b82f6); box-shadow: 0 0 8px rgb(77 148 255 / .55); animation: glow-fill-segment .45s cubic-bezier(.2, .7, .2, 1) calc(var(--i) * 45ms + .2s) both; }
+/* A charge runs along the filled segments every few seconds. */
+.item-xp-track i.is-filled::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #e6f3ff; opacity: 0; animation: xp-charge 3s ease-in-out calc(var(--i) * 70ms + 1.2s) infinite; }
+@keyframes glow-fill-segment { from { opacity: 0; transform: scaleY(.3); } }
+@keyframes xp-charge { 8% { opacity: .7; } 22% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .item-xp-track i.is-filled, .item-xp-track i.is-filled::after { animation: none; } }
 .item-pips { display: flex; align-items: center; gap: 12px; margin: 0; padding: 0; border: 0; background: none; }
 .item-pips-row { display: inline-flex; gap: 5px; }
 .item-pips-row i { width: 9px; height: 9px; rotate: 45deg; border: 1px solid rgb(var(--rarity-rgb) / .6); }

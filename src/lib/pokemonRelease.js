@@ -32,7 +32,7 @@ const OBSTACLE_SELECTOR = [
   ".note-detail-header",
   ".learning-detail-title",
   ".resource-detail-cover",
-  ".resource-detail-copy",
+  ".book-hero-copy",
 ].join(", ");
 
 export function initializePokemonRelease({ onMove } = {}) {

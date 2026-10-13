@@ -3,7 +3,7 @@ import { initializeDesktopHeader } from './desktopHeader.js';
 // Canonical and share URLs always point at production, even on previews.
 export const SITE_ORIGIN = "https://www.bynickthomas.com";
 
-export function initializeRevealAnimations(root = document) {
+export function initializeRevealAnimations(root = document, { threshold = 0.12, rootMargin = "0px" } = {}) {
   const items = root.querySelectorAll(".reveal-on-scroll");
 
   if (!("IntersectionObserver" in window)) {
@@ -19,7 +19,7 @@ export function initializeRevealAnimations(root = document) {
         observer.unobserve(entry.target);
       });
     },
-    { threshold: 0.12 }
+    { threshold, rootMargin }
   );
 
   items.forEach((item) => observer.observe(item));

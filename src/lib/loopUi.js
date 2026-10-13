@@ -1,5 +1,5 @@
 import { escapeHtml } from "./sanity.js";
-import { STEPS, STEP_XP, activityDays, bookLoop, heatmap, localDay, sessionsThisWeek, streak } from "./learningLoop.js";
+import { STEPS, STEP_XP, activityDays, bookLoop, heatmap, localDay, quizzesTaken, sessionsThisWeek, streak } from "./learningLoop.js";
 
 const STEP_HINT = {
   Read: "Take in new material",
@@ -57,39 +57,15 @@ export function renderLoopSteps(loop) {
   }).join("")}</ol>`;
 }
 
-function percent(ratio) {
-  return `${Math.round(ratio * 100)}%`;
-}
-
-// Recall from quizzes: the latest score, its change, and a short history.
-export function renderRecall(loop) {
-  const quiz = loop.quiz;
-  if (!quiz) return "";
-  const { last, trend } = quiz;
-  const delta = Math.round(trend * 100);
-  const change = quiz.taken > 1 && delta
-    ? `<span class="recall-trend" data-dir="${delta > 0 ? "up" : "down"}">${delta > 0 ? "▲" : "▼"} ${Math.abs(delta)} pts</span>`
-    : "";
-  return `
-    <div class="recall" data-step="Quiz" role="img" aria-label="${escapeHtml(`Recall: last quiz ${last.score} of ${last.total}, best ${percent(quiz.best)}, ${quiz.taken} ${quiz.taken === 1 ? "quiz" : "quizzes"} taken`)}">
-      <div class="recall-head">
-        <span class="recall-label">Recall</span>
-        <span class="recall-meta">${quiz.taken} ${quiz.taken === 1 ? "quiz" : "quizzes"} · best ${percent(quiz.best)}</span>
-      </div>
-      <div class="recall-body">
-        <p class="recall-score"><strong>${escapeHtml(String(last.score))}</strong><small>/${escapeHtml(String(last.total))}</small></p>
-        <div class="recall-detail">
-          <span class="recall-pct">${percent(last.ratio)} last quiz</span>
-          ${change}
-        </div>
-        <div class="recall-bars" aria-hidden="true">${quiz.history.map((item) => `<i style="--h: ${Math.max(6, Math.round(item.ratio * 100))}%" title="${escapeHtml(`${formatDay(item.day)}: ${item.score}/${item.total}`)}"></i>`).join("")}</div>
-      </div>
-    </div>`;
+// The glowing blue bar used for every progress and XP readout. Decorative:
+// callers carry the accessible value themselves.
+export function renderGlowBar(ratio, className = "") {
+  const fill = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+  return `<span class="glow-bar${className ? ` ${className}` : ""}" aria-hidden="true" style="--fill: ${fill}%"><span class="glow-bar-fill"${fill ? "" : " hidden"}><i></i></span></span>`;
 }
 
 export function renderMastery(loop) {
   const { level } = loop;
-  const width = Math.round(level.progress * 100);
   return `
     <div class="mastery" role="img" aria-label="Mastery level ${level.level}, ${escapeHtml(level.title)}, ${loop.xp} XP${level.next ? `, ${level.toNext} XP to ${escapeHtml(level.next.title)}` : ""}">
       <div class="mastery-head">
@@ -97,20 +73,32 @@ export function renderMastery(loop) {
         <span class="mastery-title">${escapeHtml(level.title)}</span>
         <span class="mastery-xp">${loop.xp} XP</span>
       </div>
-      <div class="mastery-bar" aria-hidden="true"><span style="--fill: ${width}%"></span></div>
+      ${renderGlowBar(level.progress, "mastery-bar")}
       <p class="mastery-next" aria-hidden="true">${level.next ? `${level.toNext} XP to ${escapeHtml(level.next.title)}` : "Max level"}</p>
     </div>`;
 }
 
-export function renderStudyLog(entries, { limit = 0 } = {}) {
-  const items = [...entries].reverse();
+// Newest first. `limit` drops older entries; `collapseAfter` tucks them into
+// a "Show all" disclosure instead.
+export function renderStudyLog(entries, { limit = 0, collapseAfter = 0 } = {}) {
+  const items = entries.filter((entry) => entry.step !== "Quiz").reverse();
   const shown = limit ? items.slice(0, limit) : items;
   if (!shown.length) return `<p class="index-empty">No study sessions logged yet.</p>`;
+  if (collapseAfter && shown.length > collapseAfter + 1) {
+    return `${studyLogList(shown.slice(0, collapseAfter))}
+      <details class="study-log-more">
+        <summary>Show all ${shown.length} entries</summary>
+        ${studyLogList(shown.slice(collapseAfter))}
+      </details>`;
+  }
+  return studyLogList(shown);
+}
+
+function studyLogList(shown) {
   return `<ol class="study-log">${shown.map((entry) => `
     <li data-step="${entry.step}">
       <div class="study-log-head">
         <span class="study-log-step">${escapeHtml(entry.step)}</span>
-        ${entry.step === "Quiz" && entry.ratio !== null && entry.ratio !== undefined ? `<span class="study-log-score">${escapeHtml(String(entry.score))}/${escapeHtml(String(entry.total))}</span>` : ""}
         ${entry.where ? `<span class="study-log-where">${escapeHtml(entry.where)}</span>` : ""}
         <time datetime="${escapeHtml(entry.day)}">${escapeHtml(formatDay(entry.day))}</time>
       </div>
@@ -121,7 +109,7 @@ export function renderStudyLog(entries, { limit = 0 } = {}) {
 }
 
 // The reader page and detail-page section for one book.
-export function renderLoopPanel(loop, { heading = "Learning loop", headingTag = "h2", headingClass = "reader-heading" } = {}) {
+export function renderLoopPanel(loop, { heading = "Learning loop", headingTag = "h2", headingClass = "reader-heading", includeMastery = true } = {}) {
   const next = loop.nextStep;
   return `
     <div class="loop-panel">
@@ -131,8 +119,7 @@ export function renderLoopPanel(loop, { heading = "Learning loop", headingTag = 
         ${renderLoopSteps(loop)}
       </div>
       <p class="loop-next" data-step="${escapeHtml(next)}"><span>Next step</span> <strong>${escapeHtml(next)}</strong> ${escapeHtml(STEP_HINT[next].toLowerCase())}</p>
-      ${renderMastery(loop)}
-      ${renderRecall(loop)}
+      ${includeMastery ? renderMastery(loop) : ""}
     </div>`;
 }
 
@@ -154,6 +141,7 @@ export function renderStudyHud(resources = [], notes = [], today = localDay(new 
   const cells = heatmap(days, today, 12);
   const level = (count) => (count >= 3 ? 3 : count);
   const current = streak(days, today);
+  const quizzes = quizzesTaken(resources);
   const week = sessionsThisWeek(days, today);
   return `
     <section class="study-hud" aria-label="Study activity">
@@ -161,6 +149,7 @@ export function renderStudyHud(resources = [], notes = [], today = localDay(new 
         <div class="study-hud-stat${current ? " is-live" : ""}"><span>Streak</span><strong>${current}</strong><em>${current === 1 ? "day" : "days"}</em></div>
         <div class="study-hud-stat"><span>This week</span><strong>${week}</strong><em>${week === 1 ? "session" : "sessions"}</em></div>
         <div class="study-hud-stat"><span>Loops closed</span><strong>${loops}</strong><em>all time</em></div>
+        <div class="study-hud-stat"><span>Quizzes</span><strong>${quizzes}</strong><em>taken</em></div>
       </div>
       <div class="study-hud-map">
         <div class="study-hud-grid" role="img" aria-label="${days.size} active days in the last 12 weeks">
@@ -175,7 +164,6 @@ export function renderGainToast(gains) {
   const total = gains.reduce((sum, gain) => sum + gain.xp, 0);
   const lines = gains.slice(0, 3).map((gain) => {
     const extras = [
-      gain.quizzes ? (gain.lastQuiz ? `Quiz ${gain.lastQuiz}` : `${gain.quizzes} ${gain.quizzes === 1 ? "quiz" : "quizzes"}`) : "",
       gain.loops ? `${gain.loops === 1 ? "Loop" : `${gain.loops} loops`} closed` : "",
       gain.levelUp ? `Level ${gain.levelUp}` : "",
     ].filter(Boolean);

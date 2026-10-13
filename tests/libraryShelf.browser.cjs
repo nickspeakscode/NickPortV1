@@ -56,8 +56,9 @@ const resources = [
         await page.locator('.study-hud').waitFor();
         const toast = page.locator('.gain-toast');
         await toast.waitFor();
-        assert.match(await toast.innerText(), /\+35 XP/, 'Paraphrase 15 + quiz 3/4 worth 20');
-        assert.match(await toast.innerText(), /Quiz 3\/4/);
+        assert.match(await toast.innerText(), /\+35 XP/, 'Paraphrase 15 + a quiz worth 20, counted quietly');
+        assert.doesNotMatch(await toast.innerText(), /quiz/i, 'quizzes are never named');
+        assert.ok((await page.locator('.study-hud-stats').innerText()).includes('QUIZZES'));
         assert.ok((await toast.innerText()).includes('<Systems & Learning>'), 'titles are text, not markup');
         await page.mouse.click(5, 5);
         await toast.waitFor({ state: 'detached' });
@@ -189,9 +190,8 @@ const resources = [
         assert.equal(await reader.locator('.reader-page--loop').count(), 1, 'the reader has a learning loop page');
         assert.equal(await reader.locator('.loop-arc[data-state="done"]').count(), 2);
         assert.equal(await reader.locator('.loop-arc[data-state="next"]').getAttribute('data-step'), 'Note');
-        assert.equal(await reader.locator('.study-log-score').first().textContent(), '3/4', 'quiz scores show in the log');
-        assert.ok((await reader.locator('.recall').getAttribute('aria-label')).startsWith('Recall: last quiz 3 of 4'));
-        assert.equal(await reader.locator('.study-log-text').nth(1).textContent(), '<b>In my words</b> & more', 'log entries are escaped');
+        assert.equal(await reader.locator('.recall, .study-log-score, .study-log [data-step="Quiz"]').count(), 0, 'nothing quiz-related is shown');
+        assert.equal(await reader.locator('.study-log-text').first().textContent(), '<b>In my words</b> & more', 'log entries are escaped');
         assert.equal(await reader.locator('.resource-rating').count(), 0, 'unset ratings stay absent');
         await page.getByRole('button', { name: 'Return to shelf' }).click().catch(async error => {
           console.error('Reader close failure', engine.name(), mobile, await reader.evaluate(el => ({ open: el.open, className: el.className, button: el.querySelector('button')?.outerHTML, inert: el.inert, html: el.outerHTML.slice(0, 600) })));

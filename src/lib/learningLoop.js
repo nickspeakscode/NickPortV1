@@ -117,6 +117,8 @@ export function bookLoop(resource = {}, notes = []) {
     nextStep,
     level: levelFor(xp),
     lastEntry: entries[entries.length - 1] ?? null,
+    // What the site shows as "last studied": quizzes stay private.
+    lastStep: [...entries].reverse().find((entry) => entry.step !== QUIZ) ?? null,
     counts: Object.fromEntries(LOGGABLE.map((step) => [step, entries.filter((entry) => entry.step === step).length])),
     quiz: quizStats(entries),
   };
@@ -136,6 +138,11 @@ export function quizStats(entries = []) {
     history: quizzes.slice(-8).map((quiz) => ({ day: quiz.day, ratio: quiz.ratio, score: quiz.score, total: quiz.total })),
     trend: quizzes.length > 1 ? last.ratio - quizzes[quizzes.length - 2].ratio : 0,
   };
+}
+
+// Quizzes taken across every book: shown only as a count.
+export function quizzesTaken(resources = []) {
+  return (resources ?? []).reduce((sum, resource) => sum + (resource?.studyLog ?? []).filter((entry) => entry?.step === QUIZ && localDay(entry.date)).length, 0);
 }
 
 // Days with any study activity, across every book and every note.
