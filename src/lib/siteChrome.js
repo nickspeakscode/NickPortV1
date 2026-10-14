@@ -27,20 +27,12 @@ export function renderSocialLinks() {
   <a href="mailto:nickthomasfx@gmail.com" aria-label="Email Nicholas Thomas">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 5.25h16.5A2.75 2.75 0 0 1 23 8v8a2.75 2.75 0 0 1-2.75 2.75H3.75A2.75 2.75 0 0 1 1 16V8a2.75 2.75 0 0 1 2.75-2.75Zm0 1.75a1 1 0 0 0-.72.3L12 13.66l8.97-6.36a1 1 0 0 0-.72-.3H3.75Zm17.5 2.12-8.74 6.2a.88.88 0 0 1-1.02 0l-8.74-6.2V16c0 .55.45 1 1 1h16.5c.55 0 1-.45 1-1V9.12Z"/></svg>
   </a>
-  <button class="pokedex-open" id="pokedexOpen" type="button" aria-haspopup="dialog" aria-label="Open Pokédex">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="4" y="2.2" width="16" height="19.6" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-      <path d="M4 10h16" fill="none" stroke="currentColor" stroke-width="1.4"/>
-      <circle class="pokedex-glyph-lens" cx="8.6" cy="6.2" r="2.1"/>
-      <circle class="pokedex-glyph-light" cx="12.6" cy="4.9" r=".85" fill="#ff6b78"/>
-      <circle class="pokedex-glyph-light" cx="15.1" cy="4.9" r=".85" fill="#f2c56d"/>
-      <circle class="pokedex-glyph-light" cx="17.6" cy="4.9" r=".85" fill="#59f1d7"/>
-      <rect x="7" y="12.6" width="10" height="5.8" rx="1.1" fill="none" stroke="currentColor" stroke-width="1.4"/>
-    </svg>
-    <span class="pokedex-badge" aria-hidden="true"></span>
-  </button>
   <button class="pokeball-release" id="pokeballRelease" type="button" aria-label="Release a random Pokémon">
     <img src="/pokemon/pokeball.png" alt="" />
+  </button>
+  <button class="pokedex-open" id="pokedexOpen" type="button" aria-haspopup="dialog" aria-label="Open Pokédex">
+    <span class="pokedex-sprite" aria-hidden="true"></span>
+    <span class="pokedex-badge" aria-hidden="true"></span>
   </button>
   `;
 }
