@@ -50,8 +50,8 @@ export function createCardPortrait({ hero, shell, image }) {
       preload.decode().then(() => loadedPhotos.set(src, preload)).catch(() => {});
     });
   }
-  // The silent intro shuffle runs for DURATION, so no new photo can be needed
-  // before it ends; wait for it, then for an idle moment.
+  // Alternates are only needed once someone shuffles; let the page settle
+  // first, then load them in an idle moment.
   const whenIdle = callback => window.requestIdleCallback
     ? window.requestIdleCallback(callback, { timeout: 2000 })
     : callback();
@@ -174,26 +174,36 @@ export function createCardPortrait({ hero, shell, image }) {
     }
     animations.forEach((animation) => animation.cancel());
     animations = [];
+    trick = null;
     shell.dataset.state = 'idle';
   }
 
-  function shuffle({ silent = false } = {}) {
+  // Transforms and z-index run as separate animations on the same clock and
+  // easing: z-index cannot run on the compositor, and sharing an animation
+  // with it would pull the card motion back onto the main thread.
+  // A click or tap always asks for sound (audio may still be resuming from the
+  // same gesture); hover and Pokemon only get it once sound is already on.
+  let trick = null;
+  function shuffle({ sound = audio.canPlay() } = {}) {
     if (!canAnimate() || animations.length) return;
     const variation = nextVariation();
     const currentGeneration = ++generation;
     shell.dataset.state = 'shuffling';
     shell.dataset.shuffle = ['fan', 'riffle', 'hindu'][variation];
-    animations = cards.map((card, index) => card.animate(framesFor(index, variation).map(frame => ({ ...frame, easing: EASING })), {
-      duration: DURATION,
-      delay: 0,
-      easing: 'linear',
-      fill: 'both',
-    }));
+    const timing = { duration: DURATION, delay: 0, easing: 'linear', fill: 'both' };
+    animations = cards.flatMap((card, index) => {
+      const frames = framesFor(index, variation);
+      return [
+        card.animate(frames.map(({ offset, transform }) => ({ offset, transform, easing: EASING })), timing),
+        card.animate(frames.map(({ offset, zIndex }) => ({ offset, zIndex, easing: EASING })), timing),
+      ];
+    });
     preparePhoto(variation);
     maskPhotoWhileFaceDown(variation);
     const startTime = document.timeline.currentTime;
     animations.forEach(animation => { animation.startTime = startTime; });
-    if (!silent) audio.play(variation, startTime);
+    trick = { variation, startTime, sound };
+    if (trick.sound) audio.play(variation, startTime);
     Promise.all(animations.map((animation) => animation.finished)).then(() => {
       if (generation === currentGeneration) settle({ completed: true });
     }).catch(() => { /* Visibility and motion changes cancel back to the crisp photo. */ });
@@ -210,7 +220,6 @@ export function createCardPortrait({ hero, shell, image }) {
 
   // Pokemon contact follows the same in-flight guard as direct interaction.
   function disturb(x, y, radius = 120) {
-    if (!audio.canPlay()) return;
     const rect = shell.getBoundingClientRect();
     const heroRect = hero.getBoundingClientRect();
     const centerX = rect.left - heroRect.left + rect.width / 2;
@@ -218,27 +227,42 @@ export function createCardPortrait({ hero, shell, image }) {
     if (Math.hypot(centerX - x, centerY - y) < radius + rect.width / 2) shuffle();
   }
 
+  // Only three things start a trick: a click or tap on the deck, the cursor
+  // actually moving over it, or a Pokemon walking into it. Browsers also send
+  // pointer events when the page moves under a still cursor (a menu closing,
+  // a scroll, a resize); those arrive at the last known position and are
+  // ignored, so a click elsewhere on the page never sets the deck off.
   // Pointer activity may replay a settled deck, but never queues a replay or
-  // restarts an in-flight shuffle. A still cursor leaves the portrait still.
-  function interact(event) {
-    if (event?.pointerType === 'touch' || !audio.canPlay()) return;
-    shuffle();
-  }
+  // restarts an in-flight shuffle.
+  let cursor = null;
   let pointer = null;
-  hero.addEventListener('pointerenter', interact);
-  shell.addEventListener('pointerenter', interact);
+  document.addEventListener('pointermove', (event) => {
+    if (event.pointerType !== 'touch') cursor = { x: event.clientX, y: event.clientY };
+  }, { passive: true });
   shell.addEventListener('pointermove', (event) => {
     if (event.pointerType === 'touch') return;
     const next = { x: event.clientX, y: event.clientY };
+    const moved = cursor && (cursor.x !== next.x || cursor.y !== next.y);
+    if (!moved) return;
     const distance = pointer ? Math.hypot(next.x - pointer.x, next.y - pointer.y) : Infinity;
     if (distance < 12) return;
     pointer = next;
-    interact(event);
+    shuffle();
   });
   shell.addEventListener('pointerleave', () => { pointer = null; });
   // Native button click handles mouse, touch and keyboard once. Touch hover
   // is ignored above; no pointer-up handler or queued replay duplicates a tap.
-  shell.addEventListener('click', shuffle);
+  // A click during a trick that started without sound (hover or a Pokemon
+  // before sound was allowed) adds the sound if its cue has not passed yet.
+  // The click has already unlocked audio in the capture phase below.
+  shell.addEventListener('click', () => {
+    if (trick && !trick.sound) {
+      trick.sound = true;
+      audio.play(trick.variation, trick.startTime);
+      return;
+    }
+    shuffle({ sound: true });
+  });
   // Capture runs before the button click starts its trick. touchend is kept
   // explicitly for iPhone Safari; pointer hover never unlocks audio.
   const unlockAudio = (event) => { if (event.isTrusted) audio.unlock(); };
@@ -267,13 +291,12 @@ export function createCardPortrait({ hero, shell, image }) {
     }
   });
 
+  // The deck stays still on load; it only moves when someone plays with it.
   function init() {
-    if (ready) return;
     ready = true;
-    shuffle({ silent: true });
   }
   if (image.complete && image.naturalWidth) init();
   else image.addEventListener('load', init, { once: true });
 
-  return { disturb, scatterFrom: shuffle, pause, resume };
+  return { disturb, scatterFrom: () => shuffle(), pause, resume };
 }

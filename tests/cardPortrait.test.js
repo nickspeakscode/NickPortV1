@@ -6,7 +6,7 @@ import vm from 'node:vm';
 const source = (await readFile(new URL('../src/lib/cardPortrait.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/m, '').replace('export function', 'function');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
-async function setup({ failed = [], reduced = false, audioReady = true } = {}) {
+async function setup({ failed = [], reduced = false, audioReady = true, start = true } = {}) {
   let observer;
   const running = [];
   const audio = {
@@ -58,9 +58,11 @@ async function setup({ failed = [], reduced = false, audioReady = true } = {}) {
   shell.querySelectorAll = () => cards;
   const motion = new Element();
   motion.matches = reduced;
+  const doc = new Element();
+  Object.assign(doc, { hidden: false, timeline: { currentTime: 1234 } });
   const context = vm.createContext({
     window: { matchMedia: () => motion },
-    document: { hidden: false, timeline: { currentTime: 1234 }, addEventListener() {} },
+    document: doc,
     createCardAudio: () => audio,
     Image: class extends Element {
       decode() { return failed.includes(this.src) ? Promise.reject() : Promise.resolve(); }
@@ -74,8 +76,16 @@ async function setup({ failed = [], reduced = false, audioReady = true } = {}) {
   const api = context.createCardPortrait({ hero, shell, image });
   await flush();
   image.emit('load');
+  // Nothing moves on load; most tests begin from a first click on the deck.
+  if (start) shell.emit('click', { pointerType: 'mouse', detail: 1 });
   return {
-    api, shell, hero, frame, motion, running, cards, audio,
+    api, shell, hero, doc, frame, motion, running, cards, audio,
+    // A real cursor move: the page last saw the pointer elsewhere.
+    hover(x = 50, y = 50) {
+      doc.emit('pointermove', { pointerType: 'mouse', clientX: 0, clientY: 0 });
+      shell.emit('pointermove', { pointerType: 'mouse', clientX: x, clientY: y });
+      shell.emit('pointerleave', {});
+    },
     visible(value) { observer([{ isIntersecting: value }]); },
     async finish() { running.filter(a => !a.cancelled).forEach(a => a.finish()); await flush(); },
   };
@@ -99,29 +109,56 @@ test('decoded image is staged invisibly and completion retains that same node', 
   assert.equal(incoming.style.opacity, undefined);
 });
 
-test('silent intro and locked hover cannot consume the first sound-enabled click', async () => {
-  const h = await setup({ audioReady: false });
-  assert.equal(h.audio.plays.length, 0);
-  await h.finish();
-  const count = h.running.length;
+test('the deck stays still on load and ignores the page moving under a still cursor', async () => {
+  const h = await setup({ start: false });
+  assert.equal(h.running.length, 0);
   h.hero.emit('pointerenter', { pointerType: 'mouse' });
   h.shell.emit('pointerenter', { pointerType: 'mouse' });
-  h.api.disturb(100, 150);
-  assert.equal(h.running.length, count);
-  h.audio.unlock(); // Trusted document capture handler runs before click.
-  h.shell.emit('click', { pointerType: 'mouse' });
+  // The first event the page sees has no earlier position to compare.
+  h.shell.emit('pointermove', { pointerType: 'mouse', clientX: 50, clientY: 50 });
+  h.doc.emit('pointermove', { pointerType: 'mouse', clientX: 50, clientY: 50 });
+  // A menu closing or a scroll moves the deck under the cursor: same position.
+  h.shell.emit('pointermove', { pointerType: 'mouse', clientX: 50, clientY: 50 });
+  assert.equal(h.running.length, 0);
+  h.shell.emit('pointermove', { pointerType: 'mouse', clientX: 64, clientY: 50 });
   assert.equal(h.shell.dataset.state, 'shuffling');
-  assert.equal(h.audio.plays.length, 1);
+});
+
+test('hover and Pokemon work before sound is allowed; a click then adds the sound', async () => {
+  const h = await setup({ audioReady: false, start: false });
+  h.hover();
+  assert.equal(h.shell.dataset.state, 'shuffling');
+  assert.equal(h.audio.plays.length, 0);
+  const count = h.running.length;
+  h.audio.unlock(); // Trusted document capture handler runs before click.
+  h.shell.emit('click', { pointerType: 'mouse', detail: 1 });
+  assert.equal(h.running.length, count, 'the trick in flight carries on');
+  assert.equal(h.audio.plays.length, 1, 'with its sound');
+  h.shell.emit('click', { pointerType: 'mouse', detail: 1 });
+  assert.equal(h.audio.plays.length, 1, 'sound is added once');
   await h.finish();
-  h.hero.emit('pointerenter', { pointerType: 'mouse' });
+  h.shell.emit('click', { pointerType: 'mouse', detail: 1 });
   assert.equal(h.audio.plays.length, 2);
+  const pokemon = await setup({ audioReady: false, start: false });
+  pokemon.api.disturb(100, 150);
+  assert.equal(pokemon.shell.dataset.state, 'shuffling');
+});
+
+test('z-index changes run apart from the card motion so the motion can stay on the compositor', async () => {
+  const h = await setup();
+  const cardAnimations = h.running.filter(a => h.cards.includes(a.target));
+  assert.equal(cardAnimations.length, 10);
+  for (const animation of cardAnimations) {
+    const properties = new Set(animation.frames.flatMap(frame => Object.keys(frame)).filter(key => !['offset', 'easing'].includes(key)));
+    assert.equal(properties.size, 1, [...properties].join());
+  }
 });
 
 test('all interactions replay immediately after settle, never during an active trick', async () => {
   const triggers = [
     h => h.api.disturb(100, 150),
     h => h.api.scatterFrom(),
-    h => h.hero.emit('pointerenter', { pointerType: 'mouse' }),
+    h => h.hover(),
     h => h.shell.emit('click', { pointerType: 'mouse', detail: 1 }),
     h => h.shell.emit('click', { pointerType: 'touch', detail: 1 }),
     h => h.shell.emit('click', { detail: 0 }),

@@ -453,6 +453,9 @@ function getOverlap(a, b) {
   return x > 0 && y > 0 ? { x, y } : null;
 }
 
+// A Pokemon sets the deck off when it walks into it, not for as long as it
+// stands on it: it has to step off before it can trigger another trick.
+let walkerOnPortrait = false;
 function disturbPortraitOnWalkerOverlap(walkerRect) {
   const portraitRect = portraitShell.getBoundingClientRect();
   const overlap = getOverlap(walkerRect, {
@@ -461,7 +464,9 @@ function disturbPortraitOnWalkerOverlap(walkerRect) {
     right: portraitRect.right,
     bottom: portraitRect.bottom,
   });
-  if (!overlap) return;
+  const entered = Boolean(overlap) && !walkerOnPortrait;
+  walkerOnPortrait = Boolean(overlap);
+  if (!entered) return;
 
   const heroRect = hero.getBoundingClientRect();
   cardPortrait.disturb(

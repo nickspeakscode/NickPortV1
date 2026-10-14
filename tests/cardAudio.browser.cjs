@@ -36,11 +36,12 @@ const assert=require('node:assert/strict');const fs=require('node:fs/promises');
  }
  await page.waitForTimeout(3500);await page.locator('.portrait-shell[data-state="idle"]').waitFor();
  await page.waitForFunction(()=>audioProof.decoded.length===3);
- assert.equal(await page.evaluate(()=>audioProof.starts.length),0,'autoplay intro must be silent');
+ assert.equal(await page.evaluate(()=>audioProof.starts.length),0,'nothing plays on load');
  if(!mobile){
    await page.mouse.move(5,5);
    await page.locator('.portrait-shell').hover();
-   assert.equal(await page.locator('.portrait-shell').getAttribute('data-state'),'idle','locked hover must not consume the first click');
+   assert.equal(await page.locator('.portrait-shell').getAttribute('data-state'),'shuffling','hover plays the deck before any click');
+   assert.equal(await page.evaluate(()=>audioProof.starts.length),0,'hover cannot start sound');
  }
  const seen=new Set();
  for(let i=0;i<5&&seen.size<3;i++){
@@ -58,10 +59,11 @@ const assert=require('node:assert/strict');const fs=require('node:fs/promises');
    await page.locator('.portrait-shell').hover();
    await page.waitForFunction(count=>audioProof.starts.length===count,count+1);
    await page.locator('.portrait-shell[data-state="idle"]').waitFor();
-   // Interrupted audio must not allow another silent hover to consume click.
+   // After an audio interruption hover still plays the deck, silently; a
+   // click during that trick adds its sound rather than being swallowed.
    await page.evaluate(async()=>{await testAudioContext.suspend();audioProof.peak=0;});
    await page.mouse.move(5,5);await page.locator('.portrait-shell').hover();
-   assert.equal(await page.locator('.portrait-shell').getAttribute('data-state'),'idle');
+   assert.equal(await page.locator('.portrait-shell').getAttribute('data-state'),'shuffling');
    await page.locator('.portrait-shell').click();
    await page.waitForFunction(count=>audioProof.starts.length===count,count+2);
    await page.locator('.portrait-shell[data-state="idle"]').waitFor();
@@ -84,6 +86,6 @@ const assert=require('node:assert/strict');const fs=require('node:fs/promises');
  const stops=await page.evaluate(()=>audioProof.stops.length);assert.ok(stops>0);
  assert.deepEqual(errors,[]);
  await fs.mkdir('test-results/audio',{recursive:true});await fs.writeFile(`test-results/audio/${name}.json`,JSON.stringify({...result,stops,errors},null,2));
- console.log(`PASS ${name}: silent intro, trusted activation, correct three recordings, scheduled alignment, cancellation`);
+ console.log(`PASS ${name}: silent hover until a click, trusted activation, correct three recordings, scheduled alignment, cancellation`);
  }finally{await browser.close();}
 }})().catch(e=>{console.error(e);process.exitCode=1});
