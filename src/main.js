@@ -6,6 +6,7 @@ import "./homeRefinements.css";
 import { initializeMarketTicker } from "./lib/marketTicker.js";
 import { initializeNavPrefetch, readCache, sameContent, writeCache } from "./lib/pageData.js";
 import { initializePokemonRelease } from "./lib/pokemonRelease.js";
+import { initializePokedex } from "./lib/pokedex.js";
 import { createCardPortrait } from "./lib/cardPortrait.js";
 import { initializeSumlinoCharacter } from "./lib/sumlinoCharacter.js";
 import { syncHeaderOffset } from "./lib/pageUi.js";
@@ -475,6 +476,7 @@ safely("Pokemon", () => initializePokemonRelease({
     disturbPortraitOnWalkerOverlap(rect);
   },
 }));
+safely("Pokedex", () => initializePokedex());
 
 function handleAnimationVisibility() {
   if (document.hidden) {
