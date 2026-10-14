@@ -156,7 +156,7 @@ export const learningResourceType = defineType({
       name: "studyLog",
       title: "Study log",
       description:
-        "Log each step of the loop as you go: Read → Paraphrase → Note → Apply. Doing all four closes a loop on the website. Quizzes are retrieval practice: they earn XP by score and keep the streak, but stay private: the website only shows how many you have taken. Today I Learned notes that point at this entry count as Note steps automatically.",
+        "Log each step of the loop as you go: Read → Paraphrase → Note → Apply. Doing all four closes a loop on the website. Quizzes are retrieval practice. They earn XP by score and keep the streak, but they stay private; the website only shows how many you have taken. Today I Learned notes that point at this entry count as Note steps automatically.",
       type: "array",
       of: [
         defineArrayMember({
@@ -229,7 +229,7 @@ export const learningResourceType = defineType({
               title: "In my own words",
               type: "text",
               rows: 4,
-              description: "What you read, your paraphrase, the note, how you applied it, or (for a quiz) what you missed. Shown on the website.",
+              description: "What you read, your paraphrase, the note, how you applied it, or (for a quiz) what you missed. Shown on the website, except for quizzes.",
               validation: (rule) =>
                 rule.max(600).custom((entry, context) =>
                   context.parent?.step === "Read" || entry?.trim() ? true : "Write a line or two for this step."),

@@ -311,7 +311,7 @@ function renderLibrary(resources, options = {}) {
     <main class="index-page library-shelf-page">
       <header class="index-intro index-enter">
         <h1>library</h1>
-        <p>what I’m reading, learning, and creating. A closer look at the work behind the profile.</p>
+        <p>what I’m reading, learning, and creating. a closer look at the work behind the profile.</p>
       </header>
       <div id="study-hud">${renderStudyHud(resources, currentNotes)}</div>
       ${renderLibraryFilters(resources)}
@@ -345,7 +345,7 @@ function renderResourceDetail(resource, notes) {
   if (!resource) {
     setPageTitle("Resource Not Found");
     setNoIndex();
-    return renderNotFound("That resource is not on this shelf.", "/library/", "Back to the Library");
+    return renderNotFound("that resource is not on this shelf.", "/library/", "Back to the Library");
   }
 
   setPageMeta({
@@ -373,7 +373,7 @@ function renderResourceDetail(resource, notes) {
     resource.keyTakeaways?.length
       ? ["key takeaways", `<ol class="takeaway-list">${resource.keyTakeaways.map((item, index) => `<li><span class="takeaway-index" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span><span>${escapeHtml(item)}</span></li>`).join("")}</ol>`]
       : null,
-    ["notes from this book", notes.length
+    [`notes from this ${escapeHtml(resourceTypeLabel(resource).toLowerCase())}`, notes.length
       ? `<ul class="index-list">${notes.map(renderRelatedNote).join("")}</ul>`
       : `<p class="index-empty" role="status">No notes yet.</p>`, "resourceNotesTitle"],
   ].filter(Boolean);

@@ -17,8 +17,8 @@ export const chapters = [
     text: 'I turned that interest into The Tribe, now Primate Trading. My financial services business generated over $150,000 in revenue. I learned by doing.',
   },
   {
-    id: 'finance', rank: '5', era: 'Accounting · HVAC businesses', title: 'Back to people.', motif: 'finance', label: 'HVAC finance',
-    text: 'After a few years, I missed working face to face. I joined an accounting firm, helping HVAC businesses with financial planning and analysis.',
+    id: 'finance', rank: '5', era: 'Accounting · Home services', title: 'Back to people.', motif: 'finance', label: 'Trades finance',
+    text: 'After a few years, I missed working face to face. I joined an accounting firm, working with HVAC, plumbing, and electrical businesses.',
   },
   {
     id: 'learning', rank: '6', era: 'Today · Studying for the CMA', title: 'Building my skills.', motif: 'learning', label: 'Studying today',

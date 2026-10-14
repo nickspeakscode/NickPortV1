@@ -113,27 +113,56 @@ function renderNowStrip() {
   const feature = items[0].kind === "learning" ? items[0] : null;
   const rest = feature ? items.slice(1) : items;
   const days = streak(activityDays(nowData.resources, nowData.notes));
+  const lead = items[0];
+  // Collapsed to one line under the bio so the hero stays centred; it opens
+  // as a dropdown panel.
   return `
-    <section class="now-card" aria-labelledby="nowTitle">
-      <div class="now-card-head">
+    <details class="now-card">
+      <summary class="now-card-head">
         <span class="now-live" aria-hidden="true"></span>
-        <h2 class="now-card-title" id="nowTitle">Right now</h2>
+        <span class="now-card-title">Right now</span>
+        <span class="now-teaser">${escapeHtml(`${lead.label} ${lead.title}`)}</span>
         ${renderStreakHand(days)}
+        <span class="now-chevron" aria-hidden="true"></span>
+      </summary>
+      <div class="now-panel">
+        ${feature ? renderNowFeature(feature) : ""}
+        ${rest.length ? `<ul class="now-list">${rest.map((item) => `
+          <li><a class="now-row" href="${escapeHtml(item.href)}">
+            <span class="now-label">${escapeHtml(item.label)}</span>
+            <span class="now-row-title">${escapeHtml(item.title)}</span>
+            ${item.meta ? `<span class="now-row-meta">${escapeHtml(item.meta)}</span>` : ""}
+          </a></li>`).join("")}</ul>` : ""}
       </div>
-      ${feature ? renderNowFeature(feature) : ""}
-      ${rest.length ? `<ul class="now-list">${rest.map((item) => `
-        <li><a class="now-row" href="${escapeHtml(item.href)}">
-          <span class="now-label">${escapeHtml(item.label)}</span>
-          <span class="now-row-title">${escapeHtml(item.title)}</span>
-          ${item.meta ? `<span class="now-row-meta">${escapeHtml(item.meta)}</span>` : ""}
-        </a></li>`).join("")}</ul>` : ""}
-    </section>
+    </details>
   `;
 }
+let nowHtml = null;
 function refreshNowStrip() {
   const mount = document.getElementById("nowStrip");
   const html = renderNowStrip();
-  if (mount && mount.innerHTML !== html) mount.innerHTML = html;
+  if (!mount || html === nowHtml) return;
+  const open = mount.querySelector(".now-card")?.open;
+  nowHtml = html;
+  mount.innerHTML = html;
+  if (open) mount.querySelector(".now-card")?.setAttribute("open", "");
+}
+
+// The dropdown closes on Escape (focus back on its toggle) and on a click
+// anywhere outside it.
+function initializeNowDropdown() {
+  const mount = document.getElementById("nowStrip");
+  if (!mount) return;
+  const card = () => mount.querySelector(".now-card[open]");
+  document.addEventListener("pointerdown", (event) => {
+    if (card() && !mount.contains(event.target)) card().open = false;
+  });
+  document.addEventListener("keydown", (event) => {
+    const open = card();
+    if (event.key !== "Escape" || !open) return;
+    open.open = false;
+    open.querySelector("summary").focus();
+  });
 }
 const featuredNotes = renderHomeRows(
   selectHighlights(cachedNotes ?? []),
@@ -195,13 +224,13 @@ app.innerHTML = `
         <div class="hero-copy">
           <h1 class="hero-intro" aria-label="Hello, Nick Here."><span aria-hidden="true"><span class="intro-before">Hello, </span><span class="intro-name">Nick</span><span class="intro-after"> Here.</span><span class="intro-cursor"></span></span></h1>
           <p class="hero-bio">
-            I do financial planning and analysis for HVAC businesses, then probably spend too much of my free time testing trading ideas and tinkering with AI tools and automations, with some time left to recharge.
+            I do accounting and financial planning for home service businesses like HVAC, plumbing, and electrical. Off the clock, I test trading ideas, tinker with AI tools and automations, and still find time to recharge.
           </p>
           <div class="hero-actions">
             <a class="contact-action" href="mailto:nickthomasfx@gmail.com">Contact me</a>
             ${showTimelineLink ? '<a class="contact-action timeline-action" href="/timeline/" aria-label="Explore my timeline">My timeline <span aria-hidden="true">→</span></a>' : ''}
           </div>
-          <div id="nowStrip">${renderNowStrip()}</div>
+          <div id="nowStrip">${(nowHtml = renderNowStrip())}</div>
         </div>
       </div>
     </section>
@@ -214,8 +243,8 @@ app.innerHTML = `
       <div class="about-layout">
         <article class="about-copy reveal-on-scroll">
           <p>
-            I work in <strong>financial planning</strong> for HVAC businesses,
-            building models, forecasts, and revenue projections from the assumptions
+            I work in <strong>accounting and financial planning</strong> for home
+            service businesses (HVAC, plumbing, electrical, and more), building models, forecasts, and revenue projections from the assumptions
             that drive real operating decisions.
           </p>
           <p>
@@ -354,6 +383,7 @@ const cardPortrait = safely("Card portrait", () => createCardPortrait({
 }), { disturb() {}, pause() {}, resume() {} });
 
 initializeMobileNav();
+initializeNowDropdown();
 syncHeaderOffset();
 safely("Sumlino preview", initializeSumlinoCharacter);
 

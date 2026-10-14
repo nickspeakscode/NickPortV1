@@ -19,7 +19,7 @@ async function verify(engine, mobile) {
     await page.bringToFront();
     await page.waitForTimeout(3500);
     await page.locator('.portrait-shell[data-state="idle"]').waitFor();
-    assert.match(await page.locator('.hero-copy p').innerText(), /financial planning and analysis for HVAC businesses/);
+    assert.match(await page.locator('.hero-copy p').innerText(), /accounting and financial planning for home service businesses like HVAC, plumbing, and electrical/);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     const seen = new Set();
     for (let attempt = 0; attempt < 5 && seen.size < 3; attempt++) {
