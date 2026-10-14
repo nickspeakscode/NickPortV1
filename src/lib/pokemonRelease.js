@@ -9,6 +9,16 @@ const pokemonOptions = [
   { name: "Mewtwo", src: "/pokemon/mewtwo.webp", size: "md" },
   { name: "Charizard", src: "/pokemon/charizard.webp", size: "lg" },
   { name: "Giratina", src: "/pokemon/giratina.webp", size: "lg" },
+  { name: "Eevee", src: "/pokemon/eevee.webp", size: "sm" },
+  { name: "Umbreon", src: "/pokemon/umbreon.webp", size: "md" },
+  { name: "Snorlax", src: "/pokemon/snorlax.webp", size: "lg" },
+  { name: "Lucario", src: "/pokemon/lucario.webp", size: "md" },
+  { name: "Squirtle", src: "/pokemon/squirtle.webp", size: "sm" },
+  { name: "Charmander", src: "/pokemon/charmander.webp", size: "sm" },
+  { name: "Jigglypuff", src: "/pokemon/jigglypuff.webp", size: "sm" },
+  { name: "Psyduck", src: "/pokemon/psyduck.webp", size: "sm" },
+  { name: "Mew", src: "/pokemon/mew.webp", size: "sm" },
+  { name: "Rayquaza", src: "/pokemon/rayquaza.webp", size: "lg" },
 ];
 
 const OBSTACLE_SELECTOR = [
