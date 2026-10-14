@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { RARITY, RECENT_LIMIT, pickPokemon, pokemonOptions } from '../src/lib/pokemonRelease.js';
 
 // A small seeded generator so the odds check is repeatable.
@@ -11,9 +12,13 @@ function seeded(seed) {
   };
 }
 
-test('every Pokemon has a known rarity and a unique name', () => {
-  assert.equal(new Set(pokemonOptions.map((option) => option.name)).size, pokemonOptions.length);
-  for (const option of pokemonOptions) assert.ok(RARITY[option.rarity], option.name);
+test('every Pokemon is listed once, with a known rarity and a sprite on disk', () => {
+  assert.equal(new Set(pokemonOptions.map((option) => option.name.toLowerCase())).size, pokemonOptions.length, 'duplicate name');
+  assert.equal(new Set(pokemonOptions.map((option) => option.src)).size, pokemonOptions.length, 'duplicate sprite');
+  for (const option of pokemonOptions) {
+    assert.ok(RARITY[option.rarity], option.name);
+    assert.ok(existsSync(new URL(`../public${option.src}`, import.meta.url)), `${option.name}: missing ${option.src}`);
+  }
 });
 
 test('recent Pokemon never come back, so there are no repeats in a row', () => {

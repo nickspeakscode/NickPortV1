@@ -28,6 +28,29 @@ export const pokemonOptions = [
   { name: "Mew", src: "/pokemon/mew.webp", size: "sm", rarity: "legendary", label: "Mythical" },
   { name: "Rayquaza", src: "/pokemon/rayquaza.webp", size: "lg", rarity: "legendary" },
   { name: "Giratina", src: "/pokemon/giratina.webp", size: "lg", rarity: "legendary" },
+  { name: "Togepi", src: "/pokemon/togepi.webp", size: "sm", rarity: "common" },
+  { name: "Meowth", src: "/pokemon/meowth.webp", size: "sm", rarity: "common" },
+  { name: "Magikarp", src: "/pokemon/magikarp.webp", size: "sm", rarity: "common" },
+  { name: "Piplup", src: "/pokemon/piplup.webp", size: "sm", rarity: "common" },
+  { name: "Mudkip", src: "/pokemon/mudkip.webp", size: "sm", rarity: "common" },
+  { name: "Cyndaquil", src: "/pokemon/cyndaquil.webp", size: "sm", rarity: "common" },
+  { name: "Vulpix", src: "/pokemon/vulpix.webp", size: "sm", rarity: "uncommon" },
+  { name: "Espeon", src: "/pokemon/espeon.webp", size: "md", rarity: "uncommon" },
+  { name: "Vaporeon", src: "/pokemon/vaporeon.webp", size: "md", rarity: "uncommon" },
+  { name: "Jolteon", src: "/pokemon/jolteon.webp", size: "md", rarity: "uncommon" },
+  { name: "Riolu", src: "/pokemon/riolu.webp", size: "sm", rarity: "uncommon" },
+  { name: "Gyarados", src: "/pokemon/gyarados.webp", size: "lg", rarity: "rare" },
+  { name: "Lapras", src: "/pokemon/lapras.webp", size: "md", rarity: "rare" },
+  { name: "Garchomp", src: "/pokemon/garchomp.webp", size: "lg", rarity: "rare" },
+  { name: "Tyranitar", src: "/pokemon/tyranitar.webp", size: "lg", rarity: "rare" },
+  { name: "Arcanine", src: "/pokemon/arcanine.webp", size: "md", rarity: "rare" },
+  { name: "Absol", src: "/pokemon/absol.webp", size: "md", rarity: "rare" },
+  { name: "Lugia", src: "/pokemon/lugia.webp", size: "lg", rarity: "legendary" },
+  { name: "Ho-Oh", src: "/pokemon/hooh.webp", size: "lg", rarity: "legendary" },
+  { name: "Kyogre", src: "/pokemon/kyogre.webp", size: "lg", rarity: "legendary" },
+  { name: "Groudon", src: "/pokemon/groudon.webp", size: "lg", rarity: "legendary" },
+  { name: "Celebi", src: "/pokemon/celebi.webp", size: "sm", rarity: "legendary", label: "Mythical" },
+  { name: "Darkrai", src: "/pokemon/darkrai.webp", size: "lg", rarity: "legendary", label: "Mythical" },
 ];
 
 // The last few releases sit out, so the same Pokemon never comes back twice
@@ -348,7 +371,8 @@ export function initializePokemonRelease({ onMove } = {}) {
     announcer.textContent = `${label}! A wild ${selected.name} appeared.`;
 
     const rect = pokemon.getBoundingClientRect();
-    const cx = Math.min(window.innerWidth - 130, Math.max(130, rect.left + rect.width / 2));
+    // Wide enough for the "LEGENDARY!" banner to stay on screen.
+    const cx = Math.min(window.innerWidth - 165, Math.max(165, rect.left + rect.width / 2));
     const cy = Math.min(window.innerHeight - 90, Math.max(state.topLimit + 40, rect.top + rect.height / 2));
     const count = legendary ? 12 : 8;
     const sparks = Array.from({ length: count }, (_, index) => {
