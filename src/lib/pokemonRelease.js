@@ -1,25 +1,60 @@
-const pokemonOptions = [
-  { name: "Bulbasaur", src: "/pokemon/bulbasaur.webp", size: "sm" },
-  { name: "Shinx", src: "/pokemon/shinx.webp", size: "sm" },
-  { name: "Flareon", src: "/pokemon/flareon.webp", size: "lg" },
-  { name: "Gengar", src: "/pokemon/gengar.webp", size: "md" },
-  { name: "Pikachu", src: "/pokemon/pikachu.webp", size: "md" },
-  { name: "Blastoise", src: "/pokemon/blastoise.webp", size: "lg" },
-  { name: "Dragonite", src: "/pokemon/dragonite.webp", size: "sm" },
-  { name: "Mewtwo", src: "/pokemon/mewtwo.webp", size: "md" },
-  { name: "Charizard", src: "/pokemon/charizard.webp", size: "lg" },
-  { name: "Giratina", src: "/pokemon/giratina.webp", size: "lg" },
-  { name: "Eevee", src: "/pokemon/eevee.webp", size: "sm" },
-  { name: "Umbreon", src: "/pokemon/umbreon.webp", size: "md" },
-  { name: "Snorlax", src: "/pokemon/snorlax.webp", size: "lg" },
-  { name: "Lucario", src: "/pokemon/lucario.webp", size: "md" },
-  { name: "Squirtle", src: "/pokemon/squirtle.webp", size: "sm" },
-  { name: "Charmander", src: "/pokemon/charmander.webp", size: "sm" },
-  { name: "Jigglypuff", src: "/pokemon/jigglypuff.webp", size: "sm" },
-  { name: "Psyduck", src: "/pokemon/psyduck.webp", size: "sm" },
-  { name: "Mew", src: "/pokemon/mew.webp", size: "sm" },
-  { name: "Rayquaza", src: "/pokemon/rayquaza.webp", size: "lg" },
+// Rarity decides the odds: within the pool, each Pokemon's chance is its
+// tier's weight over the total. Rare and legendary pulls get a reveal.
+export const RARITY = {
+  common: { weight: 12 },
+  uncommon: { weight: 7 },
+  rare: { weight: 3, label: "Rare" },
+  legendary: { weight: 1, label: "Legendary" },
+};
+
+export const pokemonOptions = [
+  { name: "Bulbasaur", src: "/pokemon/bulbasaur.webp", size: "sm", rarity: "common" },
+  { name: "Shinx", src: "/pokemon/shinx.webp", size: "sm", rarity: "common" },
+  { name: "Squirtle", src: "/pokemon/squirtle.webp", size: "sm", rarity: "common" },
+  { name: "Charmander", src: "/pokemon/charmander.webp", size: "sm", rarity: "common" },
+  { name: "Jigglypuff", src: "/pokemon/jigglypuff.webp", size: "sm", rarity: "common" },
+  { name: "Psyduck", src: "/pokemon/psyduck.webp", size: "sm", rarity: "common" },
+  { name: "Pikachu", src: "/pokemon/pikachu.webp", size: "md", rarity: "uncommon" },
+  { name: "Eevee", src: "/pokemon/eevee.webp", size: "sm", rarity: "uncommon" },
+  { name: "Flareon", src: "/pokemon/flareon.webp", size: "lg", rarity: "uncommon" },
+  { name: "Blastoise", src: "/pokemon/blastoise.webp", size: "lg", rarity: "uncommon" },
+  { name: "Gengar", src: "/pokemon/gengar.webp", size: "md", rarity: "rare" },
+  { name: "Snorlax", src: "/pokemon/snorlax.webp", size: "lg", rarity: "rare" },
+  { name: "Lucario", src: "/pokemon/lucario.webp", size: "md", rarity: "rare" },
+  { name: "Umbreon", src: "/pokemon/umbreon.webp", size: "md", rarity: "rare" },
+  { name: "Charizard", src: "/pokemon/charizard.webp", size: "lg", rarity: "rare" },
+  { name: "Dragonite", src: "/pokemon/dragonite.webp", size: "sm", rarity: "rare" },
+  { name: "Mewtwo", src: "/pokemon/mewtwo.webp", size: "md", rarity: "legendary" },
+  { name: "Mew", src: "/pokemon/mew.webp", size: "sm", rarity: "legendary", label: "Mythical" },
+  { name: "Rayquaza", src: "/pokemon/rayquaza.webp", size: "lg", rarity: "legendary" },
+  { name: "Giratina", src: "/pokemon/giratina.webp", size: "lg", rarity: "legendary" },
 ];
+
+// The last few releases sit out, so the same Pokemon never comes back twice
+// in a row and recent ones are skipped. Kept for the browser session.
+export const RECENT_LIMIT = 4;
+const RECENT_KEY = "nt-pokemon-recent";
+
+export function pickPokemon(random = Math.random, recent = []) {
+  const pool = pokemonOptions.filter((option) => !recent.includes(option.name));
+  const total = pool.reduce((sum, option) => sum + RARITY[option.rarity].weight, 0);
+  let roll = random() * total;
+  for (const option of pool) {
+    roll -= RARITY[option.rarity].weight;
+    if (roll < 0) return option;
+  }
+  return pool[pool.length - 1];
+}
+
+function readRecent() {
+  try { return JSON.parse(sessionStorage.getItem(RECENT_KEY)) ?? []; } catch { return []; }
+}
+
+function rememberRecent(name) {
+  const recent = [name, ...readRecent().filter((item) => item !== name)].slice(0, RECENT_LIMIT);
+  try { sessionStorage.setItem(RECENT_KEY, JSON.stringify(recent)); } catch {}
+  return recent;
+}
 
 const OBSTACLE_SELECTOR = [
   ".wordmark",
@@ -76,7 +111,14 @@ export function initializePokemonRelease({ onMove } = {}) {
     obstacles: [],
     obstaclesAt: 0,
     openTimer: 0,
+    revealTimer: 0,
   };
+  let recent = readRecent();
+  // Rare pulls are announced to screen readers too.
+  const announcer = document.createElement("span");
+  announcer.className = "visually-hidden";
+  announcer.setAttribute("aria-live", "polite");
+  document.body.append(announcer);
 
   function measure() {
     const rect = pokemon.getBoundingClientRect();
@@ -256,10 +298,12 @@ export function initializePokemonRelease({ onMove } = {}) {
   }
 
   function releasePokemon() {
-    const selected = pokemonOptions[Math.floor(Math.random() * pokemonOptions.length)];
+    const selected = pickPokemon(Math.random, recent);
+    recent = rememberRecent(selected.name);
     sprite.src = selected.src;
     sprite.alt = selected.name;
     pokemon.dataset.size = selected.size;
+    pokemon.dataset.rarity = selected.rarity;
     pokemon.title = `${selected.name}: double-click or press Escape to send back`;
     button.setAttribute("aria-label", `Release another Pokémon (Escape sends ${selected.name} back)`);
     state.width = 0;
@@ -285,6 +329,48 @@ export function initializePokemonRelease({ onMove } = {}) {
     // Reduced motion: the Pokemon appears and stays put (it can still be dragged).
     if (reducedMotion.matches) setPosition();
     else ensureAnimation();
+    revealRarity(selected);
+  }
+
+  // Rare and legendary pulls: a flash, a burst of sparkles and a banner, drawn
+  // where the Pokemon appears. It lives outside the walker, which mirrors
+  // itself to face its direction and would flip the text.
+  function revealRarity(selected) {
+    document.querySelector(".pokemon-reveal")?.remove();
+    clearTimeout(state.revealTimer);
+    const tier = RARITY[selected.rarity];
+    if (!tier.label) {
+      announcer.textContent = "";
+      return;
+    }
+    const label = selected.label ?? tier.label;
+    const legendary = selected.rarity === "legendary";
+    announcer.textContent = `${label}! A wild ${selected.name} appeared.`;
+
+    const rect = pokemon.getBoundingClientRect();
+    const cx = Math.min(window.innerWidth - 130, Math.max(130, rect.left + rect.width / 2));
+    const cy = Math.min(window.innerHeight - 90, Math.max(state.topLimit + 40, rect.top + rect.height / 2));
+    const count = legendary ? 12 : 8;
+    const sparks = Array.from({ length: count }, (_, index) => {
+      const angle = (index / count) * Math.PI * 2 + Math.random() * 0.4;
+      const distance = 64 + Math.random() * 42;
+      return `<i class="reveal-spark" style="--dx: ${Math.round(Math.cos(angle) * distance)}px; --dy: ${Math.round(Math.sin(angle) * distance)}px; --delay: ${Math.round(Math.random() * 160)}ms"></i>`;
+    }).join("");
+    const reveal = document.createElement("div");
+    reveal.className = "pokemon-reveal";
+    reveal.dataset.rarity = selected.rarity;
+    reveal.setAttribute("aria-hidden", "true");
+    // Near the top of the screen the banner drops below the Pokemon instead.
+    if (cy < 210) reveal.classList.add("is-below");
+    reveal.style.setProperty("--cx", `${Math.round(cx)}px`);
+    reveal.style.setProperty("--cy", `${Math.round(cy)}px`);
+    reveal.innerHTML = `
+      ${legendary ? '<span class="reveal-vignette"></span><span class="reveal-rays"></span>' : ""}
+      <span class="reveal-flash"></span>
+      ${sparks}
+      <span class="reveal-banner"><b>${label}!</b><small>A wild ${selected.name} appeared!</small></span>`;
+    document.body.append(reveal);
+    state.revealTimer = window.setTimeout(() => reveal.remove(), legendary ? 2900 : 2100);
   }
 
   function recallPokemon() {
@@ -392,6 +478,9 @@ export function initializePokemonRelease({ onMove } = {}) {
   return () => {
     if (state.frameId) cancelAnimationFrame(state.frameId);
     clearTimeout(state.openTimer);
+    clearTimeout(state.revealTimer);
+    document.querySelector(".pokemon-reveal")?.remove();
+    announcer.remove();
     button.removeEventListener("click", releasePokemon);
     pokemon.removeEventListener("dblclick", recallPokemon);
     document.removeEventListener("keydown", handleKeydown);

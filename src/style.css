@@ -422,6 +422,47 @@ main:focus {
   animation: pokemon-pop 0.55s cubic-bezier(0.2, 0.9, 0.2, 1.18);
 }
 
+/* Rare and legendary Pokemon keep a faint aura in their tier colour, the
+   Library's rare blue and legendary gold. */
+.pokemon-walker[data-rarity="rare"] img {
+  filter: saturate(1.08) contrast(1.04) drop-shadow(0 14px 12px rgba(0, 0, 0, 0.38)) drop-shadow(0 0 10px rgba(107, 184, 255, 0.45));
+}
+.pokemon-walker[data-rarity="legendary"] img {
+  filter: saturate(1.1) contrast(1.05) drop-shadow(0 14px 12px rgba(0, 0, 0, 0.38)) drop-shadow(0 0 12px rgba(242, 197, 109, 0.55));
+}
+
+/* The reveal: a flash, sparkles bursting out like a shiny encounter, and a
+   banner. Legendaries add light rays and a gold edge on the screen. Only
+   opacity and transform animate. */
+.pokemon-reveal { --tone: 107 184 255; --tone-deep: 47 111 232; position: fixed; z-index: 31; left: var(--cx); top: var(--cy); width: 0; height: 0; pointer-events: none; }
+.pokemon-reveal[data-rarity="legendary"] { --tone: 242 197 109; --tone-deep: 200 140 47; }
+.reveal-flash { position: absolute; left: -90px; top: -90px; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle, rgb(255 255 255 / .95), rgb(var(--tone) / .7) 30%, rgb(var(--tone) / 0) 68%); animation: reveal-flash .9s cubic-bezier(.2, .7, .2, 1) both; }
+.reveal-rays { position: absolute; left: -170px; top: -170px; width: 340px; height: 340px; border-radius: 50%; background: repeating-conic-gradient(rgb(var(--tone) / .4) 0 5deg, transparent 5deg 20deg); -webkit-mask-image: radial-gradient(circle, #000 18%, transparent 68%); mask-image: radial-gradient(circle, #000 18%, transparent 68%); animation: reveal-rays 2.4s ease-out both; }
+.reveal-vignette { position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgb(var(--tone) / .3)); animation: reveal-vignette 1.6s ease both; }
+.reveal-spark { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; background: radial-gradient(circle, #fff 18%, rgb(var(--tone)) 55%); clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); opacity: 0; animation: reveal-spark 1s cubic-bezier(.15, .75, .3, 1) var(--delay) both; }
+.reveal-banner { position: absolute; left: 0; top: -122px; display: grid; justify-items: center; gap: 6px; white-space: nowrap; transform: translateX(-50%); animation: reveal-banner 1.9s cubic-bezier(.2, .9, .2, 1) both; }
+.pokemon-reveal.is-below .reveal-banner { top: 96px; }
+.pokemon-reveal[data-rarity="legendary"] .reveal-banner { animation-duration: 2.7s; }
+.reveal-banner b { display: block; padding: 0 6px; background: linear-gradient(180deg, #fff 8%, rgb(var(--tone)) 52%, rgb(var(--tone-deep))); -webkit-background-clip: text; background-clip: text; color: transparent; font: 800 32px/1.05 Oxanium, Sora, sans-serif; letter-spacing: .08em; text-transform: uppercase; transform: skewX(-9deg); filter: drop-shadow(0 2px 0 #06121f) drop-shadow(0 0 14px rgb(var(--tone) / .75)); }
+.pokemon-reveal[data-rarity="legendary"] .reveal-banner b { font-size: 36px; }
+.reveal-banner small { padding: 5px 10px; border: 1px solid rgb(var(--tone) / .55); border-radius: 4px; background: rgba(6, 18, 31, .9); box-shadow: 0 8px 20px rgba(0, 0, 0, .35); color: #e6f0ff; font: 500 11px/1.2 "JetBrains Mono", monospace; letter-spacing: .04em; }
+@keyframes reveal-flash { 0% { opacity: 0; transform: scale(.2); } 18% { opacity: 1; } 100% { opacity: 0; transform: scale(2.4); } }
+@keyframes reveal-rays { 0% { opacity: 0; transform: rotate(0deg) scale(.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: rotate(55deg) scale(1.15); } }
+@keyframes reveal-vignette { 0%, 100% { opacity: 0; } 25% { opacity: 1; } }
+@keyframes reveal-spark { 0% { opacity: 0; transform: translate(0, 0) scale(.2) rotate(0deg); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1) rotate(90deg); } }
+@keyframes reveal-banner {
+  0% { opacity: 0; transform: translateX(-50%) scale(.3); }
+  14% { opacity: 1; transform: translateX(-50%) scale(1.16); }
+  24% { transform: translateX(-50%) scale(1); }
+  82% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-14px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No burst: the banner simply shows, then the reveal is removed. */
+  .reveal-flash, .reveal-rays, .reveal-vignette, .reveal-spark { display: none; }
+  .reveal-banner { animation: none; opacity: 1; }
+}
+
 @keyframes pokeball-shake {
   0%,
   68%,
