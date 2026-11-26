@@ -264,9 +264,9 @@ app.innerHTML = `
               target="_blank" rel="noopener noreferrer" aria-expanded="false"
               aria-controls="sumlino-teaser" aria-label="Sumlino (opens in a new tab)">Sumlino</a>
             for accountants, CPAs, bookkeepers, and advisors using QuickBooks Online.
-            It brings together cleanup, reconciliation, and client reports, with
-            four month-end checks and a 13-week cash outlook to help them close
-            the books and explain the numbers.
+            It helps them review and reconcile the books, run month-end checks,
+            and turn financial data into client-ready reports, KPI insights,
+            and a 13-week cash outlook.
           </p>
           <div class="about-focus-list" role="list" aria-label="Current focus areas">
             <span role="listitem" style="--focus-delay: 120ms">Financial modeling</span>
