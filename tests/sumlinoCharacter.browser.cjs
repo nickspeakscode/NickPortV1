@@ -15,22 +15,37 @@ const path = require('node:path');
           isMobile: mobile, hasTouch: mobile,
         });
         context.setDefaultTimeout(15000);
-        await context.route('https://x.com/sumlinoapp', route => route.fulfill({ body: '<title>Sumlino destination</title>' }));
+        await context.route('https://sumlino.app/', route => route.fulfill({ body: '<title>Sumlino destination</title>' }));
         const page = await context.newPage();
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
         await page.goto('http://127.0.0.1:5173/#about');
-        const trigger = page.getByRole('button', { name: 'redacted: preview Sumlino, a project by Nick' });
+        const trigger = page.getByRole('link', { name: 'Sumlino (opens in a new tab)', exact: true });
         const preview = page.locator('.sumlino-preview');
-        const link = page.getByRole('link', { name: 'View Sumlino on X' });
+        const link = page.getByRole('link', { name: 'Visit the Sumlino website (opens in a new tab)', exact: true });
+        const focusTrigger = async () => {
+          await trigger.evaluate(el => el.blur());
+          await page.keyboard.press('Tab');
+          await trigger.focus();
+          await preview.waitFor({ state: 'visible' });
+        };
         await trigger.scrollIntoViewIfNeeded();
         await page.waitForTimeout(900);
         const originalWidth = (await trigger.boundingBox()).width;
-        if (mobile) await trigger.tap();
-        else await trigger.hover();
+        assert.equal(await trigger.innerText(), 'Sumlino', 'brand is visible without interaction');
+        assert.equal(await page.locator('.redacted-label').count(), 0);
+        assert.equal(await trigger.getAttribute('href'), 'https://sumlino.app/');
+        const directPopup = context.waitForEvent('page');
+        if (mobile) await trigger.tap(); else await trigger.click();
+        const destination = await directPopup;
+        await destination.waitForURL('https://sumlino.app/');
+        await destination.close();
+        assert.equal(await preview.isVisible(), false, 'one tap or click navigates directly, without an extra reveal step');
+        if (mobile) await focusTrigger();
+        else { await page.mouse.move(0, 0); await trigger.hover(); }
         await page.waitForTimeout(350);
         assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
-        assert.ok(Math.abs((await trigger.boundingBox()).width - originalWidth) < 1, 'word reveal preserves paragraph layout');
+        assert.ok(Math.abs((await trigger.boundingBox()).width - originalWidth) < 1, 'preview preserves paragraph layout');
         await page.locator('.sumlino-character').evaluate(img => img.decode());
         assert.match(await page.locator('.sumlino-character').evaluate(img => img.currentSrc), /\.gif$/);
         const box = await preview.boundingBox();
@@ -42,9 +57,6 @@ const path = require('node:path');
         await page.screenshot({ path: path.join(output, `sumlino-signature-${engine.name()}-${mobile ? 'phone' : 'desktop'}.png`) });
 
         if (mobile) {
-          await trigger.tap();
-          assert.equal(await preview.isVisible(), false, 'tap toggles closed');
-          await trigger.tap();
           await page.touchscreen.tap(5, 600);
           assert.equal(await preview.isVisible(), false, 'outside tap closes');
         } else {
@@ -59,28 +71,26 @@ const path = require('node:path');
           assert.equal(await preview.isVisible(), false, 'Escape closes even while hovered');
         }
 
-        await trigger.focus();
-        await page.keyboard.press('Enter');
-        assert.equal(await link.evaluate(el => el === document.activeElement), true, 'keyboard opens and focuses link');
+        await focusTrigger();
+        await page.keyboard.press('Tab');
+        assert.equal(await link.evaluate(el => el === document.activeElement), true, 'keyboard can enter the preview');
         await page.keyboard.press('Escape');
         assert.equal(await trigger.evaluate(el => el === document.activeElement), true, 'Escape restores focus');
-        await page.keyboard.press('Enter');
+        await focusTrigger();
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await page.waitForFunction(() => document.querySelector('.sumlino-character').currentSrc.endsWith('-still.png'), null, { polling: 100 });
         assert.equal(await link.evaluate(el => getComputedStyle(el).animationName), 'none');
         const popupReady = context.waitForEvent('page');
         await link.press('Enter');
         const popup = await popupReady;
-        await popup.waitForURL('https://x.com/sumlinoapp');
+        await popup.waitForURL('https://sumlino.app/');
         await popup.close();
         assert.equal(await preview.isVisible(), false);
 
-        await trigger.focus();
-        await page.keyboard.press('Enter');
+        await focusTrigger();
         await page.getByRole('button', { name: 'Close Sumlino preview' }).click();
         assert.equal(await preview.isVisible(), false);
-        await trigger.focus();
-        await page.keyboard.press('Enter');
+        await focusTrigger();
         await page.evaluate(() => scrollBy(0, 30));
         await page.waitForTimeout(150);
         assert.equal(await preview.isVisible(), true, 'a small settling scroll keeps the preview open');
@@ -90,7 +100,7 @@ const path = require('node:path');
         assert.equal(await preview.isVisible(), false, 'a real scroll away dismisses instead of trailing the page');
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
         assert.deepEqual(errors, []);
-        console.log(`PASS ${engine.name()} ${mobile ? 'phone' : 'desktop'}: anchored reveal, hover/tap, focus, dismissal, reduced motion, X link, no overflow/errors`);
+        console.log(`PASS ${engine.name()} ${mobile ? 'phone' : 'desktop'}: visible Sumlino link, direct navigation, character preview, focus, dismissal, reduced motion, no overflow/errors`);
         await context.close();
       }
     } finally { await browser.close(); }

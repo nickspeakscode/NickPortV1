@@ -260,23 +260,13 @@ app.innerHTML = `
             strategy, and business performance.
           </p>
           <p>
-            Some of that same tinkering has turned into a project for accountants
-            and CPAs called
-            <span class="redacted-wrap">
-              <button
-                type="button"
-                class="redacted-mark"
-                aria-expanded="false"
-                aria-controls="sumlino-teaser"
-                aria-label="redacted: preview Sumlino, a project by Nick"
-              >
-                <span class="redacted-label" aria-hidden="true">redacted</span>
-                <span class="redacted-brand" aria-hidden="true">Sumlino</span>
-              </button>
-
-            </span>
-            that takes the month-end recon grind off their plate so they can
-            keep the judgment calls.
+            I’m also building <a class="sumlino-link" href="https://sumlino.app/"
+              target="_blank" rel="noopener noreferrer" aria-expanded="false"
+              aria-controls="sumlino-teaser" aria-label="Sumlino (opens in a new tab)">Sumlino</a>
+            for accountants, CPAs, bookkeepers, and advisors using QuickBooks Online.
+            It brings together cleanup, reconciliation, and client reports, with
+            four month-end checks and a 13-week cash outlook to help them close
+            the books and explain the numbers.
           </p>
           <div class="about-focus-list" role="list" aria-label="Current focus areas">
             <span role="listitem" style="--focus-delay: 120ms">Financial modeling</span>

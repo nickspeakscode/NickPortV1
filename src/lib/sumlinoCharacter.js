@@ -1,6 +1,6 @@
 // An anchored project reveal; the supplied character provides the only looping motion.
 export function initializeSumlinoCharacter() {
-  const trigger = document.querySelector('.redacted-mark');
+  const trigger = document.querySelector('.sumlino-link');
   if (!trigger) return;
 
   const preview = document.createElement('div');
@@ -8,8 +8,8 @@ export function initializeSumlinoCharacter() {
   preview.className = 'sumlino-preview';
   preview.hidden = true;
   preview.innerHTML = `
-    <a class="sumlino-project" href="https://x.com/sumlinoapp" target="_blank"
-       rel="noopener noreferrer" aria-label="View Sumlino on X">
+    <a class="sumlino-project" href="https://sumlino.app/" target="_blank"
+       rel="noopener noreferrer" aria-label="Visit the Sumlino website (opens in a new tab)">
       <span class="sumlino-art" aria-hidden="true">
         <picture>
           <source media="(prefers-reduced-motion: reduce)" srcset="/sumlino-cobalt-still.png" />
@@ -17,11 +17,11 @@ export function initializeSumlinoCharacter() {
         </picture>
       </span>
       <span class="sumlino-details" aria-hidden="true">
-        <span class="sumlino-byline">A project by Nick</span>
+        <span class="sumlino-byline">Built by Nick</span>
         <span class="sumlino-title">Sumlino</span>
-        <span class="sumlino-description">Month-end reconciliation<br>for accountants.</span>
+        <span class="sumlino-description">Cleanup, reconciliation, and reporting for QuickBooks Online.</span>
       </span>
-      <span class="sumlino-footer" aria-hidden="true"><span>Follow on X</span><span class="sumlino-arrow">↗</span></span>
+      <span class="sumlino-footer" aria-hidden="true"><span>Visit sumlino.app</span><span class="sumlino-arrow">↗</span></span>
     </a>
     <button class="sumlino-dismiss" type="button" aria-label="Close Sumlino preview">×</button>`;
   // Keep fixed positioning independent of the About section's reveal transform.
@@ -32,7 +32,7 @@ export function initializeSumlinoCharacter() {
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let open = false;
   let closeTimer;
-  let lastPointer = '';
+  let restoringFocus = false;
   let shownTop = 0;
   let shownAt = 0;
 
@@ -63,14 +63,17 @@ export function initializeSumlinoCharacter() {
     clearTimeout(closeTimer);
     if (!open) return;
     open = false;
-    if (restoreFocus) trigger.focus({ preventScroll: true });
+    if (restoreFocus) {
+      restoringFocus = true;
+      trigger.focus({ preventScroll: true });
+      restoringFocus = false;
+    }
     preview.hidden = true;
     trigger.setAttribute('aria-expanded', 'false');
-    trigger.classList.remove('is-revealed');
     syncImage();
   }
 
-  function show(keyboard = false) {
+  function show() {
     clearTimeout(closeTimer);
     if (!open) {
       open = true;
@@ -79,20 +82,19 @@ export function initializeSumlinoCharacter() {
       shownAt = performance.now();
       position();
       trigger.setAttribute('aria-expanded', 'true');
-      trigger.classList.add('is-revealed');
       syncImage();
     }
-    if (keyboard) link.focus({ preventScroll: true });
   }
 
   function scheduleHide() {
     clearTimeout(closeTimer);
     closeTimer = setTimeout(() => {
-      if (!preview.contains(document.activeElement) && document.activeElement !== trigger) hide();
+      const focused = document.activeElement;
+      const keyboardFocus = (preview.contains(focused) || focused === trigger) && focused.matches(':focus-visible');
+      if (!keyboardFocus) hide();
     }, 240);
   }
 
-  trigger.addEventListener('pointerdown', event => { lastPointer = event.pointerType; });
   trigger.addEventListener('pointerenter', event => {
     if (event.pointerType !== 'touch') show();
   });
@@ -103,11 +105,11 @@ export function initializeSumlinoCharacter() {
   preview.addEventListener('pointerleave', event => {
     if (event.pointerType !== 'touch') scheduleHide();
   });
-  trigger.addEventListener('click', event => {
-    if (event.detail === 0) show(true);
-    else if (lastPointer === 'touch' && open) hide();
-    else show();
+  trigger.addEventListener('focus', () => {
+    if (!restoringFocus && trigger.matches(':focus-visible')) show();
   });
+  // Click, tap, Enter and modified clicks remain ordinary link navigation.
+  trigger.addEventListener('click', () => hide());
   trigger.addEventListener('keydown', event => {
     if (open && event.key === 'Tab' && !event.shiftKey) {
       event.preventDefault();

@@ -871,13 +871,10 @@ p {
   margin-bottom: 24px;
 }
 
-/* An inline redaction resolves into an anchored product signature. */
-.redacted-wrap { display: inline-block; vertical-align: baseline; }
-
-.redacted-mark {
-  display: inline-grid;
+/* A visible product link with an anchored character preview. */
+.sumlino-link {
+  display: inline;
   vertical-align: baseline;
-  overflow: hidden;
   margin: 0;
   padding: 0;
   border: 0;
@@ -892,17 +889,8 @@ p {
   touch-action: manipulation;
 }
 
-.redacted-label,
-.redacted-brand {
-  grid-area: 1 / 1;
-  transition: transform 220ms ease, opacity 180ms ease;
-}
-
-.redacted-brand { transform: translateY(80%); opacity: 0; color: #c8dcff; }
-.redacted-mark.is-revealed .redacted-label { transform: translateY(-80%); opacity: 0; }
-.redacted-mark.is-revealed .redacted-brand { transform: translateY(0); opacity: 1; }
-
-.redacted-mark:focus-visible { outline: 2px solid var(--aqua); outline-offset: 4px; }
+.sumlino-link:hover { color: #c8dcff; border-color: currentColor; }
+.sumlino-link:focus-visible { outline: 2px solid var(--aqua); outline-offset: 4px; }
 
 .sumlino-preview {
   position: fixed;
@@ -1030,7 +1018,7 @@ p {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .redacted-label, .redacted-brand, .sumlino-arrow { transition: none; }
+  .sumlino-arrow { transition: none; }
   .sumlino-project { animation: none; }
 }
 
