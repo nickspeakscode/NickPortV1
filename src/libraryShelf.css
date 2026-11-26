@@ -133,7 +133,7 @@
 @keyframes shelf-arrive { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ── The reader: an item inspect window that opens like a book ─────────── */
-.library-reader { display: flex; flex-direction: column; width: min(900px, calc(100vw - 48px)); max-width: none; height: min(700px, calc(100dvh - 40px)); max-height: none; padding: 0; margin: auto; overflow: hidden; border: 0; border-radius: 12px; color: #dce7f5; background: transparent; overscroll-behavior: contain; }
+.library-reader { isolation: isolate; display: flex; flex-direction: column; width: min(900px, calc(100vw - 48px)); max-width: none; height: min(700px, calc(100dvh - 40px)); max-height: none; padding: 0; margin: auto; overflow: hidden; border: 0; border-radius: 12px; color: #dce7f5; background: transparent; overscroll-behavior: contain; }
 .library-reader:not([open]) { display: none; }
 /* The panel is a layer of its own so it can fade while the book stays visible. */
 .library-reader::before { content: ''; position: absolute; inset: 0; z-index: -1; border: 1px solid var(--line); border-radius: inherit; background: linear-gradient(180deg, #0a1a2c, #061325); box-shadow: 0 30px 70px #0009; }
@@ -155,7 +155,7 @@
 .reader-close:focus-visible, .reader-permalink:focus-visible, .page-turn:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; }
 .reader-content { flex: 1; min-height: 0; display: flex; justify-content: center; padding: 24px 32px 4px; }
 /* Two 2:3 pages, so the closed cover lands at its own proportions. */
-.reader-book { position: relative; display: grid; grid-template-columns: 1fr 1fr; height: 100%; aspect-ratio: 4 / 3; max-width: 100%; }
+.reader-book { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; height: 100%; aspect-ratio: 4 / 3; max-width: 100%; }
 /* HUD corner brackets in the item's colour. */
 .reader-book::after { content: ''; position: absolute; inset: -8px; pointer-events: none; opacity: .75;
   background:
@@ -170,7 +170,7 @@
 /* A thin lit spine between the pages. */
 .reader-book::before { content: ''; position: absolute; z-index: 1; top: 0; bottom: 0; left: 50%; width: 1px; translate: -50% 0; background: linear-gradient(transparent, rgb(var(--rarity-rgb) / .55) 20%, rgb(var(--rarity-rgb) / .55) 80%, transparent); box-shadow: 0 0 14px rgb(var(--rarity-rgb) / .35); pointer-events: none; }
 .reader-book.is-closed::before, .reader-book.is-closed::after { opacity: 0; }
-.reader-page { position: relative; min-width: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 32px 34px 50px; background: linear-gradient(180deg, #0c1e31, #0a192a); scrollbar-width: thin; scrollbar-color: #2f5064 transparent; }
+.reader-page { position: relative; min-width: 0; min-height: 0; overflow-y: auto; overflow-wrap: anywhere; scrollbar-gutter: stable; padding: 32px 34px 50px; background: linear-gradient(180deg, #0c1e31, #0a192a); scrollbar-width: thin; scrollbar-color: #2f5064 transparent; }
 .reader-page[hidden] { display: none; }
 .reader-page:focus-visible { outline: 2px solid var(--aqua); outline-offset: -4px; }
 .reader-page[data-side="left"] { grid-column: 1; border-radius: 4px 0 0 4px; box-shadow: inset -18px 0 22px -18px #000c; }
@@ -179,13 +179,15 @@
 /* Folio: a zero-padded page number at the foot of every page. */
 .reader-page::after { content: '0' attr(data-number) / ''; position: absolute; bottom: 18px; left: 0; right: 0; text-align: center; color: #4f6c82; font: 10px 'JetBrains Mono', monospace; letter-spacing: .14em; }
 .reader-page.is-clone { height: 100%; overflow: hidden; }
+.reader-page.is-clone *, .reader-page.is-clone *::after { animation: none !important; }
 .reader-page[tabindex="0"]::after { display: none; }
 .reader-end { display: grid; place-items: center; height: 100%; margin: 0; color: rgb(var(--rarity-rgb) / .35); font-size: 22px; text-shadow: 0 0 18px rgb(var(--rarity-rgb) / .4); }
 .reader-page--end { display: grid; }
 
 /* Title page: the item card. */
-.library-reader .resource-detail-cover { position: relative; top: auto; width: 128px; aspect-ratio: 2 / 3; margin: 0 0 24px; border-radius: 3px 5px 5px 3px; background: #13293b; box-shadow: 0 0 0 1px rgb(var(--rarity-rgb) / .6), 0 0 30px rgb(var(--rarity-rgb) / .22), 10px 14px 24px #02081266; }
-.library-reader .resource-detail-cover img { object-fit: contain; }
+.library-reader .resource-detail-cover { position: relative; top: auto; width: 128px; max-width: 100%; overflow: hidden; aspect-ratio: 2 / 3; margin: 0 0 24px; border-radius: 3px 5px 5px 3px; background: #13293b; box-shadow: 0 0 0 1px rgb(var(--rarity-rgb) / .6), 0 0 30px rgb(var(--rarity-rgb) / .22), 10px 14px 24px #02081266; }
+.library-reader .resource-detail-cover img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.library-reader .resource-detail-cover > .book-face { position: absolute; inset: 0; width: 100%; height: 100%; transform: none; }
 .item-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .item-tags .item-tier { font-size: 10px; }
 .item-tags .resource-type-badge { padding: 0; border: 0; background: none; color: #7f97ab; font: 10px/1.5 'JetBrains Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
@@ -257,10 +259,10 @@ img.book-leaf-cover { object-fit: contain; }
   .library-reader { width: calc(100vw - 20px); height: calc(100dvh - 24px); border-radius: 10px; }
   .reader-toolbar { padding: 6px 10px; }
   .reader-content { padding: 18px 16px 4px; }
-  .reader-book { grid-template-columns: 1fr; aspect-ratio: 2 / 3; }
+  .reader-book { grid-template-columns: minmax(0, 1fr); aspect-ratio: 2 / 3; }
   .reader-book::before { display: none; }
   .reader-book::after { inset: -6px; }
-  .reader-page { padding: 28px 22px 48px; }
+  .reader-page { padding: 28px 22px 48px; touch-action: pan-y; }
   .library-reader .resource-detail-cover { width: 112px; }
   .reader-nav { padding: 10px 14px 14px; }
 }

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 
 const block = text => [{ _type: 'block', style: 'normal', markDefs: [], children: [{ _type: 'span', text, marks: [] }] }];
 const resources = [
-  { title: 'Decision Notes', slug: 'decision-notes', resourceType: 'Book', authorCreator: 'Test Author', status: 'Completed', progress: 100, rating: 4.5, category: 'Finance', description: 'A resource description supplied by the CMS.', personalSummary: block('My saved thoughts from Sanity.'), keyTakeaways: ['A saved takeaway.'], startDate: '2026-01-01', finishDate: '2026-02-01', coverImage: 'https://cdn.sanity.io/images/vzrug3c0/production/test-cover.svg' },
+  { title: 'Decision Notes', slug: 'decision-notes', resourceType: 'Book', authorCreator: 'Test Author', status: 'Completed', progress: 100, rating: 4.5, category: 'Finance', description: 'A resource description supplied by the CMS. '.repeat(30), personalSummary: block('My saved thoughts from Sanity.'), keyTakeaways: ['A saved takeaway.'], startDate: '2026-01-01', finishDate: '2026-02-01', coverImage: 'https://cdn.sanity.io/images/vzrug3c0/production/test-cover.svg' },
   { title: '<Systems & Learning>', slug: 'systems', resourceType: 'Course', authorCreator: 'Test Creator', status: 'Currently Learning', progress: 35, rating: null, studyLog: [{ _key: 'l1', date: '2026-10-01', step: 'Read', where: 'Module 1' }, { _key: 'l2', date: '2026-10-02', step: 'Paraphrase', entry: '<b>In my words</b> & more' }, { _key: 'l3', date: '2026-10-03', step: 'Quiz', score: 3, total: 4, entry: 'Missed one.' }], description: 'A course without a cover image.', personalSummary: [], keyTakeaways: [] },
   { title: 'CMA preparation', slug: 'cma', resourceType: 'Certification', status: 'Currently Learning', progress: 10, description: 'The featured study resource.', coverImage: 'https://cdn.sanity.io/images/vzrug3c0/production/test-certificate.svg', externalUrl: 'https://example.com/credential' },
   { title: 'My original book', slug: 'original', resourceType: 'Book', createdByMe: true, status: 'Published', progress: 100, description: 'An original book written by the portfolio owner.' },
@@ -21,9 +21,12 @@ const resources = [
         context.setDefaultTimeout(15000);
         let delay = 0;
         let fail = false;
+        let releaseDetail;
+        let heldDetail;
         await context.route('**/data/query/production?**', async route => {
           const url = new URL(route.request().url());
           const slug = JSON.parse(url.searchParams.get('$slug') || 'null');
+          if (slug && heldDetail) await heldDetail;
           if (slug && delay) await new Promise(resolve => setTimeout(resolve, delay));
           if (slug && fail) return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
           const result = slug ? {
@@ -32,7 +35,7 @@ const resources = [
           } : resources;
           await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ result }) });
         });
-        await context.route('**/test-cover.svg?**', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="200" height="300" fill="#17394a"/><text x="24" y="60" fill="#5dffd0">Decision Notes</text></svg>' }));
+        await context.route('**/test-cover.svg?**', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><rect width="600" height="900" fill="#17394a"/><text x="24" y="60" fill="#5dffd0">Decision Notes</text></svg>' }));
         await context.route('**/test-certificate.svg?**', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><rect width="640" height="400" fill="#dce7e4"/><text x="100" y="180" fill="#123747" font-size="36">Certification</text></svg>' }));
         await context.route('**/broken-cover.jpg?**', route => route.abort());
         await context.addInitScript(() => {
@@ -77,6 +80,7 @@ const resources = [
         const mine = page.locator('[data-filter="mine"]');
         await mine.click();
         assert.equal(await mine.getAttribute('aria-pressed'), 'true');
+        assert.equal(await mine.evaluate(el => el === document.activeElement), true, 'filter retains keyboard focus');
         assert.equal(await page.locator('.shelf-link').count(), 1);
         assert.equal(await page.locator('.shelf-title').textContent(), 'My original book');
         assert.ok(page.url().endsWith('?shelf=mine'));
@@ -145,13 +149,22 @@ const resources = [
         }
         await reader.getByText('A related learning note', { exact: true }).waitFor({ state: 'attached' });
         assert.equal(await page.locator('#library-reader-title').textContent(), 'Decision Notes');
+        assert.equal(await reader.locator('.resource-detail-cover img').evaluate(img => {
+          const image = img.getBoundingClientRect();
+          const frame = img.parentElement.getBoundingClientRect();
+          return image.width <= frame.width + 1 && image.height <= frame.height + 1;
+        }), true, 'intrinsic cover size stays inside its frame');
+        assert.equal(await reader.locator('.reader-page:not([hidden])').evaluateAll(ps => ps.every(p => p.scrollWidth <= p.clientWidth + 1)), true, 'pages have no horizontal overflow');
+
         // The reader is a book: a title page, then pages turned with buttons or arrow keys.
         const position = () => reader.locator('.reader-position').textContent();
         const spread = !mobile;
         assert.equal(await position(), spread ? 'Pages 1–2 of 6' : 'Page 1 of 6');
         assert.equal(await reader.locator('.reader-page:not([hidden])').count(), spread ? 2 : 1);
         assert.equal(await reader.getByRole('button', { name: 'Previous page' }).isDisabled(), true);
+        const scrollBeforeTurn = await reader.locator('.reader-book > .reader-page:not([hidden])').last().evaluate(p => { p.scrollTop = 90; return p.scrollTop; });
         await reader.getByRole('button', { name: 'Next page' }).click();
+        assert.equal(await page.locator('.book-leaf-front > .reader-page').evaluate(p => p.scrollTop), scrollBeforeTurn, 'turning a scrolled page preserves its visible content');
         await page.waitForFunction(() => !document.querySelector('.book-leaf'));
         assert.equal(await position(), spread ? 'Pages 3–4 of 6' : 'Page 2 of 6');
         assert.equal(await reader.locator('.reader-position').getAttribute('aria-live'), 'polite', 'turns are announced');
@@ -216,6 +229,29 @@ const resources = [
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.querySelector('.library-reader').open);
         delay = 0;
+
+        // A response arriving mid-fold waits for the page to land.
+        heldDetail = new Promise(resolve => { releaseDetail = resolve; });
+        await first.click();
+        await page.waitForFunction(() => document.querySelector('.library-reader[open]:not(.is-opening)'));
+        await reader.getByRole('button', { name: 'Next page' }).click();
+        await page.locator('.book-leaf').waitFor();
+        releaseDetail(); heldDetail = null;
+        await page.waitForFunction(() => !document.querySelector('.book-leaf'));
+        await reader.getByText('A related learning note', { exact: true }).waitFor({ state: 'attached' });
+        assert.equal(await position(), spread ? 'Pages 3–4 of 6' : 'Page 2 of 6');
+        assert.equal(await reader.locator('.reader-page:not([hidden])').evaluateAll(ps => ps.every(p => getComputedStyle(p).visibility === 'visible')), true, 'refresh leaves all current pages visible');
+        // Rotate across the spread breakpoint during a backwards turn.
+        await reader.getByRole('button', { name: 'Previous page' }).click();
+        await page.locator('.book-leaf').waitFor();
+        await page.setViewportSize(mobile ? { width: 1024, height: 800 } : { width: 390, height: 844 });
+        await page.waitForFunction(() => !document.querySelector('.book-leaf, .book-flight'));
+        await page.waitForTimeout(650);
+        assert.equal(await reader.locator('.reader-page:not([hidden])').count(), mobile ? 2 : 1);
+        assert.equal(await reader.locator('.reader-page:not([hidden])').evaluateAll(ps => ps.every(p => getComputedStyle(p).visibility === 'visible' && p.scrollWidth <= p.clientWidth + 1)), true);
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.querySelector('.library-reader').open);
+        await page.setViewportSize(mobile ? { width: 320, height: 740 } : { width: 1440, height: 950 });
 
         // Resizing finishes the motion without leaving an invisible cover or locked page.
         await second.click();

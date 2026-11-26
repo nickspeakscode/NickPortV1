@@ -89,6 +89,7 @@ function initializeLibraryFilters() {
     else url.searchParams.set("shelf", activeFilter);
     history.pushState(null, "", url);
     update();
+    app.querySelector('.library-filter[aria-pressed="true"]')?.focus({ preventScroll: true });
   };
   const onPopState = () => {
     activeFilter = new URLSearchParams(location.search).get("shelf") || "all";
