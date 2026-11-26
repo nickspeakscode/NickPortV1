@@ -393,3 +393,45 @@
   .book-backdrop, .book-hero-cover::after, .book-detail .resource-detail-cover, .book-hero-copy > * { animation: none; }
   .book-detail .resource-detail-cover::after { display: none; }
 }
+
+/* Center the TIL article header and keep its reading column compact. */
+.note-detail-inner {
+  max-width: 760px;
+}
+
+.note-detail-header {
+  margin-bottom: 0;
+}
+
+.note-detail-header > .note-category {
+  margin-inline: auto;
+}
+
+.note-detail-meta,
+.note-tags {
+  justify-content: center;
+}
+
+.note-detail-header h1 {
+  max-width: 760px;
+  font-size: clamp(38px, 5.2vw, 68px);
+}
+
+.note-tags span {
+  padding: 5px 9px;
+}
+
+.note-detail .learning-from {
+  width: min(100%, 680px);
+  margin: 42px auto 0;
+}
+
+@media (max-width: 680px) {
+  .note-detail .detail-back {
+    margin-bottom: 34px;
+  }
+
+  .note-detail-header h1 {
+    font-size: clamp(36px, 10vw, 54px);
+  }
+}
