@@ -38,7 +38,7 @@ function renderIndex(articles, state) {
   }
 
   return `
-    <main class="index-page">
+    <main class="index-page journal-index-page">
       <header class="index-intro index-enter">
         <h1>musings</h1>
         <p>philosophy, markets, books, technology, and whatever else is worth thinking through.</p>
@@ -50,7 +50,7 @@ function renderIndex(articles, state) {
 
 function renderPending() {
   return `
-    <main class="index-page">
+    <main class="index-page journal-index-page">
       <header class="index-intro">
         <p class="index-empty" role="status">Loading article…</p>
       </header>
@@ -85,7 +85,7 @@ function renderArticle(article) {
 
 function renderNotFound(message = "this article could not be found. it may have been unpublished or moved.") {
   return `
-    <main class="index-page">
+    <main class="index-page journal-index-page">
       <header class="index-intro index-enter">
         <h1>musings</h1>
         <p>${escapeHtml(message)}</p>
