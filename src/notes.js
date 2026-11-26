@@ -49,7 +49,7 @@ function renderNoteRow(note, index) {
 
 function renderNotesIndex(notes, { pending = false } = {}) {
   return `
-    <main class="index-page">
+    <main class="index-page journal-index-page">
       <header class="index-intro index-enter">
         <h1>today i learned</h1>
         <p>short notes from books, courses, markets, and everyday curiosity.</p>
@@ -122,7 +122,7 @@ function renderNoteDetail(note) {
 
 function renderNotFound(message = "this note could not be found. it may have been unpublished or moved.") {
   return `
-    <main class="index-page">
+    <main class="index-page journal-index-page">
       <header class="index-intro index-enter">
         <h1>still learning</h1>
         <p>${escapeHtml(message)}</p>
@@ -134,7 +134,7 @@ function renderNotFound(message = "this note could not be found. it may have bee
 
 function renderPending(label) {
   return `
-    <main class="index-page">
+    <main class="index-page journal-index-page">
       <header class="index-intro">
         <p class="index-empty" role="status">${escapeHtml(label)}</p>
       </header>
